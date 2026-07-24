@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 
+// Always read live from the database, never serve a cached snapshot of the Window.
+export const dynamic = 'force-dynamic';
+
 function fmtDate(d: string | null) {
   if (!d) return '';
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

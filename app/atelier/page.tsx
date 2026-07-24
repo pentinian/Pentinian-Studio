@@ -45,6 +45,16 @@ export default function AtelierPage() {
 
   async function approve(entry: any) {
     const supabase = createClient();
+    // Idempotent: if this raw entry was already approved, do nothing.
+    const { data: existing } = await supabase
+      .from('work_log_released')
+      .select('id')
+      .eq('raw_id', entry.id)
+      .limit(1);
+    if (existing && existing.length) {
+      setMsg('Already approved.');
+      return;
+    }
     const { error } = await supabase.from('work_log_released').insert({
       project_id: entry.project_id,
       raw_id: entry.id,
