@@ -147,3 +147,8 @@ a{color:inherit}
 
 @media (max-width:860px){ .row-2,.queue,.wr-shell,.pj-head,.sess{grid-template-columns:1fr} .rail{min-height:auto} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Crossing between the two surfaces. Only staff ever see it in the Window. */
+.tb-switch{font:500 11px/1 var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);
+  text-decoration:none; padding:5px 9px; border:1px solid var(--line); border-radius:999px; transition:color .2s, border-color .2s}
+.tb-switch:hover{color:var(--ink); border-color:var(--line-2)}

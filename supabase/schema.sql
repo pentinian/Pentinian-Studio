@@ -74,6 +74,7 @@ insert into site_config (id, config)
 values (1, '{"open_for_work": true, "availability": "One slot, Q3", "public_projects": ["Artinian","Caveman","LimIcon","UnImpact","Studiolo"]}')
 on conflict (id) do nothing;
 
--- Before production: enable Row Level Security on the client-visible tables and add policies
--- so a signed-in client can read only their own project's released entries, sessions, and
--- questions. The Atelier and the Notion sync run server-side with the service role key.
+-- Row Level Security lives in rls.sql, applied 2026-07-27. Every table is RLS-enabled:
+-- staff (app_metadata.role = admin) see everything, a client sees only their own project
+-- and only released, visible entries, and work_log_raw is staff-only at all times.
+-- The Notion sync uses the service role key, which bypasses RLS.

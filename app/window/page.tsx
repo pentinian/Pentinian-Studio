@@ -13,6 +13,8 @@ export default async function WindowPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Staff see a way across to the Atelier. Clients never learn it exists.
+  const isAdmin = user?.app_metadata?.role === 'admin';
 
   // Scaffold: load the first project. In production, map the signed-in user to their project
   // via the clients table (clients.user_id = user.id) and filter by that client's project.
@@ -73,6 +75,11 @@ export default async function WindowPage() {
           Project: <b>{project?.name ?? 'Your project'}</b>
         </span>
         <span className="tb-right">
+          {isAdmin && (
+            <a className="tb-switch" href="/atelier" title="Studio access">
+              Atelier &#8599;
+            </a>
+          )}
           <span>{user?.email}</span>
           <span className="ava">{initials}</span>
           <form action="/auth/signout" method="post">

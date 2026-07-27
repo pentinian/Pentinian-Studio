@@ -117,6 +117,9 @@ export default function AtelierPage() {
         <button className="mini-btn pri" onClick={sync}>
           Sync Notion
         </button>
+        <a className="tb-switch" href="/window" style={{ marginLeft: 10 }} title="See it as a client does">
+          Window &#8599;
+        </a>
         <form action="/auth/signout" method="post" style={{ marginLeft: 10 }}>
           <button className="signout" type="submit">
             Sign out
