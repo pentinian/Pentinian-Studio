@@ -1,9 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+function LoginForm() {
+  const params = useSearchParams();
+  // Only ever follow an in-app path, so a crafted ?next= cannot bounce someone offsite.
+  const raw = params.get('next') ?? '';
+  const next = raw.startsWith('/') && !raw.startsWith('//') ? raw : '';
+
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -14,13 +20,24 @@ export default function LoginPage() {
     setError('');
     setBusy(true);
     const supabase = createClient();
+    const cb = new URL('/auth/callback', window.location.origin);
+    if (next) cb.searchParams.set('next', next);
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      // Access is invite only: never provision an account from this form. An email
+      // that has not been invited gets refused rather than silently created.
+      options: { shouldCreateUser: false, emailRedirectTo: cb.toString() },
     });
     setBusy(false);
-    if (error) setError(error.message);
-    else setSent(true);
+    if (error) {
+      const unknown = /signups not allowed|user not found|invalid/i.test(error.message);
+      setError(
+        unknown
+          ? 'That address is not on the list. If you should have access, reply to your last email from me.'
+          : error.message
+      );
+    } else setSent(true);
   }
 
   return (
@@ -37,7 +54,10 @@ export default function LoginPage() {
         ) : (
           <>
             <h1 className="auth-h">Sign in.</h1>
-            <p className="auth-sub">Enter your email and I'll send a one-time link. No password to remember.</p>
+            <p className="auth-sub">
+              Enter your email and I'll send a one-time link. No password to remember.
+              Access is by invitation.
+            </p>
             <form onSubmit={submit} className="auth-form">
               <input
                 className="uline"
@@ -56,5 +76,14 @@ export default function LoginPage() {
         )}
       </div>
     </main>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the static build to prerender this route.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
