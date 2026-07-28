@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Curation from './Curation';
+import Passkeys from './Passkeys';
 
 // The six cards on the public site. These are portfolio pieces, which is a different
 // set from the projects below: those are client work with logs and Windows attached.
@@ -24,7 +25,7 @@ type Proj = {
 };
 
 export default function AtelierPage() {
-  const [tab, setTab] = useState<'curation' | 'site'>('curation');
+  const [tab, setTab] = useState<'curation' | 'site' | 'access'>('curation');
   const [projects, setProjects] = useState<Proj[]>([]);
   const [orphaned, setOrphaned] = useState(0);
   const [selId, setSelId] = useState<string | null>(null);
@@ -194,11 +195,16 @@ export default function AtelierPage() {
             <button className={tab === 'site' ? 'on' : ''} onClick={() => setTab('site')}>
               The Window (site calibration)
             </button>
+            <button className={tab === 'access' ? 'on' : ''} onClick={() => setTab('access')}>
+              Access
+            </button>
           </div>
 
           {msg && <p style={{ fontSize: 12.5, color: 'var(--sage-deep)', margin: '0 0 14px' }}>{msg}</p>}
 
           {tab === 'curation' && <Curation projectId={selId} projectName={project?.name ?? null} />}
+
+          {tab === 'access' && <Passkeys />}
 
           {tab === 'site' && (
             <div className="wp">

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -14,6 +14,36 @@ function LoginForm() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [pkBusy, setPkBusy] = useState(false);
+  // Only offer the passkey door where the browser can actually open it. An offer
+  // that fails on click is worse than no offer.
+  const [canPasskey, setCanPasskey] = useState(false);
+
+  useEffect(() => {
+    setCanPasskey(typeof window !== 'undefined' && !!window.PublicKeyCredential);
+  }, []);
+
+  async function passkey() {
+    setError('');
+    setPkBusy(true);
+    const supabase = createClient();
+    const { error } = await (supabase.auth as any).signInWithPasskey();
+    setPkBusy(false);
+    if (error) {
+      // Cancelling the system prompt is not a failure, so it should not read as one.
+      const cancelled = /abort|cancel|NotAllowed/i.test(error.message ?? '');
+      if (cancelled) return;
+      setError(
+        /webauthn_credential_not_found|passkey_disabled/i.test(error.code ?? error.message ?? '')
+          ? 'No passkey is registered for this site yet. Sign in with a link once, then add one from the Atelier.'
+          : error.message
+      );
+      return;
+    }
+    // A full page load rather than a client transition, so the server sees the new
+    // cookie and the hallway can send us through the right door.
+    window.location.assign(next || '/');
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,9 +85,21 @@ function LoginForm() {
           <>
             <h1 className="auth-h">Sign in.</h1>
             <p className="auth-sub">
-              Enter your email and I'll send a one-time link. No password to remember.
-              Access is by invitation.
+              Access is by invitation. Use your passkey if you have one, otherwise I'll
+              send a one-time link. Either way there is no password to remember.
             </p>
+
+            {canPasskey && (
+              <>
+                <button className="btn-line sage pk-btn" onClick={passkey} disabled={pkBusy}>
+                  {pkBusy ? 'Waiting for you…' : 'Use a passkey ↗'}
+                </button>
+                <div className="auth-or">
+                  <span>or</span>
+                </div>
+              </>
+            )}
+
             <form onSubmit={submit} className="auth-form">
               <input
                 className="uline"
