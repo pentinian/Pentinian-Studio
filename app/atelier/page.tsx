@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Curation from './Curation';
 import Passkeys from './Passkeys';
+import Replies from './Replies';
 
 // The six cards on the public site. These are portfolio pieces, which is a different
 // set from the projects below: those are client work with logs and Windows attached.
@@ -25,7 +26,8 @@ type Proj = {
 };
 
 export default function AtelierPage() {
-  const [tab, setTab] = useState<'curation' | 'site' | 'access'>('curation');
+  const [tab, setTab] = useState<'curation' | 'replies' | 'site' | 'access'>('curation');
+  const [waiting, setWaiting] = useState(0);
   const [projects, setProjects] = useState<Proj[]>([]);
   const [orphaned, setOrphaned] = useState(0);
   const [selId, setSelId] = useState<string | null>(null);
@@ -50,6 +52,11 @@ export default function AtelierPage() {
       setOrphaned(d.orphaned ?? 0);
       setSelId((cur) => cur ?? d.projects?.[0]?.id ?? null);
     }
+    // The count sits on the tab so an unanswered client is visible from anywhere in
+    // the Atelier, rather than only once you think to go and look.
+    const rep = await fetch('/api/comments', { cache: 'no-store' });
+    if (rep.ok) setWaiting((await rep.json()).waiting ?? 0);
+
     const supabase = createClient();
     const { data: cfg } = await supabase.from('site_config').select('config').eq('id', 1).single();
     if (cfg?.config) setConfig((c: any) => ({ ...c, ...cfg.config }));
@@ -192,6 +199,10 @@ export default function AtelierPage() {
             <button className={tab === 'curation' ? 'on' : ''} onClick={() => setTab('curation')}>
               Curation
             </button>
+            <button className={tab === 'replies' ? 'on' : ''} onClick={() => setTab('replies')}>
+              Replies
+              {waiting > 0 && <span className="tab-n">{waiting}</span>}
+            </button>
             <button className={tab === 'site' ? 'on' : ''} onClick={() => setTab('site')}>
               The Window (site calibration)
             </button>
@@ -203,6 +214,8 @@ export default function AtelierPage() {
           {msg && <p style={{ fontSize: 12.5, color: 'var(--sage-deep)', margin: '0 0 14px' }}>{msg}</p>}
 
           {tab === 'curation' && <Curation projectId={selId} projectName={project?.name ?? null} />}
+
+          {tab === 'replies' && <Replies />}
 
           {tab === 'access' && <Passkeys />}
 

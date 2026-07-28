@@ -156,28 +156,23 @@ export default function Log({ projectId }: { projectId: string | null }) {
     }
   }
 
+  // Posted through the app rather than straight into the table. Not for permission:
+  // the insert still runs on this person's own session, so the same policies refuse
+  // the same things. It is so the studio can be told, since a reply that nobody sees
+  // is worse than no reply box at all.
   async function say(entry: Entry) {
     const body = (draft[entry.id] ?? '').trim();
     if (!body) return;
     setBusy(entry.id);
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const { data, error } = await supabase
-      .from('comments')
-      .insert({
-        project_id: entry.project_id,
-        entry_id: entry.id,
-        author_id: user?.id,
-        from_staff: false,
-        body,
-      })
-      .select('id,entry_id,body,from_staff,created_at')
-      .single();
+    const res = await fetch('/api/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry_id: entry.id, project_id: entry.project_id, body }),
+    });
     setBusy('');
-    if (error) return;
-    setComments((p) => ({ ...p, [entry.id]: [...(p[entry.id] ?? []), data as Comment] }));
+    if (!res.ok) return;
+    const { comment } = await res.json();
+    setComments((p) => ({ ...p, [entry.id]: [...(p[entry.id] ?? []), comment as Comment] }));
     setDraft((p) => ({ ...p, [entry.id]: '' }));
   }
 

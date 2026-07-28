@@ -189,6 +189,27 @@ a{color:inherit}
 .wl-say input{flex:1; min-width:0; border:1px solid var(--line); border-radius:7px; padding:8px 10px;
   font:400 12.5px/1.4 var(--sans); color:var(--ink); background:var(--paper)}
 .wl-say input:focus{outline:none; border-color:var(--sage)}
+
+/* ---- the reply inbox ---- */
+.tab-n{display:inline-grid; place-items:center; min-width:16px; height:16px; padding:0 4px;
+  margin-left:6px; border-radius:999px; background:var(--clay); color:#fff;
+  font:600 9.5px/1 var(--mono); vertical-align:1px}
+.rp{border:1px solid var(--line); border-left:2px solid var(--clay); border-radius:9px;
+  padding:14px 16px; background:var(--bone); margin-bottom:12px}
+.rp.done{border-left-color:var(--line-2); opacity:.72}
+.rp-head{display:flex; align-items:baseline; gap:9px; margin-bottom:7px}
+.rp-who{font:500 13px/1 var(--sans); color:var(--ink)}
+.rp-proj{font:500 9px/1 var(--mono); letter-spacing:.09em; text-transform:uppercase; color:var(--sage-deep)}
+.rp-when{font:400 10.5px/1 var(--mono); color:var(--ink-3); margin-left:auto}
+.rp-ctx{font:400 11px/1.4 var(--sans); color:var(--ink-3); margin-bottom:8px}
+.rp-ctx-l{font:500 9px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase}
+.rp-ctx i{font-style:normal; margin-left:8px; padding:2px 6px; border-radius:3px;
+  background:rgba(126,146,112,.12); color:var(--sage-deep); font-size:9.5px;
+  letter-spacing:.08em; text-transform:uppercase}
+.rp-body{font:400 13.5px/1.6 var(--sans); color:var(--ink-2); margin:0 0 10px}
+.rp-mine{margin:0 0 9px; padding-left:12px; border-left:2px solid rgba(126,146,112,.4)}
+.rp-mine .who{font:500 9px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--sage-deep)}
+.rp-mine p{font:400 12.5px/1.6 var(--sans); color:var(--ink-2); margin:3px 0 0}
 .wr-main{padding:20px 22px 40px}
 .wr-h{display:flex; align-items:center; gap:14px; margin-bottom:16px}
 .wr-h h2{font:400 22px/1 var(--serif); color:var(--ink); margin:0}
