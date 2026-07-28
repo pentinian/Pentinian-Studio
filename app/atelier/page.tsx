@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import Curation from './Curation';
 
 const ALL_PROJECTS = ['Artinian', 'Caveman', 'LimIcon', 'UnImpact', 'Studiolo'];
 
@@ -23,12 +24,8 @@ export default function AtelierPage() {
     const supabase = createClient();
     const { data: projects } = await supabase.from('projects').select('*').limit(1);
     setProject(projects?.[0] ?? null);
-    const { data: rawData } = await supabase
-      .from('work_log_raw')
-      .select('*')
-      .order('logged_at', { ascending: false })
-      .limit(50);
-    setRaw(rawData ?? []);
+    // work_log_raw is unreachable from the browser by design; Curation reads it
+    // through /api/quarry, which checks staff and then uses the service key.
     const { data: relData } = await supabase
       .from('work_log_released')
       .select('*')
@@ -162,66 +159,7 @@ export default function AtelierPage() {
 
           {msg && <p style={{ fontSize: 12.5, color: 'var(--sage-deep)', margin: '0 0 14px' }}>{msg}</p>}
 
-          {tab === 'curation' && (
-            <div className="queue">
-              <div className="lane quarry">
-                <div className="lh">
-                  <span className="ln">Quarry · raw log</span>
-                </div>
-                {raw.length ? (
-                  raw.map((e) => (
-                    <div className={`qcard${e.out_of_scope ? ' scope' : ''}`} key={e.id}>
-                      <time>{e.logged_at ? new Date(e.logged_at).toLocaleDateString() : ''}</time>
-                      {e.body}
-                      <div className="qa">
-                        <button className="mini-btn pri" onClick={() => approve(e)}>
-                          Approve →
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="empty">Empty. Hit Sync Notion to pull the work log in.</div>
-                )}
-              </div>
-
-              <div className="lane bench">
-                <div className="lh">
-                  <span className="ln">Bench · shaping</span>
-                </div>
-                {released.filter((r) => r.visible).length ? (
-                  released
-                    .filter((r) => r.visible)
-                    .map((r) => (
-                      <div className="qcard" key={r.id}>
-                        <b style={{ color: 'var(--ink)' }}>{r.title}</b>
-                        <div className="qa">
-                          <button className="toggle on" onClick={() => toggleVisible(r)} aria-label="visible" />
-                          <span style={{ fontSize: 10, color: 'var(--ink-3)' }}>Client-visible</span>
-                        </div>
-                      </div>
-                    ))
-                ) : (
-                  <div className="empty">Approve entries from the Quarry to shape them here.</div>
-                )}
-              </div>
-
-              <div className="lane cadence">
-                <div className="lh">
-                  <span className="ln">Cadence · released</span>
-                </div>
-                {released.map((r) => (
-                  <div className="qcard" key={r.id}>
-                    <b style={{ color: 'var(--ink)' }}>{r.title}</b>
-                    <div style={{ marginTop: 6, fontSize: 10, color: 'var(--sage-deep)' }}>
-                      {r.release_at ? new Date(r.release_at).toLocaleDateString() : 'scheduled'}
-                      {!r.visible && ' · hidden'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {tab === 'curation' && <Curation />}
 
           {tab === 'site' && (
             <div className="wp">

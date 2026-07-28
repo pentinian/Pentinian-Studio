@@ -152,3 +152,51 @@ a{color:inherit}
 .tb-switch{font:500 11px/1 var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);
   text-decoration:none; padding:5px 9px; border:1px solid var(--line); border-radius:999px; transition:color .2s, border-color .2s}
 .tb-switch:hover{color:var(--ink); border-color:var(--line-2)}
+
+/* ============ the gate ============
+   Left, everything the Quarry holds. Right, exactly what a client would read.
+   The preview reuses .win-entry, the Window's own class, so the two cannot drift. */
+.cur-wrap{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:20px; align-items:start}
+.cur-queue,.cur-gate{border:1px solid var(--line); border-radius:10px; background:var(--paper); padding:14px}
+.cur-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px}
+.cur-count{font:500 11px/1 var(--mono); color:var(--ink-3)}
+.cur-empty{font:400 12px/1.5 var(--sans); color:var(--ink-3); margin:6px 0}
+.cur-row{display:block; width:100%; text-align:left; border:1px solid transparent; border-bottom-color:var(--line);
+  background:none; cursor:pointer; padding:9px 8px; border-radius:6px}
+.cur-row:hover{background:rgba(255,255,255,.6)}
+.cur-row.on{border-color:var(--line-2); background:#fff}
+.cur-when{display:block; font:400 10px/1.4 var(--mono); color:var(--ink-3)}
+.cur-when b{color:var(--ink-2); font-weight:500}
+.cur-title{display:block; font:400 12.5px/1.4 var(--sans); color:var(--ink); margin:2px 0 5px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cur-tags{display:flex; gap:6px; flex-wrap:wrap}
+.cur-proj,.cur-state{font:500 9px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase;
+  font-style:normal; padding:3.5px 7px; border-radius:999px; border:1px solid var(--line); color:var(--ink-3)}
+.cur-proj.facing{border-color:transparent; background:var(--sage-wash,#e5ebe1); color:var(--sage-deep)}
+.cur-state.live{border-color:transparent; background:#e5ebe1; color:var(--sage-deep)}
+.cur-warn{font:400 11.5px/1.5 var(--sans); color:#8a4a3d; background:#f6e9e4;
+  border-radius:6px; padding:9px 11px; margin:0 0 12px}
+.win-entry.preview{border:1px dashed var(--line-2); border-radius:8px; padding:13px; background:#fff; margin-bottom:12px}
+.we-time{font:400 10px/1 var(--mono); color:var(--ink-3); margin-bottom:7px}
+.we-time b{color:var(--ink-2); font-weight:500}
+.we-time i{font-style:normal; margin-left:8px}
+.we-title{font:400 15px/1.25 var(--serif,Georgia,serif); color:var(--ink); margin:0 0 5px}
+.we-area{font:500 9px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--sage-deep); margin-bottom:7px}
+.we-eli5{font:400 12.5px/1.6 var(--sans); color:var(--ink-2); margin:0 0 6px}
+.we-why{font:400 11.5px/1.55 var(--sans); color:var(--ink-3); margin:0}
+.we-shots{margin-top:8px; font:500 9.5px/1 var(--mono); color:var(--ink-3)}
+.cur-detail{margin-bottom:12px}
+.cur-detail summary{font:500 10px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-3); cursor:pointer}
+.cur-detail pre{white-space:pre-wrap; font:400 11px/1.55 var(--mono); color:var(--ink-2);
+  background:#f3f0ea; border-radius:6px; padding:10px; margin:8px 0 0; max-height:180px; overflow:auto}
+.cur-fields{display:flex; flex-direction:column; gap:9px; margin-bottom:12px}
+.cur-fields label{display:flex; flex-direction:column; gap:4px;
+  font:500 9.5px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
+.cur-fields input,.cur-fields textarea{font:400 12.5px/1.5 var(--sans); color:var(--ink);
+  border:1px solid var(--line); border-radius:6px; padding:7px 9px; background:#fff; resize:vertical}
+.cur-fields input:focus,.cur-fields textarea:focus{outline:none; border-color:var(--line-2)}
+.cur-actions{display:flex; gap:8px; flex-wrap:wrap}
+.mini-btn.warn{color:#8a4a3d; border-color:#e3cec6}
+.cur-msg{font:400 11.5px/1.5 var(--sans); color:var(--sage-deep); margin:10px 0 0}
+@media (max-width: 900px){ .cur-wrap{grid-template-columns:1fr} }
