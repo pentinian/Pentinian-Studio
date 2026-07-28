@@ -225,6 +225,16 @@ a{color:inherit}
 .room-solo{font:500 11.5px/1 var(--sans); color:var(--ink-3); letter-spacing:.04em}
 .tb-mail{font-size:12.5px; color:var(--ink-3)}
 @media (max-width:700px){ .tb-mail{display:none} }
+.switch label{font:400 12px/1 var(--sans); color:var(--ink-3)}
+.proj-pick{font:500 12.5px/1 var(--sans); color:var(--ink); background:none; border:0;
+  cursor:pointer; padding:2px 4px; max-width:210px}
+.proj-pick:focus{outline:none; text-decoration:underline}
+/* The source heading above the preview: what the log called it, before you decide
+   whether the client should read something different. */
+.cur-src{font:400 11.5px/1.5 var(--sans); color:var(--ink-3); margin:0 0 9px;
+  padding-left:9px; border-left:2px solid var(--line-2)}
+.cur-area{font:500 9px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-3); background:rgba(0,0,0,.04); border-radius:3px; padding:3px 6px}
 .wr-main{padding:20px 22px 40px}
 .wr-h{display:flex; align-items:center; gap:14px; margin-bottom:16px}
 .wr-h h2{font:400 22px/1 var(--serif); color:var(--ink); margin:0}

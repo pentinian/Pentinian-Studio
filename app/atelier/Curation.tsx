@@ -149,9 +149,15 @@ export default function Curation({
               </span>
               <span className="cur-title">{(e.body ?? '(no text)').split('\n')[0]}</span>
               <span className="cur-tags">
-                <i className={'cur-proj' + (p?.client_facing ? ' facing' : '')}>
-                  {p?.name ?? 'no project'}
-                </i>
+                {/* The project name is only worth repeating when the queue is showing
+                    more than one. Scoped to a single project it was six identical
+                    chips down the column, which is noise pretending to be data. */}
+                {(scope === 'all' || !projectId || e.project_id !== projectId) && (
+                  <i className={'cur-proj' + (p?.client_facing ? ' facing' : '')}>
+                    {p?.name ?? 'no project'}
+                  </i>
+                )}
+                {e.area && <i className="cur-area">{e.area}</i>}
                 {out && <i className={'cur-state' + (out.visible ? ' live' : '')}>
                   {out.visible ? 'released' : 'held'}
                 </i>}
@@ -171,6 +177,10 @@ export default function Curation({
               <span className="ln">What they will see</span>
               {proj && <span className={'cur-proj' + (proj.client_facing ? ' facing' : '')}>{proj.name}</span>}
             </div>
+
+            {/* The heading, unedited, so you can see what the log actually called it
+                before deciding whether the client-facing title should differ. */}
+            <div className="cur-src">{(sel.body ?? '').split('\n')[0] || '(untitled)'}</div>
 
             {blocked && (
               <p className="cur-warn">
@@ -194,10 +204,11 @@ export default function Curation({
               {!!sel.shots?.length && <div className="we-shots">{sel.shots.length} screenshot(s) attached</div>}
             </div>
 
-            {/* what they will never see */}
+            {/* what they will never see. The first line is the heading shown above,
+                so only the body below it belongs here. */}
             <details className="cur-detail">
               <summary>The detail, staff only</summary>
-              <pre>{sel.body || '(empty)'}</pre>
+              <pre>{(sel.body ?? '').split('\n').slice(1).join('\n').trim() || '(empty)'}</pre>
             </details>
 
             <div className="cur-fields">

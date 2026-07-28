@@ -52,7 +52,14 @@ export default function AtelierPage() {
       const d = await res.json();
       setProjects(d.projects ?? []);
       setOrphaned(d.orphaned ?? 0);
-      setSelId((cur) => cur ?? d.projects?.[0]?.id ?? null);
+      // Open on whatever has the most waiting for you, not on whatever sorts first.
+      // Alphabetical order put an empty project in front of the one with six entries
+      // in it, so the Atelier opened on nothing at all.
+      setSelId((cur) => {
+        if (cur) return cur;
+        const busiest = [...(d.projects ?? [])].sort((a: Proj, b: Proj) => b.quarry - a.quarry)[0];
+        return busiest?.id ?? null;
+      });
     }
     // The count sits on the tab so an unanswered client is visible from anywhere in
     // the Atelier, rather than only once you think to go and look.

@@ -84,7 +84,14 @@ export async function POST(request: Request) {
       started_at: e.started_at,
       ended_at: e.ended_at,
       minutes: e.minutes,
-      body: e.detail || e.title,
+      // Title first, then the detail, separated by a blank line.
+      //
+      // This used to be `e.detail || e.title`, which threw the title away whenever a
+      // detail existed. The Quarry then listed six rows of dense technical prose with
+      // no readable headings, which defeats the point of a queue you are meant to
+      // scan. Everything downstream already reads the first line as the title, so
+      // this shape needs no schema change and no new column.
+      body: [e.title, e.detail].filter(Boolean).join('\n\n'),
       eli5: e.eli5,
       why: e.why,
       area: e.area,
