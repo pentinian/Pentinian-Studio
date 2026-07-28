@@ -101,6 +101,17 @@ export default function Log({ projectId }: { projectId: string | null }) {
   useEffect(() => { load(); }, [load]);
   useEffect(() => { setOpenDay(null); }, [cursor.y, cursor.m]);
 
+  // Open the most recent day that has work, rather than greeting someone with an
+  // empty panel and an instruction. The calendar is for moving between days, not a
+  // gate you have to pass to see anything, and with one marked day it was a click
+  // that did nothing but hide the content until you found it.
+  useEffect(() => {
+    if (openDay || !entries.length) return;
+    const latest = Object.keys(byDay).sort().pop();
+    if (latest) open(latest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, openDay]);
+
   /** day key -> entries, for the squares and the panel alike */
   const byDay = useMemo(() => {
     const m: Record<string, Entry[]> = {};
@@ -129,6 +140,10 @@ export default function Log({ projectId }: { projectId: string | null }) {
 
   async function openThe(key: string) {
     if (openDay === key) return setOpenDay(null);
+    await open(key);
+  }
+
+  async function open(key: string) {
     setOpenDay(key);
 
     const supabase = createClient();
