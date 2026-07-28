@@ -212,8 +212,12 @@ export default function Curation({
                 {clock(sel.ended_at) && <span> to {clock(sel.ended_at)}</span>}
                 <i>{dur(sel.minutes)}</i>
               </div>
-              <h4 className="we-title">{draft.title || 'Untitled'}</h4>
+              {/* Area above the title, matching the Window exactly. These had drifted
+                  into different orders, which is precisely the drift the shared classes
+                  were supposed to make impossible. Sharing a stylesheet is not sharing
+                  a layout, and only one of the two is actually a guarantee. */}
               {draft.area && <div className="we-area">{draft.area}</div>}
+              <h4 className="we-title">{draft.title || 'Untitled'}</h4>
               <p className="we-eli5">{draft.eli5 || 'No plain-language summary yet. The client would see nothing here.'}</p>
               {draft.why && <p className="we-why">{draft.why}</p>}
               {!!sel.shots?.length && <div className="we-shots">{sel.shots.length} screenshot(s) attached</div>}
