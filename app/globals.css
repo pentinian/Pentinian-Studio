@@ -210,6 +210,21 @@ a{color:inherit}
 .rp-mine{margin:0 0 9px; padding-left:12px; border-left:2px solid rgba(126,146,112,.4)}
 .rp-mine .who{font:500 9px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--sage-deep)}
 .rp-mine p{font:400 12.5px/1.6 var(--sans); color:var(--ink-2); margin:3px 0 0}
+
+/* ---- one header, two rooms ---- */
+.topbar .brand{text-decoration:none}
+.topbar .brand:hover{color:var(--sage-deep)}
+/* The switcher only appears for someone with more than one door. A client sees a
+   plain label instead, because a control that goes nowhere is worse than none. */
+.rooms{display:flex; gap:2px; padding:3px; border-radius:9px; background:var(--paper);
+  border:1px solid var(--line)}
+.rooms a{font:500 11.5px/1 var(--sans); color:var(--ink-3); text-decoration:none;
+  padding:8px 13px; border-radius:6px}
+.rooms a:hover{color:var(--ink-2)}
+.rooms a.on{color:var(--ink); background:var(--bone); box-shadow:0 1px 2px rgba(60,52,30,.08)}
+.room-solo{font:500 11.5px/1 var(--sans); color:var(--ink-3); letter-spacing:.04em}
+.tb-mail{font-size:12.5px; color:var(--ink-3)}
+@media (max-width:700px){ .tb-mail{display:none} }
 .wr-main{padding:20px 22px 40px}
 .wr-h{display:flex; align-items:center; gap:14px; margin-bottom:16px}
 .wr-h h2{font:400 22px/1 var(--serif); color:var(--ink); margin:0}

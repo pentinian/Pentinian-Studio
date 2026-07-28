@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import Curation from './Curation';
 import Passkeys from './Passkeys';
 import Replies from './Replies';
+import StudioHeader from '../StudioHeader';
 
 // The six cards on the public site. These are portfolio pieces, which is a different
 // set from the projects below: those are client work with logs and Windows attached.
@@ -37,6 +38,7 @@ export default function AtelierPage() {
     public_projects: SITE_CARDS.map((c) => c.key),
   });
   const [msg, setMsg] = useState('');
+  const [email, setEmail] = useState<string | null>(null);
 
   const project = projects.find((p) => p.id === selId) ?? null;
 
@@ -58,6 +60,10 @@ export default function AtelierPage() {
     if (rep.ok) setWaiting((await rep.json()).waiting ?? 0);
 
     const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setEmail(user?.email ?? null);
     const { data: cfg } = await supabase.from('site_config').select('config').eq('id', 1).single();
     if (cfg?.config) setConfig((c: any) => ({ ...c, ...cfg.config }));
   }, []);
@@ -111,30 +117,12 @@ export default function AtelierPage() {
 
   return (
     <>
-      <div className="wr-top">
-        <span className="brand">
-          <svg viewBox="0 0 32 32" fill="none">
-            <g stroke="#7E9270" strokeWidth="1.5">
-              <circle cx="16" cy="16" r="10" />
-              <circle cx="16" cy="16" r="5.5" />
-            </g>
-            <circle cx="16" cy="16" r="1.8" fill="#B0805C" />
-          </svg>
-          Pentinian · Atelier
-        </span>
-        <span className="wr-search">⌕ Search projects, logs, notes…</span>
-        <button className="mini-btn pri" onClick={sync}>
+      {/* Same header the Window uses, so the two read as rooms rather than products. */}
+      <StudioHeader room="atelier" staff email={email}>
+        <button className="mini-btn pri" onClick={sync} style={{ marginLeft: 'auto' }}>
           Sync Notion
         </button>
-        <a className="tb-switch" href="/window" style={{ marginLeft: 10 }} title="See it as a client does">
-          Window &#8599;
-        </a>
-        <form action="/auth/signout" method="post" style={{ marginLeft: 10 }}>
-          <button className="signout" type="submit">
-            Sign out
-          </button>
-        </form>
-      </div>
+      </StudioHeader>
 
       <div className="wr-shell">
         <div className="rail">

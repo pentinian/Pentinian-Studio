@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import StudioHeader from '../StudioHeader';
 import Log from './Log';
 
 // Always read live from the database, never serve a cached snapshot of the Window.
@@ -32,39 +33,13 @@ export default async function WindowPage() {
   // still unused. Left in place rather than dropped, because dropping a table is not
   // a decision to make in passing.
 
-  const initials = (user?.email ?? 'C').slice(0, 2).toUpperCase();
-
   return (
     <>
-      <div className="topbar">
-        <span className="brand">
-          <svg viewBox="0 0 32 32" fill="none">
-            <g stroke="#7E9270" strokeWidth="1.5">
-              <circle cx="16" cy="16" r="10" />
-              <circle cx="16" cy="16" r="5.5" />
-            </g>
-            <circle cx="16" cy="16" r="1.8" fill="#B0805C" />
-          </svg>
-          Pentinian · Window
-        </span>
+      <StudioHeader room="window" staff={isAdmin} email={user?.email ?? null}>
         <span className="switch">
           Project: <b>{project?.name ?? 'Your project'}</b>
         </span>
-        <span className="tb-right">
-          {isAdmin && (
-            <a className="tb-switch" href="/atelier" title="Studio access">
-              Atelier &#8599;
-            </a>
-          )}
-          <span>{user?.email}</span>
-          <span className="ava">{initials}</span>
-          <form action="/auth/signout" method="post">
-            <button className="signout" type="submit">
-              Sign out
-            </button>
-          </form>
-        </span>
-      </div>
+      </StudioHeader>
 
       <div className="body">
         <h2 className="hello">Welcome back.</h2>
