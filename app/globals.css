@@ -109,7 +109,25 @@ a{color:inherit}
 .rail .ri .st{width:8px; height:8px; border-radius:50%; background:var(--line-3)}
 .rail .ri.live .st{background:var(--sage)}
 .rail .ri.sel{background:var(--paper); color:var(--ink); border:1px solid var(--line)}
+.rail .ri:hover{background:rgba(255,255,255,.5)}
+.rail .ri .ri-name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+/* Queue depth, read at a glance from the rail rather than by opening each project. */
+.rail .ri .ri-n{font:500 10px/1 var(--mono); color:var(--ink-3); background:var(--line-2,rgba(0,0,0,.05));
+  border-radius:999px; padding:3px 6px; flex:none}
+.rail .rl-none,.rail .rl-note{font:400 11px/1.5 var(--sans); color:var(--ink-3); margin:4px 10px 8px}
 .rail .rl-sec{height:1px; background:var(--line); margin:14px 8px}
+/* The switch the release gate reads. Sage when work can leave, plain when it cannot. */
+.facing-tog{font:500 10px/1 var(--sans); letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); background:none; border:1px solid var(--line); border-radius:999px;
+  padding:5px 10px; cursor:pointer}
+.facing-tog.on{color:var(--sage-deep); border-color:var(--sage); background:rgba(126,146,112,.09)}
+.wr-h .wr-sub{font:400 11.5px/1 var(--sans); color:var(--ink-3); margin-left:auto}
+.cur-scope{font:500 10px/1 var(--sans); letter-spacing:.06em; color:var(--ink-3); background:none;
+  border:1px solid var(--line); border-radius:999px; padding:4px 9px; cursor:pointer; margin-right:auto}
+.cur-scope:hover{color:var(--ink-2)}
+.cur-note{font:400 11px/1.5 var(--sans); color:var(--ink-3); margin:0 0 10px; padding:8px 10px;
+  border-left:2px solid var(--line); background:rgba(0,0,0,.02)}
+.calib-warn{font:400 11.5px/1.5 var(--sans); color:var(--clay,#B0805C); margin:10px 0 0}
 .wr-main{padding:20px 22px 40px}
 .wr-h{display:flex; align-items:center; gap:14px; margin-bottom:16px}
 .wr-h h2{font:400 22px/1 var(--serif); color:var(--ink); margin:0}

@@ -25,7 +25,13 @@ const day = (s: string | null) =>
 const dur = (m: number | null) =>
   m == null ? '' : m >= 60 ? `${Math.floor(m / 60)}h ${m % 60 ? (m % 60) + 'm' : ''}`.trim() : `${m}m`;
 
-export default function Curation() {
+export default function Curation({
+  projectId,
+  projectName,
+}: {
+  projectId: string | null;
+  projectName: string | null;
+}) {
   const [raw, setRaw] = useState<Raw[]>([]);
   const [released, setReleased] = useState<Released[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -33,6 +39,10 @@ export default function Curation() {
   const [draft, setDraft] = useState({ title: '', eli5: '', why: '', area: '' });
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  // The rail scopes the queue. Unplaced entries are the exception: they belong to no
+  // project by definition, so they would otherwise be invisible from every rail
+  // position, which is the one state most worth noticing.
+  const [scope, setScope] = useState<'project' | 'all'>('project');
 
   const load = useCallback(async () => {
     const res = await fetch('/api/quarry', { cache: 'no-store' });
@@ -42,6 +52,16 @@ export default function Curation() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Moving along the rail should not leave a stale entry sitting in the gate, or you
+  // could edit one project's work while reading another project's name in the header.
+  useEffect(() => { setSel(null); setMsg(''); }, [projectId]);
+
+  const unplaced = raw.filter((e) => !e.project_id);
+  const shown =
+    scope === 'all' || !projectId
+      ? raw
+      : raw.filter((e) => e.project_id === projectId || !e.project_id);
 
   function pick(e: Raw) {
     setSel(e);
@@ -92,12 +112,30 @@ export default function Curation() {
       <div className="cur-queue">
         <div className="cur-head">
           <span className="ln">Quarry</span>
-          <span className="cur-count">{raw.length}</span>
+          <button
+            className="cur-scope"
+            onClick={() => setScope(scope === 'project' ? 'all' : 'project')}
+            title="Switch between this project and everything in the Quarry"
+          >
+            {scope === 'all' || !projectId ? 'everything' : projectName ?? 'this project'}
+          </button>
+          <span className="cur-count">{shown.length}</span>
         </div>
 
         {raw.length === 0 && <p className="cur-empty">Nothing here. Press Sync Notion.</p>}
+        {raw.length > 0 && shown.length === 0 && (
+          <p className="cur-empty">
+            Nothing logged against {projectName ?? 'this project'} yet.
+          </p>
+        )}
+        {scope === 'project' && unplaced.length > 0 && (
+          <p className="cur-note">
+            {unplaced.length} entr{unplaced.length === 1 ? 'y has' : 'ies have'} no project,
+            so {unplaced.length === 1 ? 'it shows' : 'they show'} everywhere until linked in Notion.
+          </p>
+        )}
 
-        {raw.map((e) => {
+        {shown.map((e) => {
           const out = isReleased(e.id);
           const p = projectOf(e.project_id);
           return (

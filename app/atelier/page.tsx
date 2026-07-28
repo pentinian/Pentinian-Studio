@@ -4,34 +4,52 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Curation from './Curation';
 
-const ALL_PROJECTS = ['Artinian', 'Caveman', 'LimIcon', 'UnImpact', 'Studiolo'];
+// The six cards on the public site. These are portfolio pieces, which is a different
+// set from the projects below: those are client work with logs and Windows attached.
+// Same word, two meanings, so they are kept deliberately apart.
+const SITE_CARDS = [
+  { key: 'artinian', label: 'Artinian Gems' },
+  { key: 'caveman', label: 'Caveman Gems' },
+  { key: 'limicon', label: 'LimIcon' },
+  { key: 'unimpact', label: 'UnImpact' },
+  { key: 'studiolo', label: 'Studiolo' },
+  { key: 'pentinian', label: 'Pentinian' },
+];
+
+type Proj = {
+  id: string; name: string; phase: string | null;
+  client_facing: boolean; linked: boolean;
+  client: { name: string; has_login: boolean } | null;
+  quarry: number; released: number; held: number;
+};
 
 export default function AtelierPage() {
   const [tab, setTab] = useState<'curation' | 'site'>('curation');
-  const [raw, setRaw] = useState<any[]>([]);
-  const [released, setReleased] = useState<any[]>([]);
-  const [project, setProject] = useState<any>(null);
+  const [projects, setProjects] = useState<Proj[]>([]);
+  const [orphaned, setOrphaned] = useState(0);
+  const [selId, setSelId] = useState<string | null>(null);
   const [config, setConfig] = useState<any>({
     open_for_work: true,
     availability: 'One slot, Q3',
-    public_projects: ALL_PROJECTS,
+    public_projects: SITE_CARDS.map((c) => c.key),
   });
   const [msg, setMsg] = useState('');
+
+  const project = projects.find((p) => p.id === selId) ?? null;
 
   // Note: the client is created inside functions (never at render), so nothing
   // touches Supabase during the static build, only at runtime in the browser.
   const load = useCallback(async () => {
+    // Projects come through /api/projects rather than straight from the browser,
+    // because the counts need work_log_raw, which no browser JWT can read.
+    const res = await fetch('/api/projects', { cache: 'no-store' });
+    if (res.ok) {
+      const d = await res.json();
+      setProjects(d.projects ?? []);
+      setOrphaned(d.orphaned ?? 0);
+      setSelId((cur) => cur ?? d.projects?.[0]?.id ?? null);
+    }
     const supabase = createClient();
-    const { data: projects } = await supabase.from('projects').select('*').limit(1);
-    setProject(projects?.[0] ?? null);
-    // work_log_raw is unreachable from the browser by design; Curation reads it
-    // through /api/quarry, which checks staff and then uses the service key.
-    const { data: relData } = await supabase
-      .from('work_log_released')
-      .select('*')
-      .order('release_at', { ascending: false })
-      .limit(50);
-    setReleased(relData ?? []);
     const { data: cfg } = await supabase.from('site_config').select('config').eq('id', 1).single();
     if (cfg?.config) setConfig((c: any) => ({ ...c, ...cfg.config }));
   }, []);
@@ -40,37 +58,23 @@ export default function AtelierPage() {
     load();
   }, [load]);
 
-  async function approve(entry: any) {
-    const supabase = createClient();
-    // Idempotent: if this raw entry was already approved, do nothing.
-    const { data: existing } = await supabase
-      .from('work_log_released')
-      .select('id')
-      .eq('raw_id', entry.id)
-      .limit(1);
-    if (existing && existing.length) {
-      setMsg('Already approved.');
-      return;
-    }
-    const { error } = await supabase.from('work_log_released').insert({
-      project_id: entry.project_id,
-      raw_id: entry.id,
-      title: (entry.body ?? '').slice(0, 120),
-      note: '',
-      release_at: new Date().toISOString(),
-      visible: true,
+  async function toggleFacing(p: Proj) {
+    setMsg('');
+    const res = await fetch('/api/projects', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: p.id, client_facing: !p.client_facing }),
     });
-    if (!error) load();
-    else setMsg(error.message);
-  }
-
-  async function toggleVisible(r: any) {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('work_log_released')
-      .update({ visible: !r.visible })
-      .eq('id', r.id);
-    if (!error) load();
+    const d = await res.json();
+    if (!res.ok) return setMsg(d.error);
+    setMsg(
+      d.project.client_facing
+        ? `${d.project.name} can now receive released work.`
+        : d.stillLive
+          ? `${d.project.name} is internal again. ${d.stillLive} already-released entr${d.stillLive === 1 ? 'y stays' : 'ies stay'} visible until pulled back.`
+          : `${d.project.name} is internal. Nothing can be released to it.`
+    );
+    load();
   }
 
   async function sync() {
@@ -81,9 +85,9 @@ export default function AtelierPage() {
     load();
   }
 
-  function toggleProject(name: string) {
+  function toggleProject(key: string) {
     const set = new Set<string>(config.public_projects ?? []);
-    set.has(name) ? set.delete(name) : set.add(name);
+    set.has(key) ? set.delete(key) : set.add(key);
     setConfig({ ...config, public_projects: Array.from(set) });
   }
 
@@ -127,9 +131,28 @@ export default function AtelierPage() {
       <div className="wr-shell">
         <div className="rail">
           <div className="rl-label">Projects · The Spine</div>
-          <button className="ri live sel">
-            <span className="st" /> {project?.name ?? 'No project yet'}
-          </button>
+
+          {projects.length === 0 && <p className="rl-none">No projects yet.</p>}
+
+          {projects.map((p) => (
+            <button
+              key={p.id}
+              className={'ri' + (p.client_facing ? ' live' : '') + (p.id === selId ? ' sel' : '')}
+              onClick={() => setSelId(p.id)}
+              title={p.client_facing ? 'Client-facing' : 'Internal'}
+            >
+              <span className="st" style={p.client_facing ? undefined : { background: 'transparent' }} />
+              <span className="ri-name">{p.name}</span>
+              {p.quarry > 0 && <span className="ri-n">{p.quarry}</span>}
+            </button>
+          ))}
+
+          {orphaned > 0 && (
+            <p className="rl-note" title="Synced from Notion with no project attached">
+              {orphaned} unplaced entr{orphaned === 1 ? 'y' : 'ies'}
+            </p>
+          )}
+
           <div className="rl-sec" />
           <div className="rl-label">Workspace</div>
           <button className="ri">
@@ -143,9 +166,25 @@ export default function AtelierPage() {
         <div className="wr-main">
           <div className="wr-h">
             <h2>{project?.name ?? 'Atelier'}</h2>
-            <span className="pill">
-              <span className="sdot" /> live
-            </span>
+            {project && (
+              <>
+                <button
+                  className={'facing-tog' + (project.client_facing ? ' on' : '')}
+                  onClick={() => toggleFacing(project)}
+                  title="Whether work can be released to this project's client"
+                >
+                  {project.client_facing ? 'Client-facing' : 'Internal'}
+                </button>
+                <span className="wr-sub">
+                  {project.client
+                    ? project.client.has_login
+                      ? project.client.name
+                      : `${project.client.name}, not invited yet`
+                    : 'no client linked'}
+                  {project.released > 0 && ` · ${project.released} released`}
+                </span>
+              </>
+            )}
           </div>
 
           <div className="tabs">
@@ -159,7 +198,7 @@ export default function AtelierPage() {
 
           {msg && <p style={{ fontSize: 12.5, color: 'var(--sage-deep)', margin: '0 0 14px' }}>{msg}</p>}
 
-          {tab === 'curation' && <Curation />}
+          {tab === 'curation' && <Curation projectId={selId} projectName={project?.name ?? null} />}
 
           {tab === 'site' && (
             <div className="wp">
@@ -193,18 +232,32 @@ export default function AtelierPage() {
                 <div className="calib-row" style={{ display: 'block' }}>
                   <span className="lead">
                     <b>Public project cards</b>
-                    <small>Toggle which of the five show on the site.</small>
+                    <small>
+                      Which of the six Selected Work rows appear on pentinian.com. These are
+                      portfolio pieces, not the client projects in the rail. Removing one takes
+                      it out of the list, not off the web: its case study still answers at its
+                      own link.
+                    </small>
                   </span>
                   <div className="chips-edit">
-                    {ALL_PROJECTS.map((name) => {
-                      const on = (config.public_projects ?? []).includes(name);
+                    {SITE_CARDS.map((c) => {
+                      const on = (config.public_projects ?? []).includes(c.key);
                       return (
-                        <button key={name} className={`pchip${on ? ' on' : ''}`} onClick={() => toggleProject(name)}>
-                          {on ? '●' : '○'} {name}
+                        <button
+                          key={c.key}
+                          className={`pchip${on ? ' on' : ''}`}
+                          onClick={() => toggleProject(c.key)}
+                        >
+                          {on ? '●' : '○'} {c.label}
                         </button>
                       );
                     })}
                   </div>
+                  {(config.public_projects ?? []).length === 0 && (
+                    <p className="calib-warn">
+                      With none selected, Selected Work disappears from the public site entirely.
+                    </p>
+                  )}
                 </div>
                 <div style={{ marginTop: 18 }}>
                   <button className="btn-line sage" onClick={saveConfig}>
