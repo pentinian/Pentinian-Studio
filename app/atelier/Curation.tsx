@@ -183,9 +183,14 @@ export default function Curation({
               {proj && <span className={'cur-proj' + (proj.client_facing ? ' facing' : '')}>{proj.name}</span>}
             </div>
 
-            {/* The heading, unedited, so you can see what the log actually called it
-                before deciding whether the client-facing title should differ. */}
-            <div className="cur-src">{(sel.body ?? '').split('\n')[0] || '(untitled)'}</div>
+            {/* What the log called it, shown only once you have changed it. Until then
+                it is the same sentence twice, which is clutter rather than context. */}
+            {(sel.body ?? '').split('\n')[0].trim() !== draft.title.trim() && (
+              <div className="cur-src">
+                <span className="cur-src-l">logged as</span>{' '}
+                {(sel.body ?? '').split('\n')[0] || '(untitled)'}
+              </div>
+            )}
 
             {blocked && (
               <p className="cur-warn">

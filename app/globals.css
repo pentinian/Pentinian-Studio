@@ -233,6 +233,7 @@ a{color:inherit}
    whether the client should read something different. */
 .cur-src{font:400 11.5px/1.5 var(--sans); color:var(--ink-3); margin:0 0 9px;
   padding-left:9px; border-left:2px solid var(--line-2)}
+.cur-src-l{font:500 9px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
 .cur-area{font:500 9px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase;
   color:var(--ink-3); background:rgba(0,0,0,.04); border-radius:3px; padding:3px 6px}
 .wr-main{padding:20px 22px 40px}
