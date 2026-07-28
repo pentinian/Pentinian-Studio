@@ -21,15 +21,16 @@ export default async function WindowPage() {
     .order('name');
   const project: any = projects?.[0] ?? null;
 
-  const questions = project
-    ? (
-        await supabase
-          .from('questions')
-          .select('*')
-          .eq('project_id', project.id)
-          .eq('status', 'awaiting')
-      ).data ?? []
-    : [];
+  // The questions panel used to render here. It said "Awaiting your approval before
+  // this thread continues" above two buttons that did nothing, and no staff surface
+  // ever raised a question, so the table has always been empty and the promise could
+  // only ever have been false. Removed rather than softened: a client can now reply
+  // on any entry, which is a real conversation, and that is where a question belongs
+  // until there is a deliberate mechanism for one that blocks work.
+  //
+  // The questions and sessions tables are still in the schema, still under RLS, and
+  // still unused. Left in place rather than dropped, because dropping a table is not
+  // a decision to make in passing.
 
   const initials = (user?.email ?? 'C').slice(0, 2).toUpperCase();
 
@@ -83,18 +84,6 @@ export default async function WindowPage() {
             <p className="phase">{project?.phase ?? 'Getting started'}</p>
           </div>
         </div>
-
-        {questions.map((q: any) => (
-          <div className="panel" key={q.id} style={{ marginBottom: 18 }}>
-            <div className="qflag" style={{ margin: 16 }}>
-              <div className="qh">◆ A question for you</div>
-              <p>{q.body}</p>
-              <div className="qs">
-                <span className="sdot clay" /> Awaiting your approval before this thread continues.
-              </div>
-            </div>
-          </div>
-        ))}
 
         <div className="panel">
           <div className="ph">
