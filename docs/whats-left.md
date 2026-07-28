@@ -206,6 +206,23 @@ an entry is enough. If the latter, the tables should go.
 
 ---
 
+## One gotcha worth writing down
+
+**Never pass an author on the git command line in these repos.** Both already have
+`user.email` set to `308107907+pentinian@users.noreply.github.com`, which is the address
+attached to the GitHub account. Vercel blocks any deployment whose commit author it
+cannot match to that account, and the block reads as a broken deploy rather than a
+rejected author: the push succeeds, GitHub is happy, and the site quietly keeps serving
+yesterday.
+
+This cost an hour on 28 July, twice, because two different guesses were substituted for
+a setting that was already correct. Just run `git commit`.
+
+If it happens again, the tell is a deployment marked **Blocked** rather than Failed, and
+the fix is one empty commit with the right author at the tip of the push.
+
+---
+
 ## The order, in one line
 
 Deploy, then Vercel variables, then passkeys, then walk the loop. Email before any real
