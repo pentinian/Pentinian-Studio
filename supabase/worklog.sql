@@ -25,8 +25,12 @@ alter table work_log_released add column if not exists area        text;   -- wh
 alter table work_log_released add column if not exists shots       text[]; -- storage object paths
 alter table work_log_released add column if not exists notion_id   text;
 
+-- Not partial. Postgres already allows many NULLs in a unique index, so the
+-- `where notion_id is not null` predicate bought nothing and cost the ability to use
+-- ON CONFLICT against it, which broke every release until the route stopped relying
+-- on it. Left non-partial so a fresh setup does not inherit the same trap.
 create unique index if not exists work_log_released_notion_id_key
-  on work_log_released (notion_id) where notion_id is not null;
+  on work_log_released (notion_id);
 create index if not exists work_log_released_project_started_idx
   on work_log_released (project_id, started_at desc);
 

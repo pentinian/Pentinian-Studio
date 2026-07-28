@@ -325,4 +325,7 @@ a{color:inherit}
 .cur-actions{display:flex; gap:8px; flex-wrap:wrap}
 .mini-btn.warn{color:#8a4a3d; border-color:#e3cec6}
 .cur-msg{font:400 11.5px/1.5 var(--sans); color:var(--sage-deep); margin:10px 0 0}
+/* A refusal should not wear the same colour as a success. */
+.cur-msg.bad{color:#8a4a3d; background:#f6e9e4; border-left:2px solid #c1735f;
+  padding:9px 11px; border-radius:0 5px 5px 0; font-size:12px}
 @media (max-width: 900px){ .cur-wrap{grid-template-columns:1fr} }

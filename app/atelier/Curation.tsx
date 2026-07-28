@@ -43,6 +43,7 @@ export default function Curation({
   const [sel, setSel] = useState<Raw | null>(null);
   const [draft, setDraft] = useState({ title: '', eli5: '', why: '', area: '' });
   const [msg, setMsg] = useState('');
+  const [ok, setOk] = useState(true);
   const [busy, setBusy] = useState(false);
   // The rail scopes the queue. Unplaced entries are the exception: they belong to no
   // project by definition, so they would otherwise be invisible from every rail
@@ -94,7 +95,11 @@ export default function Curation({
     });
     const d = await res.json();
     setBusy(false);
-    setMsg(res.ok ? (visible ? 'Released. It is in their Window now.' : 'Saved, held back.') : d.error);
+    // A failure has to look like one. This used to render in the same quiet sage as
+    // "Released", so a release that errored read as a release that worked, and the
+    // only clue was a line of small text under the buttons.
+    setOk(res.ok);
+    setMsg(res.ok ? (visible ? 'Released. It is in their Window now.' : 'Saved, held back.') : `Could not release: ${d.error}`);
     if (res.ok) load();
   }
 
@@ -105,7 +110,7 @@ export default function Curation({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, withdraw: true }),
     });
-    setBusy(false); setMsg('Pulled back. The client can no longer see it.'); load();
+    setBusy(false); setOk(true); setMsg('Pulled back. The client can no longer see it.'); load();
   }
 
   const proj = projectOf(sel?.project_id ?? null);
@@ -246,7 +251,7 @@ export default function Curation({
               )}
             </div>
 
-            {msg && <p className="cur-msg">{msg}</p>}
+            {msg && <p className={ok ? "cur-msg" : "cur-msg bad"}>{msg}</p>}
           </>
         )}
       </div>

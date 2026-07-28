@@ -103,9 +103,26 @@ export async function POST(request: Request) {
     release_at: body.release_at || null,
   };
 
-  // Upsert on notion_id so pressing Release twice edits rather than duplicates.
-  const { data, error } = source.notion_id
-    ? await db.from('work_log_released').upsert(row, { onConflict: 'notion_id' }).select().single()
+  // Pressing Release twice edits rather than duplicates.
+  //
+  // This was an upsert on notion_id, which never worked: the unique index on that
+  // column is PARTIAL (`where notion_id is not null`), and Postgres cannot infer a
+  // partial index from ON CONFLICT unless the statement repeats the predicate, which
+  // PostgREST does not emit. Every release failed with "no unique or exclusion
+  // constraint matching the ON CONFLICT specification", printed in small text under
+  // the buttons, so it read as nothing happening rather than as an error.
+  //
+  // Looking the row up first needs no schema change and no migration to run. It is
+  // two queries instead of one, at a volume where that costs nothing, and it also
+  // handles entries with no notion_id, which the upsert never could.
+  const { data: existing } = await db
+    .from('work_log_released')
+    .select('id')
+    .or(source.notion_id ? `notion_id.eq.${source.notion_id},raw_id.eq.${source.id}` : `raw_id.eq.${source.id}`)
+    .limit(1);
+
+  const { data, error } = existing?.length
+    ? await db.from('work_log_released').update(row).eq('id', existing[0].id).select().single()
     : await db.from('work_log_released').insert(row).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
