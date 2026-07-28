@@ -73,6 +73,20 @@ compression. Retake the shot instead.
 When in doubt, do not capture it. A missing screenshot costs almost nothing. A leaked one
 costs a client relationship.
 
+### Then push them
+
+Screenshots have to be uploaded from this machine, because the sync runs serverless and
+cannot read your disk. Once a block's shots are saved and you have looked at each one whole:
+
+```
+set -a; source .env.local; set +a
+node scripts/push-shots.mjs "<project name>" ~/Studio/_shots/<project>/<date>
+```
+
+It prints the storage paths. Those go in **Shot paths**, not the local ones. Images land
+under the project id, which is exactly what the storage policy checks, so a client can only
+ever fetch their own.
+
 ---
 
 ## 3. Write the entry
@@ -90,7 +104,7 @@ Log** database). Fill every field:
 | **Detail** | The full technical truth. What you changed, why, what you tried that failed, what is still fragile. Write this for a developer picking it up cold in six months. | **Pen only** |
 | **ELI5** | What happened, in plain words, no jargon, two or three sentences. | **The client** |
 | **Why** | Why it mattered and how it fits the larger build. One or two sentences. | **The client** |
-| **Shot paths** | The local paths of the screenshots for this block. | Pipeline |
+| **Shot paths** | The **storage** paths printed by `push-shots`, not the local ones. | Pipeline |
 | **Session** | A short id for the session, so several blocks can be grouped. | Pen |
 | **Stage** | `🫘 Raw` when you write it. Pen moves it on. | Pen |
 | **Client-visible** | Leave **unchecked**. Only Pen decides what a client sees. | Pen |
