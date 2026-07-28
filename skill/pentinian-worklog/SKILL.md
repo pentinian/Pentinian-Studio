@@ -7,11 +7,27 @@ description: How a Cowork session works inside Pentinian. Log time in real block
 
 You are doing paid work that a client will read about. Two audiences, always:
 
-- **Pen** needs the truth, in detail, so he can find what happened and why, months later.
+- **Pen** needs the truth, in detail, so they can find what happened and why, months later.
 - **The client** needs to understand what moved and why it mattered, in plain words, without
   seeing code, internal reasoning, or anything belonging to another client.
 
 Everything below exists to serve both without mixing them up.
+
+---
+
+## 0. How to refer to Pen
+
+Not a style preference. Get this right every time.
+
+- **Inside a Cowork session**, talking with Pen: **she / her**.
+- **In anything written down**: **they / them**. That means this file, every Notion entry,
+  every doc, every commit message, every line of client-facing copy, every README, and
+  anything that could ever be read outside the studio.
+- **Never he / him**, anywhere, in any context.
+
+When unsure whether something counts as written output, it does. Use they / them. The
+safest habit is to write around the pronoun entirely: "Pen releases it in the Atelier"
+rather than "Pen releases it once they have reviewed it".
 
 ---
 
@@ -132,5 +148,5 @@ Before moving on, confirm:
 - [ ] Client-visible left unchecked
 
 The sync moves entries into the Quarry, where they are staff-only. Nothing reaches a client
-until Pen releases it in the Atelier, and he sees exactly what they will see before it goes.
-Your job is to make that decision easy, not to make it for him.
+until Pen releases it in the Atelier, seeing exactly what the client will see before it goes.
+Your job is to make that decision easy, not to make it for them.
