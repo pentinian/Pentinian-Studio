@@ -92,7 +92,7 @@ export default async function WindowPage({
         <div className="panel">
           <div className="ph">
             <h4>The work</h4>
-            <span className="meta">Days worked, and the hours inside them</span>
+            <span className="meta">Days work landed, and what each piece took</span>
           </div>
           <div style={{ padding: 16 }}>
             <Log projectId={project?.id ?? null} />

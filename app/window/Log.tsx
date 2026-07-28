@@ -272,10 +272,15 @@ export default function Log({ projectId }: { projectId: string | null }) {
 
             {(byDay[openDay] ?? []).map((e) => (
               <div className="win-entry" key={e.id}>
+                {/* Effort, not a timesheet.
+                    This showed a wall-clock window, "3:00 PM to 4:45 PM", which makes a
+                    factual claim about when someone sat down and invites a client to
+                    watch the clock. The claim actually being made is how much work a
+                    piece took, so that is what it says. Pen is commissioned for
+                    projects, not employed by the hour, and the log is here to make the
+                    work legible rather than to timestamp a shift. */}
                 <div className="we-time">
-                  <b>{clock(e.started_at) || 'time not recorded'}</b>
-                  {clock(e.ended_at) && <span> to {clock(e.ended_at)}</span>}
-                  <i>{dur(e.minutes)}</i>
+                  <b>{dur(e.minutes) ? `About ${dur(e.minutes)} of work` : 'Duration not recorded'}</b>
                 </div>
                 {e.area && <div className="we-area">{e.area}</div>}
                 <h4 className="we-title">{e.title || 'Work'}</h4>

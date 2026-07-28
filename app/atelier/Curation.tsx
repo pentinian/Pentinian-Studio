@@ -154,6 +154,8 @@ export default function Curation({
               className={'cur-row' + (sel?.id === e.id ? ' on' : '')}
               onClick={() => pick(e)}
             >
+              {/* Staff side keeps the clock. You need to find your own work by when you
+                  did it; the client only ever needs to know what it cost. */}
               <span className="cur-when">
                 {day(e.started_at)} {clock(e.started_at) && <b>{clock(e.started_at)}</b>} {dur(e.minutes)}
               </span>
@@ -207,10 +209,9 @@ export default function Curation({
 
             {/* the preview, using the Window's own classes */}
             <div className="win-entry preview">
+              {/* What the client reads: effort, not a clock window. See Log.tsx. */}
               <div className="we-time">
-                <b>{clock(sel.started_at) || 'time not recorded'}</b>
-                {clock(sel.ended_at) && <span> to {clock(sel.ended_at)}</span>}
-                <i>{dur(sel.minutes)}</i>
+                <b>{dur(sel.minutes) ? `About ${dur(sel.minutes)} of work` : 'Duration not recorded'}</b>
               </div>
               {/* Area above the title, matching the Window exactly. These had drifted
                   into different orders, which is precisely the drift the shared classes
