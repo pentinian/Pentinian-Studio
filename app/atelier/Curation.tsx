@@ -28,9 +28,14 @@ const dur = (m: number | null) =>
 export default function Curation({
   projectId,
   projectName,
+  refreshKey = 0,
 }: {
   projectId: string | null;
   projectName: string | null;
+  /** Bumped by the parent after a sync. Pressing Sync Notion used to refresh the
+   *  project counts and leave this queue showing whatever it loaded on mount, so the
+   *  message said eight entries were pulled while the list underneath did not move. */
+  refreshKey?: number;
 }) {
   const [raw, setRaw] = useState<Raw[]>([]);
   const [released, setReleased] = useState<Released[]>([]);
@@ -51,7 +56,7 @@ export default function Curation({
     setRaw(d.raw); setReleased(d.released); setProjects(d.projects);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, refreshKey]);
 
   // Moving along the rail should not leave a stale entry sitting in the gate, or you
   // could edit one project's work while reading another project's name in the header.

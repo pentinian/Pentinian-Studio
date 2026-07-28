@@ -39,6 +39,9 @@ export default function AtelierPage() {
   });
   const [msg, setMsg] = useState('');
   const [email, setEmail] = useState<string | null>(null);
+  // Bumped after a sync so the queue below reloads with it, rather than reporting a
+  // pull that the list it sits above never reflects.
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const project = projects.find((p) => p.id === selId) ?? null;
 
@@ -102,8 +105,16 @@ export default function AtelierPage() {
     setMsg('Syncing from Notion…');
     const res = await fetch('/api/notion-sync', { method: 'POST' });
     const j = await res.json();
-    setMsg(res.ok ? `Pulled ${j.pulled} entries into the Quarry.` : `Sync error: ${j.error}`);
+    setMsg(
+      res.ok
+        ? `Pulled ${j.pulled} entries into the Quarry.` +
+            (j.unmatchedProjects?.length
+              ? ` ${j.unmatchedProjects.length} named a project that does not exist here, so those cannot reach anyone: ${j.unmatchedProjects.join(', ')}.`
+              : '')
+        : `Sync error: ${j.error}`
+    );
     load();
+    setRefreshKey((n) => n + 1);
   }
 
   function toggleProject(key: string) {
@@ -208,7 +219,9 @@ export default function AtelierPage() {
 
           {msg && <p style={{ fontSize: 12.5, color: 'var(--sage-deep)', margin: '0 0 14px' }}>{msg}</p>}
 
-          {tab === 'curation' && <Curation projectId={selId} projectName={project?.name ?? null} />}
+          {tab === 'curation' && (
+            <Curation projectId={selId} projectName={project?.name ?? null} refreshKey={refreshKey} />
+          )}
 
           {tab === 'replies' && <Replies />}
 
