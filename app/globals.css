@@ -175,10 +175,18 @@ a{color:inherit}
 
 .wl-panel .win-entry{border:1px solid var(--line); border-radius:9px; padding:15px 16px;
   background:var(--bone); margin-bottom:12px}
-.we-gal{display:flex; flex-wrap:wrap; gap:7px; margin-top:11px}
-.we-gal a{display:block; line-height:0}
-.we-gal img{width:104px; height:70px; object-fit:cover; border-radius:5px; border:1px solid var(--line)}
-.we-shot-skel{width:104px; height:70px; border-radius:5px; background:var(--paper-2); display:inline-block}
+/* Screenshots of an interface are wide, pale and detailed. The first version cropped
+   them into 104x70 thumbnails, which showed a meaningless patch of empty page and
+   read as a broken image even when the file had loaded perfectly. A screenshot in a
+   work log is evidence, so it is shown large enough to actually be evidence, anchored
+   to the top-left where the substance usually is, and it opens full size on click. */
+.we-gal{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:9px; margin-top:13px}
+.we-gal a{display:block; line-height:0; border-radius:6px; overflow:hidden;
+  border:1px solid var(--line); background:var(--paper-2); transition:border-color .18s ease}
+.we-gal a:hover{border-color:var(--sage)}
+.we-gal img{width:100%; aspect-ratio:16/10; object-fit:cover; object-position:top left; display:block}
+.we-shot-skel{width:100%; aspect-ratio:16/10; border-radius:6px; background:var(--paper-2);
+  border:1px solid var(--line); display:block}
 
 .wl-talk{margin-top:13px; padding-top:11px; border-top:1px solid var(--line)}
 .wl-c{margin-bottom:8px}
