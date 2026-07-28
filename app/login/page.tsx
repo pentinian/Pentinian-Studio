@@ -23,6 +23,42 @@ function LoginForm() {
     setCanPasskey(typeof window !== 'undefined' && !!window.PublicKeyCredential);
   }, []);
 
+  // Some sign-in links hand back the session in the URL fragment rather than as a
+  // code to exchange. Links minted by the admin API do exactly this, because there is
+  // no browser in the loop to hold a PKCE verifier. The callback route only knew how
+  // to exchange a code, so those links bounced to /login?e=link with a perfectly good
+  // session sitting unused in the address bar. This finishes the job.
+  //
+  // The fragment is scrubbed from the URL immediately afterwards. A fragment is never
+  // sent to a server, but it does persist in the address bar, in history, and in
+  // anything that screenshots a window, and it is a live credential until it expires.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (!hash.includes('access_token=')) return;
+
+    const p = new URLSearchParams(hash.slice(1));
+    const access_token = p.get('access_token');
+    const refresh_token = p.get('refresh_token');
+
+    // Wipe it from the bar before anything async, so a slow network cannot leave a
+    // token visible on screen while the session is being established.
+    window.history.replaceState(null, '', window.location.pathname);
+
+    if (!access_token || !refresh_token) return;
+    setBusy(true);
+    createClient()
+      .auth.setSession({ access_token, refresh_token })
+      .then(({ error }) => {
+        if (error) {
+          setBusy(false);
+          setError('That link has expired or has already been used. Ask for another.');
+          return;
+        }
+        window.location.assign(next || '/');
+      });
+  }, [next]);
+
   async function passkey() {
     setError('');
     setPkBusy(true);

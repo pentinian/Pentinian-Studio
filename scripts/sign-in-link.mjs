@@ -50,10 +50,16 @@ if (!user) {
   process.exit(1);
 }
 
+// Land on /login, not /auth/callback. A link minted here comes back with the session
+// in the URL fragment rather than as a code to exchange, because there is no browser
+// in the loop holding a PKCE verifier, and the callback route only knows how to
+// exchange a code. /login reads the fragment, establishes the session, and scrubs the
+// token out of the address bar. Sending these to /auth/callback bounced them to
+// /login?e=link with a working session left sitting unused in the URL.
 const { data, error } = await admin.auth.admin.generateLink({
   type: 'magiclink',
   email,
-  options: { redirectTo: `${SITE}/auth/callback` },
+  options: { redirectTo: `${SITE}/login` },
 });
 
 if (error) {
@@ -71,6 +77,9 @@ console.log(`
 
   ${data.properties.action_link}
 
-  It is single use and short lived. Once you are in, add a passkey from
-  Atelier, Access, and you should not need this again.
+  It is single use and short lived. Once you land, the token is scrubbed from the
+  address bar, but until then it is a live credential: do not leave the tab open,
+  do not screenshot it, and do not paste it anywhere.
+
+  Then add a passkey from Atelier, Access, and you should not need this again.
 `);
