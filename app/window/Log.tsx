@@ -70,6 +70,33 @@ const clock = (iso: string | null) => (iso ? clockFmt.format(new Date(iso)) : ''
 const dur = (m: number | null) =>
   m == null ? '' : m >= 60 ? `${Math.floor(m / 60)}h ${m % 60 ? `${m % 60}m` : ''}`.trim() : `${m}m`;
 
+/**
+ * A day, read as a timeline: the blocks in order with the untouched stretches
+ * between them compressed to a line.
+ *
+ * The point is the shape of the day, not a running total. Work that happened at one
+ * in the morning should look like it happened at one in the morning, because that is
+ * the part a duration alone erases. The quiet stretches are collapsed rather than
+ * drawn to scale, so a day with a gap in the middle does not become mostly whitespace.
+ */
+type Row = { kind: 'entry'; e: Entry } | { kind: 'gap'; minutes: number };
+
+function timeline(entries: Entry[]): Row[] {
+  const out: Row[] = [];
+  entries.forEach((e, i) => {
+    const prev = entries[i - 1];
+    if (prev?.ended_at && e.started_at) {
+      const gap = Math.round(
+        (new Date(e.started_at).getTime() - new Date(prev.ended_at).getTime()) / 60000
+      );
+      // Half an hour is a coffee, not a gap worth drawing.
+      if (gap >= 30) out.push({ kind: 'gap', minutes: gap });
+    }
+    out.push({ kind: 'entry', e });
+  });
+  return out;
+}
+
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -314,14 +341,26 @@ export default function Log({ projectId }: { projectId: string | null }) {
                 with six blocks in it should read as a list you can scan, not a wall of
                 prose you have to scroll past to find the one you care about. Everything
                 else waits behind a click. */}
-            {(byDay[openDay] ?? []).map((e) => {
+            {timeline(byDay[openDay] ?? []).map((row, i) => {
+              if (row.kind === 'gap') {
+                return (
+                  <div className="wl-gap" key={`gap${i}`}>
+                    <span>{dur(row.minutes)} away</span>
+                  </div>
+                );
+              }
+              const e = row.e;
               const isOpen = openEntry === e.id;
               const firstShot = e.shots?.[0];
               return (
                 <div className={'win-entry' + (isOpen ? ' open' : '')} key={e.id}>
                   <button className="we-head" onClick={() => setOpenEntry(isOpen ? null : e.id)}>
-                    {/* The approximate sign carries the hedge, so no word has to. */}
-                    <span className="we-dur">{dur(e.minutes) ? `~${dur(e.minutes)}` : 'no time'}</span>
+                    {/* The gutter is the timeline: when it started, then how long it ran.
+                        The approximate sign carries the hedge, so no word has to. */}
+                    <span className="we-when">
+                      <b>{clock(e.started_at) || '--'}</b>
+                      <i>{dur(e.minutes) ? `~${dur(e.minutes)}` : 'no time'}</i>
+                    </span>
                     <span className="we-headline">
                       {e.area && <i className="we-area">{e.area}</i>}
                       <b>{e.title || 'Work'}</b>
@@ -338,6 +377,11 @@ export default function Log({ projectId }: { projectId: string | null }) {
 
                   {isOpen && (
                     <div className="we-body">
+                      {clock(e.started_at) && clock(e.ended_at) && (
+                        <p className="we-ran">
+                          Ran {clock(e.started_at)} to {clock(e.ended_at)}
+                        </p>
+                      )}
                       {e.eli5 && <p className="we-eli5">{e.eli5}</p>}
                       {e.why && <p className="we-why">{e.why}</p>}
 

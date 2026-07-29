@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import StudioHeader from '../StudioHeader';
+import ProjectHead from './ProjectHead';
 import Log from './Log';
 
 // Always read live from the database, never serve a cached snapshot of the Window.
@@ -79,20 +80,16 @@ export default async function WindowPage({
         <h2 className="hello">Welcome back.</h2>
         <p className="sub">Here is where things stand on your build.</p>
 
-        <div className="pj-head">
-          <div className="ring" style={{ ['--p' as any]: project?.progress ?? 0 }}>
-            <b>{project?.progress ?? 0}%</b>
-          </div>
-          <div className="pj-info">
-            <h3>
-              {project?.name ?? 'Your project'}
-              <span className="pill">
-                <span className="sdot" /> {project?.status === 'on_track' ? 'On track' : 'In progress'}
-              </span>
-            </h3>
-            <p className="phase">{project?.phase ?? 'Getting started'}</p>
-          </div>
-        </div>
+        {/* The header opens. Screenshots used to be reachable only by finding the exact
+            entry that carried them, which is no use when you do not know which day you
+            are looking for. */}
+        <ProjectHead
+          name={project?.name ?? 'Your project'}
+          phase={project?.phase ?? 'Getting started'}
+          progress={project?.progress ?? 0}
+          status={project?.status ?? null}
+          projectId={project?.id ?? null}
+        />
 
         <div className="panel">
           <div className="ph">
