@@ -62,9 +62,36 @@ a{color:inherit}
 .pj-wrap.open{border-color:var(--line-2)}
 .pj-head{display:grid; grid-template-columns:auto 1fr auto; gap:26px; align-items:center; width:100%; padding:22px; background:none; border:0; text-align:left; font-family:inherit; cursor:pointer}
 .pj-head:disabled{cursor:default}
-.pj-head:not(:disabled):hover .pj-open{color:var(--ink-2); border-color:var(--line-2)}
-.pj-open{font:500 11px/1 var(--sans); letter-spacing:.06em; color:var(--ink-3); border:1px solid var(--line); border-radius:999px; padding:8px 13px; white-space:nowrap}
-.pj-open i{font-style:normal; margin-left:5px}
+/* A pile of prints on a desk, rather than a button that says "files".
+   Three tiles, each a few degrees off true, straightening when the shelf opens. */
+.pj-stack{display:flex; align-items:center; gap:14px}
+.pj-pile{position:relative; width:78px; height:52px; flex:none}
+.pj-pile img,.pj-pile .ph{
+  position:absolute; top:50%; left:50%; width:56px; height:38px; margin:-19px 0 0 -28px;
+  border-radius:4px; border:1px solid var(--line-2); background:var(--paper-2);
+  object-fit:cover; object-position:top left; display:block;
+  box-shadow:0 2px 6px -3px rgba(60,52,30,.5);
+  /* index 0 sits on top and squarest; the ones behind lean further out */
+  transform:rotate(calc((var(--i) - 1) * 5deg)) translate(calc((var(--i) - 1) * 5px), calc(var(--i) * 1px));
+  z-index:calc(3 - var(--i));
+  transition:transform .28s cubic-bezier(.2,.7,.3,1), box-shadow .28s ease;
+}
+.pj-pile .ph.lone{transform:none; opacity:.55; border-style:dashed; box-shadow:none}
+.pj-head:not(:disabled):hover .pj-pile img,
+.pj-head:not(:disabled):hover .pj-pile .ph{
+  transform:rotate(calc((var(--i) - 1) * 7deg)) translate(calc((var(--i) - 1) * 9px), calc(var(--i) * -1px));
+  box-shadow:0 5px 12px -5px rgba(60,52,30,.5);
+}
+/* Open: the pile squares up. The only motion here that means something. */
+.pj-wrap.open .pj-pile img,.pj-wrap.open .pj-pile .ph{
+  transform:translate(calc((var(--i) - 1) * 15px), 0) rotate(0deg);
+  box-shadow:0 2px 5px -3px rgba(60,52,30,.4);
+}
+.pj-meta{display:flex; flex-direction:column; gap:4px; text-align:left}
+.pj-meta b{font:400 19px/1 var(--serif); color:var(--ink); font-weight:400}
+.pj-meta i{font-style:normal; font:500 9.5px/1 var(--mono); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-3)}
+.pj-stack.bare .pj-meta b{font:400 11.5px/1 var(--sans); color:var(--ink-3)}
 
 /* the shelf */
 .pj-files{border-top:1px solid var(--line); padding:18px 22px 22px}
