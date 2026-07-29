@@ -13,7 +13,7 @@ type Raw = {
   id: string; notion_id: string | null; project_id: string | null;
   body: string | null; eli5: string | null; why: string | null; area: string | null;
   started_at: string | null; ended_at: string | null; minutes: number | null;
-  shots: string[] | null; links: string[] | null;
+  shots: string[] | null; links: string[] | null; gap_label: string | null;
   stage: string | null; client_visible: boolean | null;
 };
 type Released = { id: string; raw_id: string | null; visible: boolean; title: string };
@@ -42,7 +42,7 @@ export default function Curation({
   const [released, setReleased] = useState<Released[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [sel, setSel] = useState<Raw | null>(null);
-  const [draft, setDraft] = useState({ title: '', eli5: '', why: '', area: '' });
+  const [draft, setDraft] = useState({ title: '', eli5: '', why: '', area: '', gap_label: '' });
   const [msg, setMsg] = useState('');
   const [ok, setOk] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -80,6 +80,7 @@ export default function Curation({
       eli5: e.eli5 ?? '',
       why: e.why ?? '',
       area: e.area ?? '',
+      gap_label: e.gap_label ?? '',
     });
   }
 
@@ -247,6 +248,16 @@ export default function Curation({
               </label>
               <label>Why it mattered
                 <textarea rows={2} value={draft.why} onChange={(e) => setDraft({ ...draft, why: e.target.value })} />
+              </label>
+              {/* Labels the quiet stretch BEFORE this block, which the Window draws as
+                  a dashed line. Empty reads as research, since a gap in a build day is
+                  usually reading or waiting rather than being away. */}
+              <label>The gap before this
+                <input
+                  placeholder="research"
+                  value={draft.gap_label}
+                  onChange={(e) => setDraft({ ...draft, gap_label: e.target.value })}
+                />
               </label>
             </div>
 

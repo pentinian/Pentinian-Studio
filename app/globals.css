@@ -490,3 +490,21 @@ a{color:inherit}
 .cur-msg.bad{color:#8a4a3d; background:#f6e9e4; border-left:2px solid #c1735f;
   padding:9px 11px; border-radius:0 5px 5px 0; font-size:12px}
 @media (max-width: 900px){ .cur-wrap{grid-template-columns:1fr} }
+
+/* The day, said once, before the blocks. Compiled from what is released at the
+   moment you look, so a held-back piece is simply absent and joins on release. */
+.ds{margin:0 0 16px; padding:0 0 15px; border-bottom:1px solid var(--line)}
+.ds-line{font:400 14px/1.6 var(--sans); color:var(--ink-2); margin:0}
+.ds-line b{font-weight:500; color:var(--ink)}
+.ds-bar{display:flex; gap:2px; height:5px; margin:12px 0 9px; border-radius:999px; overflow:hidden}
+.ds-bar span{background:var(--sage); opacity:.85; border-radius:999px}
+.ds-bar span:nth-child(2){background:var(--clay); opacity:.7}
+.ds-bar span:nth-child(3){background:var(--haze); opacity:.7}
+.ds-bar span:nth-child(4){background:var(--sage-soft)}
+.ds-keys{display:flex; flex-wrap:wrap; gap:14px}
+.ds-keys span{display:inline-flex; align-items:center; gap:6px; font:400 11px/1 var(--sans); color:var(--ink-3)}
+.ds-keys span i{width:7px; height:7px; border-radius:2px; background:var(--sage); opacity:.85}
+.ds-keys span:nth-child(2) i{background:var(--clay); opacity:.7}
+.ds-keys span:nth-child(3) i{background:var(--haze); opacity:.7}
+.ds-keys span:nth-child(4) i{background:var(--sage-soft)}
+.ds-keys b{font:500 11px/1 var(--mono); color:var(--ink-2)}

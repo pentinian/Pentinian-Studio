@@ -42,7 +42,7 @@ export async function GET() {
   // With links, or without if that column has not been added yet. See Log.tsx: one
   // unknown column makes PostgREST refuse the entire query.
   const relCols =
-    'id,raw_id,title,eli5,why,area,started_at,ended_at,minutes,visible,release_at,shots,project_id';
+    'id,raw_id,title,eli5,why,area,started_at,ended_at,minutes,visible,release_at,shots,gap_label,project_id';
   let { data: released, error: relErr } = await db
     .from('work_log_released')
     .select(`${relCols},links`);
@@ -105,6 +105,7 @@ export async function POST(request: Request) {
     minutes: source.minutes,
     shots: Array.isArray(body.shots) ? body.shots : source.shots ?? [],
     links: Array.isArray(body.links) ? body.links : source.links ?? [],
+    gap_label: (body.gap_label ?? '').trim() || null,
     visible: body.visible !== false,
     release_at: body.release_at || null,
   };
@@ -135,9 +136,9 @@ export async function POST(request: Request) {
   let { data, error } = await write(row);
   // Same tolerance as the reads: if the links column has not been added yet, release
   // the entry without it rather than refusing to publish anything at all.
-  if (error && /links/.test(error.message)) {
-    const { links, ...withoutLinks } = row;
-    ({ data, error } = await write(withoutLinks));
+  if (error && /links|gap_label/.test(error.message)) {
+    const { links, gap_label, ...lean } = row;
+    ({ data, error } = await write(lean));
   }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

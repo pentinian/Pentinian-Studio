@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import DaySummary from './DaySummary';
 
 // The client's view of the work: a month of days that had work, and the hours inside
 // whichever day they open.
@@ -30,6 +31,9 @@ type Entry = {
   minutes: number | null;
   shots: string[] | null;
   links: string[] | null;
+  /** Labels the gap BEFORE this block. Null reads as research, which is what a
+   *  quiet stretch in the middle of a build day usually was. */
+  gap_label: string | null;
   release_at: string | null;
 };
 
@@ -79,7 +83,7 @@ const dur = (m: number | null) =>
  * the part a duration alone erases. The quiet stretches are collapsed rather than
  * drawn to scale, so a day with a gap in the middle does not become mostly whitespace.
  */
-type Row = { kind: 'entry'; e: Entry } | { kind: 'gap'; minutes: number };
+type Row = { kind: 'entry'; e: Entry } | { kind: 'gap'; minutes: number; label: string };
 
 function timeline(entries: Entry[]): Row[] {
   const out: Row[] = [];
@@ -90,7 +94,10 @@ function timeline(entries: Entry[]): Row[] {
         (new Date(e.started_at).getTime() - new Date(prev.ended_at).getTime()) / 60000
       );
       // Half an hour is a coffee, not a gap worth drawing.
-      if (gap >= 30) out.push({ kind: 'gap', minutes: gap });
+      // "away" reads as absence. A gap in a build day is usually reading, thinking
+      // or waiting on something, so research is the honest default and the label is
+      // editable per gap in the Atelier.
+      if (gap >= 30) out.push({ kind: 'gap', minutes: gap, label: (e.gap_label ?? '').trim() || 'research' });
     }
     out.push({ kind: 'entry', e });
   });
@@ -132,7 +139,7 @@ export default function Log({ projectId }: { projectId: string | null }) {
     // PostgREST refuses the whole query over one unknown column, so without this the
     // Window would go empty between deploying the code and running the SQL.
     const base =
-      'id,project_id,title,area,eli5,why,started_at,ended_at,minutes,shots,release_at';
+      'id,project_id,title,area,eli5,why,started_at,ended_at,minutes,shots,gap_label,release_at';
     const ask = (cols: string) =>
       supabase
         .from('work_log_released')
@@ -143,8 +150,12 @@ export default function Log({ projectId }: { projectId: string | null }) {
         .lte('started_at', to)
         .order('started_at', { ascending: true });
 
+    // Asked for with the newest columns, then progressively without. PostgREST
+    // refuses a whole query over one unknown column, so a pending migration must
+    // cost one feature rather than the page.
     let { data, error } = await ask(`${base},links`);
-    if (error) ({ data } = await ask(base));
+    if (error) ({ data, error } = await ask(base));
+    if (error) ({ data } = await ask(base.replace(',gap_label', '')));
     setEntries((data as unknown as Entry[]) ?? []);
     setLoading(false);
   }, [projectId, cursor.y, cursor.m]);
@@ -341,11 +352,13 @@ export default function Log({ projectId }: { projectId: string | null }) {
                 with six blocks in it should read as a list you can scan, not a wall of
                 prose you have to scroll past to find the one you care about. Everything
                 else waits behind a click. */}
+            <DaySummary entries={byDay[openDay] ?? []} />
+
             {timeline(byDay[openDay] ?? []).map((row, i) => {
               if (row.kind === 'gap') {
                 return (
                   <div className="wl-gap" key={`gap${i}`}>
-                    <span>{dur(row.minutes)} away</span>
+                    <span>{dur(row.minutes)} {row.label}</span>
                   </div>
                 );
               }
