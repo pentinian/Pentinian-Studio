@@ -94,9 +94,15 @@ a{color:inherit}
 .cn-note{font:400 11.5px/1.5 var(--sans); color:var(--ink-3); margin:0 0 9px}
 .cn-who{display:block; margin-top:9px; font:500 9px/1 var(--mono); letter-spacing:.1em;
   text-transform:uppercase; color:var(--ink-3)}
-.cn-x{margin-left:9px; font:500 9px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase;
-  color:var(--ink-3); background:none; border:0; padding:0; cursor:pointer; font-family:inherit}
-.cn-x:hover{color:var(--clay-deep)}
+/* Quiet until you go looking for it. Spelling the word out put REMOVE at the same
+   weight as the colour it was attached to, which made the chip about the removing
+   rather than the colour. */
+.cn-x{margin-left:7px; width:15px; height:15px; flex:none; display:inline-grid; place-items:center;
+  font:400 14px/1 var(--sans); color:var(--ink-3); background:none; border:0; padding:0;
+  border-radius:50%; cursor:pointer; opacity:0; transition:opacity .15s ease, color .15s ease}
+.bd-col:hover .cn-x,.bd-type:hover .cn-x,.bd-rule:hover .cn-x,
+.in-card:hover .cn-x,.cn-thumb:hover .cn-x,.cn-x:focus-visible{opacity:.55}
+.cn-x:hover{opacity:1; color:var(--clay-deep); background:rgba(176,128,92,.12)}
 
 /* brand ------------------------------------------------------------------ */
 /* Colour is the one thing here that is better shown than described, so the swatch
@@ -104,17 +110,21 @@ a{color:inherit}
 .cn-brand{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px}
 .bd-cols{display:flex; flex-wrap:wrap; gap:9px}
 .bd-col{display:flex; align-items:center; gap:9px; border:1px solid var(--line);
-  border-radius:8px; padding:7px 11px 7px 7px; background:var(--paper)}
-.bd-chip{width:26px; height:26px; border-radius:6px; border:1px solid rgba(35,37,30,.14); flex:none}
-.bd-col b{font:400 12.5px/1 var(--sans); color:var(--ink); font-weight:500}
+  border-radius:8px; padding:7px 10px 7px 7px; background:var(--paper)}
+/* The inset keeps a near-white swatch reading as a swatch rather than a gap in the
+   chip. Paper and Bone are two of the five, and both are nearly the page. */
+.bd-chip{width:26px; height:26px; border-radius:6px; flex:none;
+  box-shadow:inset 0 0 0 1px rgba(35,37,30,.16)}
+.bd-col b{font:500 12.5px/1.3 var(--sans); color:var(--ink)}
 .bd-col i{font-style:normal; font:400 10px/1 var(--mono); color:var(--ink-3); text-transform:uppercase}
 .bd-type{display:flex; align-items:baseline; gap:12px; padding:7px 0}
 .bd-type b{font-size:19px; line-height:1.1; color:var(--ink); font-weight:400}
-.bd-type span{font:400 11.5px/1 var(--sans); color:var(--ink-3)}
+.bd-type span{font:400 11.5px/1.4 var(--sans); color:var(--ink-3)}
 .bd-type a{font:400 10.5px/1 var(--mono); color:var(--sage-deep); text-decoration:none}
-.bd-rule{padding:7px 0}
-.bd-rule b{display:block; font:400 13.5px/1.35 var(--serif); color:var(--ink); font-weight:400}
-.bd-rule p{font:400 12px/1.6 var(--sans); color:var(--ink-2); margin:4px 0 0; max-width:56ch}
+.bd-rule{padding:7px 0; max-width:60ch}
+.bd-rule b{display:flex; align-items:baseline; font:400 13.5px/1.35 var(--serif);
+  color:var(--ink); font-weight:400}
+.bd-rule p{font:400 12px/1.6 var(--sans); color:var(--ink-2); margin:4px 0 0}
 /* Four shapes to choose between, so the composer asks for what that shape needs
    rather than one form with three fields that do not apply. */
 .cn-pick-row{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:2px}

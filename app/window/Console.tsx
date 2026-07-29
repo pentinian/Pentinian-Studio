@@ -35,6 +35,16 @@ export type Note = {
   created_at: string;
 };
 
+// A remove control that does not compete with the thing it removes. The first pass
+// spelled the word out in caps, which put "REMOVE" at the same optical weight as the
+// colour it was attached to and made every chip twice as wide. It is a glyph now,
+// nearly transparent until the row is under the cursor.
+const Del = ({ onClick }: { onClick: () => void }) => (
+  <button className="cn-x" onClick={onClick} title="Remove" aria-label="Remove">
+    &#215;
+  </button>
+);
+
 const STATUS: Record<string, string> = {
   open: 'Open', doing: 'In hand', done: 'Done', declined: 'Not doing', none: '',
 };
@@ -213,7 +223,7 @@ function Brand({ notes, staff, ready, projectId, shotUrls, add, remove }: any) {
                 <span className="bd-chip" style={{ background: n.swatch ?? '#ccc' }} />
                 <b>{n.title}</b>
                 <i>{n.swatch}</i>
-                {staff && <button className="cn-x" onClick={() => remove(n)}>remove</button>}
+                {staff && <Del onClick={() => remove(n)} />}
               </div>
             ))}
           </div>
@@ -227,7 +237,7 @@ function Brand({ notes, staff, ready, projectId, shotUrls, add, remove }: any) {
               <b style={{ fontFamily: `${n.title}, var(--serif)` }}>{n.title}</b>
               {n.body && <span>{n.body}</span>}
               {n.url && <a href={n.url} target="_blank" rel="noopener noreferrer">{host(n.url)} &#8599;</a>}
-              {staff && <button className="cn-x" onClick={() => remove(n)}>remove</button>}
+              {staff && <Del onClick={() => remove(n)} />}
             </div>
           ))}
         </Row>
@@ -237,9 +247,8 @@ function Brand({ notes, staff, ready, projectId, shotUrls, add, remove }: any) {
         <Row label="Rules">
           {rules.map((n: Note) => (
             <div className="bd-rule" key={n.id}>
-              <b>{n.title}</b>
+              <b>{n.title}{staff && <Del onClick={() => remove(n)} />}</b>
               {n.body && <p>{n.body}</p>}
-              {staff && <button className="cn-x" onClick={() => remove(n)}>remove</button>}
             </div>
           ))}
         </Row>
@@ -358,9 +367,7 @@ function Inspiration({ notes, ready, projectId, shotUrls, add, remove, staff }: 
                 )}
                 <span className="cn-who">
                   {n.from_client ? 'Yours' : 'Pentinian'} · {day(n.created_at)}
-                  {(staff || n.from_client) && (
-                    <button className="cn-x" onClick={() => remove(n)}>remove</button>
-                  )}
+                  {(staff || n.from_client) && <Del onClick={() => remove(n)} />}
                 </span>
               </figcaption>
             </figure>
@@ -476,7 +483,7 @@ function Thumb({ note, url, onRemove }: { note: Note; url?: string; onRemove?: (
       )}
       <span className="cn-cap">
         {note.title}
-        {onRemove && <button className="cn-x" onClick={onRemove}>remove</button>}
+        {onRemove && <Del onClick={onRemove} />}
       </span>
     </div>
   );
