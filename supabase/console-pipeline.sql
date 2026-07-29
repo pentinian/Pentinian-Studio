@@ -30,8 +30,15 @@ alter table project_notes add constraint project_notes_facet_check
 -- in Notion updates in place rather than arriving a second time. Nullable, because a
 -- client writing in their own Window has no Notion page behind them.
 alter table project_notes add column if not exists notion_id text;
+
+-- NOT partial. This exact mistake broke the work log release for its entire life and
+-- is written up in the Notion log under "Publishing work to a client had never once
+-- worked": Postgres cannot infer a PARTIAL unique index from ON CONFLICT unless the
+-- statement repeats the predicate, and PostgREST does not emit one. The predicate buys
+-- nothing anyway, because a unique index already permits many NULLs.
+drop index if exists project_notes_notion_id_key;
 create unique index if not exists project_notes_notion_id_key
-  on project_notes (notion_id) where notion_id is not null;
+  on project_notes (notion_id);
 
 -- ---------------------------------------------------------------------- the gate
 -- Null means staged. A timestamp means someone pressed Release, and when.
