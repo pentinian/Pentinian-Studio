@@ -110,12 +110,48 @@ try {
       ok('and sees it at once, without any release', (back ?? []).length === 1);
     }
   }
+
+  // ------------------------------------------------------- brand suggestions
+  console.log('\nbrand suggestions');
+  let suggestion = null;
+  {
+    const { data, error } = await client.from('project_notes').insert({
+      project_id: pr.id, kind: 'brand', facet: 'color', parent_id: live.id,
+      title: `${TAG} the sage is too soft`, body: 'a touch deeper',
+      from_client: true, author_id: cu.user.id, status: 'open',
+    }).select().single();
+    ok('a client MAY suggest a brand change', !error, error?.message);
+    suggestion = data;
+  }
   {
     const { error } = await client.from('project_notes').insert({
-      project_id: pr.id, kind: 'brand', facet: 'color', title: `${TAG} forged brand`,
-      from_client: true, author_id: cu.user.id,
+      project_id: pr.id, kind: 'brand', facet: 'color', title: `${TAG} sneaked in`,
+      from_client: false, author_id: cu.user.id,
     });
-    ok('a client may NOT author a brand decision', Boolean(error));
+    ok('but may NOT author one as Pentinian', Boolean(error));
+  }
+  {
+    const { error } = await client.from('project_notes').insert({
+      project_id: pr.id, kind: 'brand', facet: 'color', title: `${TAG} self approved`,
+      from_client: true, author_id: cu.user.id, status: 'done',
+    });
+    ok('and may NOT mark their own suggestion accepted', Boolean(error));
+  }
+  if (suggestion) {
+    const { data } = await client.from('project_notes')
+      .update({ from_client: false }).eq('id', suggestion.id).select();
+    ok('a client may NOT promote their suggestion to a decision', (data ?? []).length === 0);
+
+    // Adopting is what the Atelier does: it becomes Pentinian's and it releases.
+    await db.from('project_notes').update({
+      from_client: false, status: 'none', parent_id: null,
+      released_at: new Date().toISOString(),
+    }).eq('id', suggestion.id);
+    const { data: after } = await client.from('project_notes')
+      .select('id,from_client,released_at').eq('id', suggestion.id).single();
+    ok('adopting keeps the same row, so their card moves rather than vanishing',
+      after?.id === suggestion.id);
+    ok('and it is now a released decision', after?.from_client === false && after?.released_at !== null);
   }
   {
     const { error } = await client.from('project_notes').insert({

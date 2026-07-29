@@ -32,7 +32,41 @@ export type Note = {
   shot: string | null;
   status: string;
   from_client: boolean;
+  parent_id: string | null;
   created_at: string;
+};
+
+// A mark for each face, drawn in the same thin line as everything else. Not an icon
+// set: four small diagrams of what is behind the tab, which is enough to find the one
+// you want without reading, and quiet enough not to become decoration.
+const MARK: Record<Face, React.ReactNode> = {
+  files: (
+    <>
+      <rect x="2.5" y="4.5" width="8" height="9" rx="1" />
+      <path d="M5 2.5h6.5a1 1 0 0 1 1 1V11" />
+    </>
+  ),
+  brand: (
+    <>
+      <rect x="1.5" y="5" width="4" height="8" rx=".8" />
+      <rect x="6.5" y="5" width="4" height="8" rx=".8" />
+      <rect x="11.5" y="5" width="3" height="8" rx=".8" />
+      <path d="M1.5 3h13" />
+    </>
+  ),
+  inspiration: (
+    <>
+      <rect x="1.5" y="3.5" width="6" height="6" rx=".8" />
+      <rect x="8.5" y="6" width="6" height="6.5" rx=".8" />
+      <path d="M1.5 11.5h5" />
+    </>
+  ),
+  requests: (
+    <>
+      <path d="M2 3.5h12v7.5H7l-3.5 3v-3H2z" />
+      <path d="M5 6.5h6M5 8.5h3.5" />
+    </>
+  ),
 };
 
 const STATUS: Record<string, string> = {
@@ -101,6 +135,11 @@ export default function Console({
 
   const of = (k: Note['kind']) => notes.filter((n) => n.kind === k);
   const openRequests = of('request').filter((n) => n.status === 'open').length;
+  // The brand splits in two, and the split is the whole point. What Pentinian settled
+  // is the board. What the client has asked for is a conversation next to the board,
+  // and it never joins the board until it is adopted.
+  const settledBrand = of('brand').filter((n) => !n.from_client);
+  const suggestions = of('brand').filter((n) => n.from_client);
 
   async function add(row: Partial<Note> & { kind: Note['kind'] }) {
     const supabase = createClient();
@@ -109,15 +148,29 @@ export default function Console({
       project_id: projectId,
       from_client: true,
       author_id: user?.id,
-      status: row.kind === 'request' ? 'open' : 'none',
+      status: row.kind === 'request' || row.kind === 'brand' ? 'open' : 'none',
       ...row,
     };
-    let { error } = await supabase.from('project_notes').insert(payload);
-    if (error && /facet/.test(error.message)) {
-      const { facet, ...lean } = payload;
-      ({ error } = await supabase.from('project_notes').insert(lean));
+    const tryInsert = async (p: any) => (await supabase.from('project_notes').insert(p)).error;
+    let error = await tryInsert(payload);
+    // Degrade through the columns a pending migration might not have yet, rather than
+    // refusing to accept what someone just typed.
+    if (error && /parent_id/.test(error.message)) {
+      const { parent_id, ...lean } = payload;
+      error = await tryInsert(lean);
     }
-    if (error) { setMsg(error.message); return false; }
+    if (error && /facet/.test(error.message)) {
+      const { facet, parent_id, ...lean } = payload;
+      error = await tryInsert(lean);
+    }
+    if (error) {
+      // The one refusal worth translating: the database is still on the old policy that
+      // forbade a client writing to the brand face at all.
+      setMsg(/row-level security/i.test(error.message) && row.kind === 'brand'
+        ? 'Suggestions are not switched on yet. Run supabase/brand-feedback.sql.'
+        : error.message);
+      return false;
+    }
     setMsg(''); load(); return true;
   }
 
@@ -128,9 +181,13 @@ export default function Console({
     load();
   }
 
-  const tab = (k: Face, label: string, n: number | null) => (
-    <button className={'cn-tab' + (face === k ? ' on' : '')} onClick={() => setFace(k)}>
-      {label}
+  const tab = (k: Face, label: string, n: number | null, blurb: string) => (
+    <button className={'cn-tab' + (face === k ? ' on' : '')} onClick={() => setFace(k)} title={blurb}>
+      <svg viewBox="0 0 16 16" aria-hidden="true">{MARK[k]}</svg>
+      <span className="cn-tab-t">
+        {label}
+        <small>{blurb}</small>
+      </span>
       {n != null && n > 0 && <i>{n}</i>}
     </button>
   );
@@ -138,10 +195,10 @@ export default function Console({
   return (
     <div className="cn">
       <div className="cn-tabs">
-        {tab('files', 'Files', fileCount)}
-        {tab('brand', 'Brand', of('brand').length)}
-        {tab('inspiration', 'Inspiration', of('inspiration').length)}
-        {tab('requests', 'Requests', openRequests)}
+        {tab('files', 'Files', fileCount, 'Everything the project holds')}
+        {tab('brand', 'Brand', settledBrand.length, 'What we have settled')}
+        {tab('inspiration', 'Inspiration', of('inspiration').length, 'What it should feel like')}
+        {tab('requests', 'Requests', openRequests, 'What you have asked for')}
       </div>
 
       {face && missing && (
@@ -151,7 +208,10 @@ export default function Console({
       {face === 'files' && <Files projectId={projectId} projectName={projectName} />}
 
       {face === 'brand' && !missing && (
-        <Brand notes={of('brand')} ready={ready} staff={staff} shotUrls={shotUrls} />
+        <Brand
+          notes={settledBrand} suggestions={suggestions} ready={ready} staff={staff}
+          shotUrls={shotUrls} add={add} remove={remove}
+        />
       )}
 
       {face === 'inspiration' && !missing && (
@@ -181,14 +241,16 @@ export default function Console({
 // the cursor, because five labelled chips is a table and a table is not a palette: you
 // look at a palette to see the colors next to each other, which is exactly what a
 // caption on every one prevents.
-function Brand({ notes, ready, staff, shotUrls }: any) {
+function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove }: any) {
   const [hover, setHover] = useState<string | null>(null);
+  const [asking, setAsking] = useState<Note | null | 'general'>(null);
 
   const group = (f: Facet) => notes.filter((n: Note) => (n.facet ?? 'rule') === f);
   const colors = group('color'), type = group('type'), rules = group('rule'), assets = group('asset');
   const lit = colors.find((n: Note) => n.id === hover) ?? null;
+  const about = (n: Note) => suggestions.filter((s: Note) => s.parent_id === n.id && s.status === 'open').length;
 
-  if (ready && !notes.length) {
+  if (ready && !notes.length && !suggestions.length) {
     return (
       <div className="cn-body">
         <p className="cur-empty">
@@ -201,7 +263,7 @@ function Brand({ notes, ready, staff, shotUrls }: any) {
   }
 
   return (
-    <div className="cn-body">
+    <div className="cn-body settled">
       {colors.length > 0 && (
         <Row label="Color">
           {/* One row, and one caption slot under it that changes rather than five
@@ -229,6 +291,7 @@ function Brand({ notes, ready, staff, shotUrls }: any) {
                 <b>{lit.title}</b>
                 {lit.body && <span>{lit.body}</span>}
                 <i>{lit.swatch}</i>
+                <button className="bx-ask" onClick={() => setAsking(lit)}>Ask about this</button>
               </>
             ) : (
               <span className="pal-rest">
@@ -252,6 +315,7 @@ function Brand({ notes, ready, staff, shotUrls }: any) {
                 {n.url && (
                   <a href={n.url} target="_blank" rel="noopener noreferrer">{host(n.url)} &#8599;</a>
                 )}
+                <Ask n={n} pending={about(n)} onAsk={setAsking} />
               </div>
             ))}
           </div>
@@ -268,6 +332,7 @@ function Brand({ notes, ready, staff, shotUrls }: any) {
                 {n.url && (
                   <a href={n.url} target="_blank" rel="noopener noreferrer">{host(n.url)} &#8599;</a>
                 )}
+                <Ask n={n} pending={about(n)} onAsk={setAsking} />
               </div>
             ))}
           </div>
@@ -300,6 +365,102 @@ function Brand({ notes, ready, staff, shotUrls }: any) {
           </div>
         </Row>
       )}
+
+      {/* The conversation, kept next to the board rather than inside it. A suggestion
+          that sat among the decisions would read as one, which is precisely the thing
+          the board is for preventing. */}
+      {suggestions.length > 0 && (
+        <Row label="Your notes">
+          <div className="sg-list">
+            {suggestions.map((s: Note) => {
+              const on = notes.find((n: Note) => n.id === s.parent_id);
+              return (
+                <div className={'sg s-' + s.status} key={s.id}>
+                  <span className="sg-st">
+                    {s.status === 'open' ? 'Pending' : s.status === 'declined' ? 'Not doing' : STATUS[s.status]}
+                  </span>
+                  <div className="sg-b">
+                    {on && <span className="sg-on">on {on.title}</span>}
+                    {s.title && <b>{s.title}</b>}
+                    {s.body && <p>{s.body}</p>}
+                  </div>
+                  {s.status === 'open' && (
+                    <button className="cn-x" onClick={() => remove(s)} title="Withdraw" aria-label="Withdraw">
+                      &#215;
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Row>
+      )}
+
+      {!staff && (
+        <SuggestBox target={asking} setTarget={setAsking} add={add} />
+      )}
+    </div>
+  );
+}
+
+// Saying "the sage is too soft" should take ten seconds and land where it will be seen.
+// The alternative is an email, and an email about a colour is lost by Thursday.
+function Ask({ n, pending, onAsk }: { n: Note; pending: number; onAsk: (n: Note) => void }) {
+  return (
+    <span className="bx-foot">
+      {pending > 0 && <i className="bx-pend">{pending} pending</i>}
+      <button className="bx-ask" onClick={() => onAsk(n)}>Ask about this</button>
+    </span>
+  );
+}
+
+function SuggestBox({ target, setTarget, add }: any) {
+  const [d, setD] = useState({ title: '', body: '' });
+  const [busy, setBusy] = useState(false);
+  const on: Note | null = target && target !== 'general' ? target : null;
+
+  const submit = async () => {
+    if (!d.title.trim() && !d.body.trim()) return;
+    setBusy(true);
+    const ok = await add({
+      kind: 'brand',
+      facet: on?.facet ?? 'rule',
+      parent_id: on?.id ?? null,
+      title: d.title.trim() || null,
+      body: d.body.trim() || null,
+      status: 'open',
+    });
+    setBusy(false);
+    if (ok) { setD({ title: '', body: '' }); setTarget(null); }
+  };
+
+  if (!target) {
+    return (
+      <div className="sg-open">
+        <button className="mini-btn" onClick={() => setTarget('general')}>
+          Suggest a change
+        </button>
+        <span className="cn-note">
+          The brand is mine to set, and yours to push on. Anything you send here waits for
+          me rather than changing what is above.
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="cn-add">
+      {on && <span className="sg-on">about {on.title}</span>}
+      <input placeholder="What would you change" value={d.title}
+             onChange={(e) => setD({ ...d, title: e.target.value })} />
+      <textarea rows={2} placeholder="Why, or what it should be instead" value={d.body}
+                onChange={(e) => setD({ ...d, body: e.target.value })} />
+      <div className="cn-add-row">
+        <button className="mini-btn pri" onClick={submit} disabled={busy}>
+          {busy ? 'Sending…' : 'Send it over'}
+        </button>
+        <button className="mini-btn" onClick={() => setTarget(null)}>Cancel</button>
+      </div>
     </div>
   );
 }

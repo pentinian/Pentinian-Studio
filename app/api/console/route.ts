@@ -79,7 +79,7 @@ export async function PATCH(request: Request) {
   if (!db) return NextResponse.json({ error: 'Supabase is not configured' }, { status: 500 });
 
   const body = await request.json().catch(() => ({}));
-  const { id, release, ...fields } = body ?? {};
+  const { id, release, adopt, ...fields } = body ?? {};
   if (!id) return NextResponse.json({ error: 'No id' }, { status: 400 });
 
   const { data: row } = await db.from('project_notes').select('*, projects(client_facing, name)').eq('id', id).single();
@@ -94,6 +94,22 @@ export async function PATCH(request: Request) {
     if (k === 'status' && !STATUSES.includes(String(v))) continue;
     if (k === 'sort') { patch[k] = Number(v) || 0; continue; }
     patch[k] = typeof v === 'string' ? (v.trim() || null) : v;
+  }
+
+  // Adopting a client's suggestion. It stops being theirs and becomes a decision, which
+  // is exactly what approving one means: Pen is not agreeing with a note, Pen is making
+  // the thing they asked for true. The row keeps its id, so the client watches the same
+  // card move from Pending to settled rather than seeing theirs vanish and a stranger
+  // appear in its place.
+  if (adopt === true) {
+    patch.from_client = false;
+    patch.status = 'none';
+    patch.parent_id = null;
+  }
+  // Declining is not deleting. A suggestion marked Not doing stays where the client can
+  // see it, which is the difference between an answer and a silence.
+  if (adopt === false) {
+    patch.status = 'declined';
   }
 
   if (release === true) {
@@ -121,7 +137,15 @@ export async function PATCH(request: Request) {
 
   if (!Object.keys(patch).length) return NextResponse.json({ ok: true, item: row });
 
-  const { data, error } = await db.from('project_notes').update(patch).eq('id', id).select().single();
+  const write = (p: Record<string, any>) =>
+    db.from('project_notes').update(p).eq('id', id).select().single();
+  let { data, error } = await write(patch);
+  // Tolerate brand-feedback.sql not being run yet: adopt the suggestion anyway rather
+  // than refusing the whole action over a column that only carries a cross-reference.
+  if (error && /parent_id/.test(error.message)) {
+    const { parent_id, ...lean } = patch;
+    ({ data, error } = await write(lean));
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, item: data });
 }

@@ -19,7 +19,7 @@ type Item = {
   facet: 'color' | 'type' | 'rule' | 'asset' | null;
   title: string | null; body: string | null; swatch: string | null;
   url: string | null; shot: string | null; status: string;
-  sort: number; from_client: boolean;
+  sort: number; from_client: boolean; parent_id: string | null;
   released_at: string | null; notion_id: string | null; notion_url: string | null;
   created_at: string;
 };
@@ -110,9 +110,19 @@ export default function ConsoleDesk({
     setDraft((c) => ({ ...c, [it.id]: { ...c[it.id], [k]: v } }));
   const dirty = (it: Item) => Boolean(draft[it.id] && Object.keys(draft[it.id]).length);
 
-  const shown = items.filter((i) => i.kind === face);
+  // A client's brand note is a suggestion, not a decision, and it belongs above the
+  // board rather than in the same list. Mixing them would mean scanning a column of
+  // rows to work out which ones are asking you something.
+  const shown = items.filter((i) => i.kind === face && !(i.kind === 'brand' && i.from_client));
+  const pending = face === 'brand'
+    ? items.filter((i) => i.kind === 'brand' && i.from_client && i.status === 'open')
+    : [];
+  const answered = face === 'brand'
+    ? items.filter((i) => i.kind === 'brand' && i.from_client && i.status === 'declined')
+    : [];
   const stagedCount = (k: Item['kind']) =>
-    items.filter((i) => i.kind === k && !i.released_at).length;
+    items.filter((i) => i.kind === k && !i.released_at && !i.from_client).length;
+  const askCount = items.filter((i) => i.kind === 'brand' && i.from_client && i.status === 'open').length;
 
   if (!projectId) return <p className="cur-empty">Choose a project in the rail.</p>;
 
@@ -125,6 +135,9 @@ export default function ConsoleDesk({
                     onClick={() => { setFace(f.k); setAdding(null); }}>
               {f.label}
               {stagedCount(f.k) > 0 && <i title="staged, not yet released">{stagedCount(f.k)}</i>}
+              {f.k === 'brand' && askCount > 0 && (
+                <i className="ask" title="waiting on you">{askCount}</i>
+              )}
             </button>
           ))}
         </div>
@@ -135,6 +148,56 @@ export default function ConsoleDesk({
 
       {msg && <p className={'cur-msg' + (bad ? ' bad' : '')}>{msg}</p>}
       {loading && <p className="cur-empty">Reading the console…</p>}
+
+      {/* What the client has asked for, above the board rather than inside it. Adopting
+          one turns their row into a decision and releases it: they watch the same card
+          move from Pending to settled, rather than theirs vanishing and a stranger
+          appearing where it was. */}
+      {(pending.length > 0 || answered.length > 0) && (
+        <div className="cd-asks">
+          <span className="cd-asks-h">
+            From the client
+            {pending.length > 0 && <b>{pending.length} waiting on you</b>}
+          </span>
+          {[...pending, ...answered].map((s) => {
+            const on = items.find((i) => i.id === s.parent_id);
+            return (
+              <div className={'cd-ask s-' + s.status} key={s.id}>
+                <div className="cd-ask-b">
+                  {on && <span className="cd-ask-on">on {on.title}</span>}
+                  {s.title && <b>{s.title}</b>}
+                  {s.body && <p>{s.body}</p>}
+                </div>
+                {s.status === 'open' ? (
+                  <div className="cd-acts">
+                    <button
+                      className="mini-btn pri"
+                      title="Make it a decision and put it on their board"
+                      onClick={async () => {
+                        if (await patch(s.id, { adopt: true, release: true })) {
+                          say('Adopted. It is on their board as a decision now.');
+                        }
+                      }}
+                    >
+                      Adopt
+                    </button>
+                    <button className="mini-btn"
+                            onClick={async () => {
+                              if (await patch(s.id, { adopt: false })) {
+                                say('Marked not doing. They can see the answer, which beats silence.');
+                              }
+                            }}>
+                      Decline
+                    </button>
+                  </div>
+                ) : (
+                  <span className="cd-state">Not doing</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {!loading && shown.length === 0 && (
         <p className="cur-empty">

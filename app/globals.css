@@ -79,15 +79,34 @@ a{color:inherit}
 
 /* the console */
 .cn{border-top:1px solid var(--line)}
-.cn-tabs{display:flex; gap:2px; padding:12px 22px 0; border-bottom:1px solid var(--line); flex-wrap:wrap}
-.cn-tab{font:500 12.5px/1 var(--sans); color:var(--ink-3); background:none; border:0;
-  border-bottom:2px solid transparent; padding:10px 13px 11px; cursor:pointer; font-family:inherit}
-.cn-tab:hover{color:var(--ink-2)}
-.cn-tab.on{color:var(--ink); border-color:var(--sage)}
-.cn-tab i{font-style:normal; margin-left:6px; font:500 9.5px/1 var(--mono);
+/* The tabs carry a mark and a line of what they are for. Four words alone made you
+   open each one to find out which was which; the drawing is what you actually navigate
+   by after the second visit, and the line under it is for the first. */
+.cn-tabs{display:flex; gap:4px; padding:12px 18px 0; border-bottom:1px solid var(--line); flex-wrap:wrap}
+.cn-tab{display:flex; align-items:center; gap:10px; text-align:left; font-family:inherit;
+  color:var(--ink-3); background:none; border:1px solid transparent; border-bottom:0;
+  border-radius:9px 9px 0 0; padding:10px 14px 12px; cursor:pointer; margin-bottom:-1px;
+  transition:background .18s ease, color .18s ease}
+.cn-tab svg{width:16px; height:16px; flex:none; fill:none; stroke:currentColor;
+  stroke-width:1.1; stroke-linecap:round; stroke-linejoin:round; opacity:.62}
+.cn-tab-t{display:flex; flex-direction:column; gap:3px; min-width:0}
+.cn-tab-t{font:500 12.5px/1 var(--sans)}
+.cn-tab-t small{font:400 10px/1.2 var(--sans); color:var(--ink-3); white-space:nowrap}
+.cn-tab:hover{color:var(--ink-2); background:rgba(35,37,30,.03)}
+.cn-tab:hover svg{opacity:.85}
+/* The open one joins the panel below it: same surface, and the border line breaks
+   under it rather than running past. */
+.cn-tab.on{color:var(--ink); background:var(--paper); border-color:var(--line);
+  box-shadow:0 1px 0 var(--paper)}
+.cn-tab.on svg{opacity:1; color:var(--sage-deep)}
+.cn-tab.on .cn-tab-t small{color:var(--ink-3)}
+.cn-tab i{font-style:normal; align-self:flex-start; font:500 9.5px/1 var(--mono);
   color:var(--ink-3); background:rgba(0,0,0,.05); border-radius:999px; padding:3px 5px}
 .cn-tab.on i{color:var(--sage-deep); background:rgba(126,146,112,.16)}
 .cn-body{padding:18px 22px 22px}
+@media (max-width:720px){
+  .cn-tab-t small{display:none}
+}
 
 /* A labelled row. Only drawn when it has something in it, so the console never
    shows a heading that is a promise of content that is not there.
@@ -128,21 +147,62 @@ a{color:inherit}
 .pal-rest{font:400 11.5px/1.4 var(--sans); color:var(--ink-3)}
 
 /* little boxes --------------------------------------------------------------- */
-/* Each element of the brand gets its own frame. A decision with an edge around it
-   reads as settled; the same words loose on the page read as a note someone left. */
-.bx-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px}
-.bx-grid.wide{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
-.bx{border:1px solid var(--line); border-radius:9px; padding:14px 15px; background:var(--paper)}
+/* Each element of the brand gets its own frame, and the frames are deliberately firmer
+   than anything else in here. A decision inside a drawn edge reads as settled; the same
+   words loose on the page read as a note someone left. Inspiration goes the other way
+   on purpose, further down. */
+.cn-body.settled .cn-row{border-bottom-color:var(--line-2)}
+.bx-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(224px,1fr)); gap:11px}
+.bx-grid.wide{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.bx{position:relative; border:1px solid var(--line-2); border-radius:4px;
+  padding:15px 16px 14px; background:var(--paper);
+  box-shadow:0 1px 0 rgba(35,37,30,.04)}
+/* A hairline of sage down the left edge. Small, and it is the thing that says these
+   were decided rather than collected. */
+.bx::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:2px;
+  border-radius:2px; background:rgba(126,146,112,.5)}
 .bx > b{display:block; font:400 13.5px/1.4 var(--serif); color:var(--ink); font-weight:400}
 .bx p{font:400 12px/1.6 var(--sans); color:var(--ink-2); margin:6px 0 0}
-.bx a{display:inline-block; margin-top:9px; font:400 10.5px/1 var(--mono);
+.bx > a{display:inline-block; margin-top:9px; font:400 10.5px/1 var(--mono);
   color:var(--sage-deep); text-decoration:none}
-.bx a:hover{border-bottom:1px solid rgba(126,146,112,.5)}
+.bx > a:hover{border-bottom:1px solid rgba(126,146,112,.5)}
 /* A typeface has to be shown in itself. Nothing else tells you what it is. */
 .bx-spec{display:block; font-size:30px; line-height:1.05; color:var(--ink); font-weight:400;
   padding-bottom:11px; border-bottom:1px solid var(--line)}
 .bx-name{display:block; margin-top:10px; font:500 9.5px/1 var(--mono); letter-spacing:.12em;
   text-transform:uppercase; color:var(--ink-3)}
+/* Pushing back on a decision is one press, and quiet until wanted. */
+.bx-foot{display:flex; align-items:center; gap:9px; margin-top:11px; padding-top:9px;
+  border-top:1px solid var(--line)}
+.bx-ask{font:400 10.5px/1 var(--sans); color:var(--ink-3); background:none; border:0;
+  padding:0; cursor:pointer; font-family:inherit; border-bottom:1px solid transparent;
+  opacity:.55; transition:opacity .15s ease, color .15s ease}
+.bx:hover .bx-ask,.pal-cap .bx-ask{opacity:1}
+.bx-ask:hover{color:var(--sage-deep); border-bottom-color:rgba(126,146,112,.5)}
+.pal-cap .bx-ask{margin-left:14px}
+.bx-pend{font-style:normal; font:500 9px/1 var(--mono); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--clay-deep); background:rgba(176,128,92,.12);
+  border-radius:999px; padding:4px 7px}
+
+/* suggestions ---------------------------------------------------------------- */
+/* Beside the board, never in it. A suggestion drawn like a decision would be read as
+   one, which is exactly what the board exists to prevent. */
+.sg-list{display:flex; flex-direction:column; gap:8px}
+.sg{display:flex; align-items:flex-start; gap:12px; border:1px dashed var(--line-2);
+  border-radius:9px; padding:12px 14px; background:transparent}
+.sg.s-declined{opacity:.6}
+.sg-st{flex:none; min-width:62px; font:500 9px/1 var(--mono); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--clay-deep); padding-top:3px}
+.sg.s-declined .sg-st{color:var(--ink-3)}
+.sg-b{flex:1; min-width:0}
+.sg-b b{display:block; font:400 13px/1.4 var(--serif); color:var(--ink); font-weight:400}
+.sg-b p{font:400 12px/1.6 var(--sans); color:var(--ink-2); margin:5px 0 0}
+.sg-on{display:block; font:500 9px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); margin-bottom:5px}
+.sg:hover .cn-x{opacity:.55}
+.sg-open{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:16px;
+  padding-top:15px; border-top:1px solid var(--line)}
+.sg-open .cn-note{margin:0; max-width:46ch}
 .cn-note{font:400 11.5px/1.5 var(--sans); color:var(--ink-3); margin:0 0 9px}
 .cn-who{display:block; margin-top:9px; font:500 9px/1 var(--mono); letter-spacing:.1em;
   text-transform:uppercase; color:var(--ink-3)}
@@ -167,18 +227,27 @@ a{color:inherit}
   border-radius:7px; background:var(--bone); cursor:pointer; flex:none}
 
 /* inspiration ------------------------------------------------------------ */
-/* The picture is the reference and the line under it is the reason, which is the
-   part that can actually be built from. */
-.in-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px}
-.in-card{margin:0; border:1px solid var(--line); border-radius:9px; overflow:hidden;
-  background:var(--paper); break-inside:avoid}
-.in-card img{width:100%; display:block; background:var(--paper-2)}
-.in-skel{display:block; aspect-ratio:4/5; background:var(--paper-2)}
-.in-card figcaption{padding:11px 12px 12px}
-.in-card p{font:400 12px/1.55 var(--sans); color:var(--ink-2); margin:0}
-.in-src{display:inline-block; margin-top:8px; font:400 10.5px/1 var(--mono);
+/* The opposite of the brand board, and deliberately so. Brand is decided, so it sits
+   in an even grid of drawn frames. This is gathered, so it is a wall: columns of
+   whatever height each image wants, no frames, the pictures touching the page
+   directly. A uniform grid made a mood board read like a specification.
+   The picture is the reference and the line under it is the reason, which is the part
+   that can actually be built from. */
+.in-grid{columns:210px 4; column-gap:14px}
+.in-card{margin:0 0 14px; border:0; border-radius:6px; overflow:hidden;
+  background:transparent; break-inside:avoid; display:inline-block; width:100%}
+.in-card img{width:100%; display:block; border-radius:6px; background:var(--paper-2);
+  box-shadow:0 2px 10px -6px rgba(60,52,30,.5); transition:box-shadow .22s ease}
+.in-card:hover img{box-shadow:0 8px 22px -10px rgba(60,52,30,.55)}
+.in-skel{display:block; aspect-ratio:4/5; border-radius:6px; background:var(--paper-2)}
+.in-card figcaption{padding:9px 2px 0}
+/* Handwritten-feeling rather than set: the note beside a pin, not a caption under an
+   exhibit. */
+.in-card p{font:400 12.5px/1.5 var(--serif); color:var(--ink-2); margin:0}
+.in-src{display:inline-block; margin-top:7px; font:400 10px/1 var(--mono);
   color:var(--sage-deep); text-decoration:none}
 .in-src i{font-style:normal; opacity:.6}
+.in-card .cn-who{margin-top:6px}
 
 /* requests: what they asked for, and where it got to */
 .cn-req{display:flex; gap:13px; align-items:flex-start; border:1px solid var(--line);
@@ -276,6 +345,25 @@ a{color:inherit}
   transition:opacity .15s ease}
 .cd-row:hover .cd-drop{opacity:.5}
 .cd-drop:hover{opacity:1; color:var(--clay-deep); background:rgba(176,128,92,.12)}
+/* What the client is asking for, at the top of the desk where it cannot be missed. */
+.cd-face i.ask{color:var(--clay-deep); background:rgba(176,128,92,.16)}
+.cd-asks{border:1px solid rgba(176,128,92,.34); background:rgba(176,128,92,.05);
+  border-radius:11px; padding:14px 16px; margin-bottom:16px}
+.cd-asks-h{display:flex; align-items:baseline; gap:10px; font:500 9.5px/1 var(--mono);
+  letter-spacing:.12em; text-transform:uppercase; color:var(--clay-deep); margin-bottom:11px}
+.cd-asks-h b{font:500 10px/1 var(--sans); letter-spacing:.02em; text-transform:none;
+  color:var(--ink-2); margin-left:auto}
+.cd-ask{display:flex; align-items:flex-start; gap:14px; padding:11px 0;
+  border-top:1px solid rgba(176,128,92,.22)}
+.cd-ask:first-of-type{border-top:0; padding-top:2px}
+.cd-ask.s-declined{opacity:.55}
+.cd-ask-b{flex:1; min-width:0}
+.cd-ask-b b{display:block; font:400 13.5px/1.4 var(--serif); color:var(--ink); font-weight:400}
+.cd-ask-b p{font:400 12px/1.6 var(--sans); color:var(--ink-2); margin:5px 0 0}
+.cd-ask-on{display:block; font:500 9px/1 var(--mono); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:5px}
+.cd-ask .cd-acts{flex-direction:row; align-items:center}
+
 .cd-add{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:15px;
   padding-top:14px; border-top:1px solid var(--line)}
 .cd-addl{font:500 9.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
