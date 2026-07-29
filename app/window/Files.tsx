@@ -6,13 +6,21 @@ import Attach, { isImage } from './Attach';
 
 // Everything the project holds, in two halves.
 //
-// Screenshots are evidence: they came out of a released piece of work and belong to
-// the entry that produced them, so they stay grouped that way. Files are everything
-// else, and grouping those by entry would be a fiction, since a brief or a font does
-// not come from an afternoon.
+// Screenshots are evidence: they came out of a released piece of work and belong to the
+// entry that produced them, so they stay grouped that way. Files are everything
+// deliberately attached, and grouping those by entry would be a fiction, since a brief
+// or a font does not come from an afternoon.
 //
-// A section with nothing in it is not drawn. An empty heading is a promise of content
-// that is not there.
+// THE RULE THAT MATTERS HERE. This used to list the storage folder and show whatever
+// was in it, with anything unclaimed collected under "Loose images". That quietly
+// bypassed the release gate: push-shots uploads a screenshot the moment it is captured,
+// so an image belonging to a work-log entry still sitting in the Quarry was rendered in
+// the client's Window. Found by probing the live bucket against work_log_raw, where
+// exactly one such image was already visible to a client who was never meant to see it.
+//
+// So: nothing is shown because it happens to exist in storage. A screenshot appears
+// only when the work that produced it has been released. A file appears only when it
+// was put there deliberately, which is what the files/ segment records.
 
 type Entry = { id: string; title: string | null; started_at: string | null; shots: string[] | null };
 type Item = { path: string; name: string; url?: string; size?: number };
@@ -29,54 +37,56 @@ const ext = (p: string) => (p.split('.').pop() ?? '').toUpperCase();
 export default function Files({ projectId, projectName }: { projectId: string; projectName: string }) {
   const [shots, setShots] = useState<{ entry: Entry; items: Item[] }[]>([]);
   const [files, setFiles] = useState<Item[]>([]);
-  const [loose, setLoose] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     const supabase = createClient();
     setLoading(true);
 
-    const [{ data: objects }, { data: entries }] = await Promise.all([
-      supabase.storage.from('shots').list(projectId, { limit: 500, sortBy: { column: 'name', order: 'desc' } }),
+    // Two reads, and neither of them is "list the folder and show it".
+    const [{ data: attached }, { data: entries }] = await Promise.all([
+      supabase.storage.from('shots').list(`${projectId}/files`, {
+        limit: 500, sortBy: { column: 'name', order: 'desc' },
+      }),
       supabase.from('work_log_released')
         .select('id,title,started_at,shots').eq('project_id', projectId)
         .order('started_at', { ascending: false, nullsFirst: false }),
     ]);
 
-    const all: Item[] = (objects ?? [])
-      .filter((o: any) => o.name && !o.name.startsWith('.'))
-      .map((o: any) => ({ path: `${projectId}/${o.name}`, name: o.name, size: o.metadata?.size }));
+    // Screenshots come from the released entries themselves, so an entry still in the
+    // Quarry can never contribute one. This is the release gate, not a filter over it.
+    const claimed: Item[] = [];
+    const groups = (entries ?? []).map((e: any) => {
+      const items: Item[] = (e.shots ?? []).map((p: string) => {
+        const it = { path: p, name: p.split('/').pop() ?? p };
+        claimed.push(it);
+        return it;
+      });
+      return { entry: e as Entry, items };
+    }).filter((g) => g.items.length);
 
-    const byPath = new Map(all.map((i) => [i.path, i]));
+    const attachedItems: Item[] = (attached ?? [])
+      .filter((o: any) => o.name && !o.name.startsWith('.'))
+      .map((o: any) => ({ path: `${projectId}/files/${o.name}`, name: o.name, size: o.metadata?.size }));
+
+    const all = [...claimed, ...attachedItems];
     if (all.length) {
       const { data: signed } = await supabase.storage
         .from('shots').createSignedUrls(all.map((i) => i.path), 60 * 30);
+      const byPath = new Map(all.map((i) => [i.path, i]));
       for (const s of signed ?? []) {
         if (s.signedUrl && s.path) { const it = byPath.get(s.path); if (it) it.url = s.signedUrl; }
       }
     }
 
-    const claimed = new Set<string>();
-    const grouped = (entries ?? [])
-      .map((e: any) => {
-        const items = (e.shots ?? []).map((p: string) => { claimed.add(p); return byPath.get(p); }).filter(Boolean) as Item[];
-        return { entry: e as Entry, items };
-      })
-      .filter((g) => g.items.length);
-
-    const rest = all.filter((i) => !claimed.has(i.path));
-    setShots(grouped);
-    // Anything that is not an image is a file by definition. An unclaimed image is
-    // more likely a shot waiting for its entry than a document, so it sits apart from
-    // both rather than being guessed into the wrong half.
-    setFiles(rest.filter((i) => !isImage(i.path)));
-    setLoose(rest.filter((i) => isImage(i.path)));
+    setShots(groups);
+    setFiles(attachedItems);
     setLoading(false);
   }, [projectId]);
 
   useEffect(() => { load(); }, [load]);
 
-  const total = shots.reduce((n, g) => n + g.items.length, 0) + files.length + loose.length;
+  const total = shots.reduce((n, g) => n + g.items.length, 0) + files.length;
 
   return (
     <div className="cn-body">
@@ -109,16 +119,6 @@ export default function Files({ projectId, projectName }: { projectId: string; p
           <span className="cn-row-l">Files</span>
           <div className="cn-row-b">
             <div className="cn-grid">{files.map((it) => <Tile key={it.path} item={it} />)}</div>
-          </div>
-        </div>
-      )}
-
-      {loose.length > 0 && (
-        <div className="cn-row">
-          <span className="cn-row-l">Loose images</span>
-          <div className="cn-row-b">
-            <p className="cn-note">Uploaded but not yet attached to a released piece of work.</p>
-            <div className="cn-grid">{loose.map((it) => <Tile key={it.path} item={it} />)}</div>
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Attach from './Attach';
 import Files from './Files';
+import { ExampleInspiration, ExampleRequest } from './Mocks';
 
 // The project console: what we settled, what you want it to feel like, what you asked
 // for, and everything the project holds.
@@ -210,7 +211,7 @@ export default function Console({
       {face === 'brand' && !missing && (
         <Brand
           notes={settledBrand} suggestions={suggestions} ready={ready} staff={staff}
-          shotUrls={shotUrls} add={add} remove={remove}
+          shotUrls={shotUrls} add={add} remove={remove} projectName={projectName}
         />
       )}
 
@@ -241,9 +242,9 @@ export default function Console({
 // the cursor, because five labelled chips is a table and a table is not a palette: you
 // look at a palette to see the colors next to each other, which is exactly what a
 // caption on every one prevents.
-function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove }: any) {
+function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove, projectName }: any) {
   const [hover, setHover] = useState<string | null>(null);
-  const [asking, setAsking] = useState<Note | null | 'general'>(null);
+  const [asking, setAsking] = useState<Note | null | 'general' | 'rebrand'>(null);
 
   const group = (f: Facet) => notes.filter((n: Note) => (n.facet ?? 'rule') === f);
   const colors = group('color'), type = group('type'), rules = group('rule'), assets = group('asset');
@@ -262,10 +263,30 @@ function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove }: any)
     );
   }
 
+  // Numbered as a guide is numbered. Only the sections that exist get a number, so the
+  // sequence never has a hole where a section would have been.
+  let n = 0;
+  const no = () => String(++n).padStart(2, '0');
+
   return (
     <div className="cn-body settled">
+      {/* It is a document, so it says so. The first version was four unlabelled groups
+          of cards, which read as a list of preferences rather than the thing we agreed
+          to build against. */}
+      <header className="bg-head">
+        <div>
+          <span className="bg-kicker">Brand guide</span>
+          <h4>How {projectName} is set</h4>
+        </div>
+        <p>
+          Maintained by Pentinian. Everything here is decided rather than proposed, which
+          is what makes it safe to build against. If something is wrong, say so and it
+          waits for me instead of changing under you.
+        </p>
+      </header>
+
       {colors.length > 0 && (
-        <Row label="Color">
+        <Row label="Palette" no={no()}>
           {/* One row, and one caption slot under it that changes rather than five
               captions competing. The slot keeps its height whether or not anything is
               hovered, so the rows below do not jump as the cursor crosses. */}
@@ -303,19 +324,24 @@ function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove }: any)
       )}
 
       {type.length > 0 && (
-        <Row label="Type">
+        <Row label="Typography" no={no()}>
           <div className="bx-grid">
-            {type.map((n: Note) => (
-              <div className="bx" key={n.id}>
-                <b className="bx-spec" style={{ fontFamily: `'${n.title}', var(--serif)` }}>
-                  {n.title}
+            {type.map((t: Note) => (
+              <div className="bx spec" key={t.id}>
+                {/* A typeface can only be shown in itself. A name in another face tells
+                    you nothing, which is why the specimen leads and the label follows. */}
+                <b className="bx-spec" style={{ fontFamily: `'${t.title}', var(--serif)` }}>
+                  Aa
                 </b>
-                <span className="bx-name">{n.title}</span>
-                {n.body && <p>{n.body}</p>}
-                {n.url && (
-                  <a href={n.url} target="_blank" rel="noopener noreferrer">{host(n.url)} &#8599;</a>
+                <span className="bx-set" style={{ fontFamily: `'${t.title}', var(--serif)` }}>
+                  ABCDEFGHIJKLM<br />abcdefghijklm 0123456789
+                </span>
+                <span className="bx-name">{t.title}</span>
+                {t.body && <p>{t.body}</p>}
+                {t.url && (
+                  <a href={t.url} target="_blank" rel="noopener noreferrer">{host(t.url)} &#8599;</a>
                 )}
-                <Ask n={n} pending={about(n)} onAsk={setAsking} />
+                <Ask n={t} pending={about(t)} onAsk={setAsking} />
               </div>
             ))}
           </div>
@@ -323,24 +349,30 @@ function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove }: any)
       )}
 
       {rules.length > 0 && (
-        <Row label="Decisions">
-          <div className="bx-grid wide">
-            {rules.map((n: Note) => (
-              <div className="bx" key={n.id}>
-                <b>{n.title}</b>
-                {n.body && <p>{n.body}</p>}
-                {n.url && (
-                  <a href={n.url} target="_blank" rel="noopener noreferrer">{host(n.url)} &#8599;</a>
-                )}
-                <Ask n={n} pending={about(n)} onAsk={setAsking} />
-              </div>
+        <Row label="Principles" no={no()}>
+          {/* Numbered clauses set in the serif, indented under their own heading. As
+              cards in a grid these read as a list of rules someone is imposing; as a
+              manual they read as the shape of the thing, which is what they are. */}
+          <ol className="pr">
+            {rules.map((r: Note, i: number) => (
+              <li className="pr-i" key={r.id}>
+                <span className="pr-n">{String(i + 1).padStart(2, '0')}</span>
+                <div className="pr-b">
+                  <b>{r.title}</b>
+                  {r.body && <p>{r.body}</p>}
+                  {r.url && (
+                    <a href={r.url} target="_blank" rel="noopener noreferrer">{host(r.url)} &#8599;</a>
+                  )}
+                  <Ask n={r} pending={about(r)} onAsk={setAsking} />
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </Row>
       )}
 
       {assets.length > 0 && (
-        <Row label="Assets">
+        <Row label="Assets" no={no()}>
           <div className="cn-grid">
             {assets.map((n: Note) => {
               const u = n.shot ? shotUrls[n.shot] : undefined;
@@ -370,7 +402,7 @@ function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove }: any)
           that sat among the decisions would read as one, which is precisely the thing
           the board is for preventing. */}
       {suggestions.length > 0 && (
-        <Row label="Your notes">
+        <Row label="Your notes" no={no()}>
           <div className="sg-list">
             {suggestions.map((s: Note) => {
               const on = notes.find((n: Note) => n.id === s.parent_id);
@@ -403,6 +435,18 @@ function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove }: any)
   );
 }
 
+function Row({ label, no, children }: { label: string; no?: string; children: React.ReactNode }) {
+  return (
+    <div className="cn-row">
+      <span className="cn-row-l">
+        {no && <em>{no}</em>}
+        {label}
+      </span>
+      <div className="cn-row-b">{children}</div>
+    </div>
+  );
+}
+
 // Saying "the sage is too soft" should take ten seconds and land where it will be seen.
 // The alternative is an email, and an email about a colour is lost by Thursday.
 function Ask({ n, pending, onAsk }: { n: Note; pending: number; onAsk: (n: Note) => void }) {
@@ -417,7 +461,8 @@ function Ask({ n, pending, onAsk }: { n: Note; pending: number; onAsk: (n: Note)
 function SuggestBox({ target, setTarget, add }: any) {
   const [d, setD] = useState({ title: '', body: '' });
   const [busy, setBusy] = useState(false);
-  const on: Note | null = target && target !== 'general' ? target : null;
+  const on: Note | null =
+    target && target !== 'general' && target !== 'rebrand' ? target : null;
 
   const submit = async () => {
     if (!d.title.trim() && !d.body.trim()) return;
@@ -426,7 +471,10 @@ function SuggestBox({ target, setTarget, add }: any) {
       kind: 'brand',
       facet: on?.facet ?? 'rule',
       parent_id: on?.id ?? null,
-      title: d.title.trim() || null,
+      // Prefixed rather than given its own column. A rebrand is still a suggestion on
+      // the brand face, and a whole new kind for one word would have to be taught to
+      // the sync, the Atelier and both policies for nothing.
+      title: (target === 'rebrand' ? 'Rebrand: ' : '') + (d.title.trim() || 'a conversation'),
       body: d.body.trim() || null,
       status: 'open',
     });
@@ -437,27 +485,54 @@ function SuggestBox({ target, setTarget, add }: any) {
   if (!target) {
     return (
       <div className="sg-open">
-        <button className="mini-btn" onClick={() => setTarget('general')}>
-          Suggest a change
-        </button>
-        <span className="cn-note">
-          The brand is mine to set, and yours to push on. Anything you send here waits for
-          me rather than changing what is above.
-        </span>
+        <div className="sg-open-l">
+          <b>The brand is mine to set, and yours to push on.</b>
+          <span>
+            Anything you send here waits for me rather than changing what is above. Point
+            at a single piece with Ask about this, or start something larger.
+          </span>
+        </div>
+        <div className="sg-open-a">
+          <button className="mini-btn" onClick={() => setTarget('general')}>
+            Suggest a change
+          </button>
+          {/* A rebrand is a different size of request and pretending otherwise helps
+              nobody. It arrives as a suggestion like any other, but it says what it is,
+              so the conversation starts in the right place. */}
+          <button className="mini-btn rebrand" onClick={() => setTarget('rebrand')}>
+            Ask about a rebrand
+          </button>
+        </div>
       </div>
     );
   }
 
+  const big = target === 'rebrand';
+
   return (
-    <div className="cn-add">
+    <div className={'cn-add sg-form' + (big ? ' big' : '')}>
       {on && <span className="sg-on">about {on.title}</span>}
-      <input placeholder="What would you change" value={d.title}
-             onChange={(e) => setD({ ...d, title: e.target.value })} />
-      <textarea rows={2} placeholder="Why, or what it should be instead" value={d.body}
-                onChange={(e) => setD({ ...d, body: e.target.value })} />
+      {big && (
+        <p className="sg-lead">
+          A rebrand is a project rather than a change, so this one starts a conversation
+          rather than a ticket. Tell me what stopped working and I will come back with
+          what it would take.
+        </p>
+      )}
+      <input
+        placeholder={big ? 'What is not working any more' : 'What would you change'}
+        value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })}
+      />
+      <textarea
+        rows={big ? 4 : 2}
+        placeholder={big
+          ? 'Anything that helps: who you are speaking to now, what has changed, what you want it to feel like'
+          : 'Why, or what it should be instead'}
+        value={d.body} onChange={(e) => setD({ ...d, body: e.target.value })}
+      />
       <div className="cn-add-row">
         <button className="mini-btn pri" onClick={submit} disabled={busy}>
-          {busy ? 'Sending…' : 'Send it over'}
+          {busy ? 'Sending…' : big ? 'Start the conversation' : 'Send it over'}
         </button>
         <button className="mini-btn" onClick={() => setTarget(null)}>Cancel</button>
       </div>
@@ -526,18 +601,24 @@ function Inspiration({ notes, ready, projectId, shotUrls, add, remove }: any) {
         </div>
       )}
 
-      <div className="cn-add">
-        <textarea rows={2} placeholder="What you like about it" value={d.body}
-                  onChange={(e) => setD({ ...d, body: e.target.value })} />
-        <div className="cn-add-row">
+      {/* The composer and a worked example side by side. A blank field on its own asks
+          someone to invent the format as well as the content, and the usual answer to
+          that is nothing at all. */}
+      <div className="cn-pair">
+        <div className="cn-add">
+          <textarea rows={3} placeholder="What you like about it" value={d.body}
+                    onChange={(e) => setD({ ...d, body: e.target.value })} />
           <input placeholder="Pinterest or any link" value={d.url}
                  onChange={(e) => setD({ ...d, url: e.target.value })} />
-          <Attach projectId={projectId} label={d.shot ? 'Image ready' : 'Add an image'}
-                  onDone={(p) => setD((x) => ({ ...x, shot: p }))} />
-          <button className="mini-btn pri" onClick={submit} disabled={busy}>
-            {busy ? 'Pinning…' : 'Pin it'}
-          </button>
+          <div className="cn-add-row">
+            <Attach projectId={projectId} label={d.shot ? 'Image ready' : 'Add an image'}
+                    onDone={(p) => setD((x) => ({ ...x, shot: p }))} />
+            <button className="mini-btn pri" onClick={submit} disabled={busy}>
+              {busy ? 'Pinning…' : 'Pin it'}
+            </button>
+          </div>
         </div>
+        <ExampleInspiration />
       </div>
     </div>
   );
@@ -588,33 +669,23 @@ function Requests({ notes, ready, projectId, shotUrls, add }: any) {
         </div>
       ))}
 
-      <div className="cn-add">
-        <input placeholder="What would you like" value={d.title}
-               onChange={(e) => setD({ ...d, title: e.target.value })} />
-        <textarea rows={2} placeholder="Any detail that helps" value={d.body}
-                  onChange={(e) => setD({ ...d, body: e.target.value })} />
-        <div className="cn-add-row">
-          <Attach projectId={projectId} label={d.shot ? 'Shot ready' : 'Show me where'}
-                  onDone={(p) => setD((x) => ({ ...x, shot: p }))} />
-          <button className="mini-btn pri" onClick={submit} disabled={busy}>
-            {busy ? 'Sending…' : 'Send'}
-          </button>
+      <div className="cn-pair">
+        <div className="cn-add">
+          <input placeholder="What would you like" value={d.title}
+                 onChange={(e) => setD({ ...d, title: e.target.value })} />
+          <textarea rows={3} placeholder="Any detail that helps" value={d.body}
+                    onChange={(e) => setD({ ...d, body: e.target.value })} />
+          <div className="cn-add-row">
+            <Attach projectId={projectId} label={d.shot ? 'Shot ready' : 'Show me where'}
+                    onDone={(p) => setD((x) => ({ ...x, shot: p }))} />
+            <button className="mini-btn pri" onClick={submit} disabled={busy}>
+              {busy ? 'Sending…' : 'Send'}
+            </button>
+          </div>
         </div>
+        <ExampleRequest />
       </div>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ shared ---- */
-// A labelled row. The label column is wide enough for the longest word it will ever
-// hold: at 88px "SCREENSHOTS" overflowed and printed straight through the heading
-// beside it, which is the sort of thing that reads as carelessness everywhere else on
-// the page too.
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="cn-row">
-      <span className="cn-row-l">{label}</span>
-      <div className="cn-row-b">{children}</div>
-    </div>
-  );
-}

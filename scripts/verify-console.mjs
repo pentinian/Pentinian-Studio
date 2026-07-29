@@ -222,6 +222,52 @@ try {
       (theirs ?? []).every((r) => r.notion_id === null));
   }
 
+  // ------------------------------------------------- the gate reaches into storage
+  //
+  // The one a policy test suite would miss if it only tested tables. push-shots uploads
+  // a screenshot the moment it is captured, so an image belonging to unreleased work
+  // sits in the bucket immediately. Hiding it in the interface is not a gate; a client
+  // holds a real session and can sign a URL for anything the policy permits.
+  console.log('\nscreenshots and the release gate');
+  {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    const held = `${pr.id}/${TAG}-unreleased-work.png`;
+    const shown = `${pr.id}/${TAG}-released-work.png`;
+    const attached = `${pr.id}/files/${TAG}-a-real-attachment.png`;
+    for (const p of [held, shown, attached]) {
+      await db.storage.from('shots').upload(p, png, { contentType: 'image/png', upsert: true });
+    }
+
+    // One in the Quarry, one released. Same folder, same client.
+    await db.from('work_log_raw').insert({
+      notion_id: `${TAG}-raw`, project_id: pr.id, body: `${TAG} still in the quarry`,
+      shots: [held],
+    });
+    await db.from('work_log_released').insert({
+      project_id: pr.id, title: `${TAG} released`, eli5: 'out', shots: [shown],
+    });
+
+    const sign = async (p) => {
+      const { data } = await client.storage.from('shots').createSignedUrl(p, 60);
+      return Boolean(data?.signedUrl);
+    };
+    ok('a screenshot of RELEASED work signs for the client', await sign(shown));
+    ok('a deliberate attachment under files/ signs', await sign(attached));
+    ok('a screenshot of UNRELEASED work does NOT sign', !(await sign(held)),
+      'the release gate does not reach storage yet: run supabase/shots-gate.sql');
+
+    const { data: listed } = await client.storage.from('shots').list(pr.id, { limit: 100 });
+    const names = (listed ?? []).map((o) => o.name);
+    ok('and it is not even listed', !names.includes(`${TAG}-unreleased-work.png`));
+
+    await db.storage.from('shots').remove([held, shown, attached]);
+    await db.from('work_log_raw').delete().eq('notion_id', `${TAG}-raw`);
+    await db.from('work_log_released').delete().eq('project_id', pr.id);
+  }
+
   // -------------------------------------------------------- staff-only endpoints
   console.log('\nthe console endpoint');
   {

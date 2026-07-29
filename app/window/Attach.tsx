@@ -22,6 +22,10 @@ export default function Attach({
   label?: string;
   accept?: string;
 }) {
+  // Everything uploaded from a browser goes under <project>/files/, and push-shots
+  // writes work screenshots to <project>/ directly. That one segment is what lets the
+  // shelf tell a deliberate attachment from a work screenshot that has not been
+  // released yet, without needing a row in a table to say so.
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -32,7 +36,7 @@ export default function Attach({
     // Prefixed with the date and stripped of anything awkward, so two files called
     // screenshot.png from different weeks do not collide.
     const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-80);
-    const path = `${projectId}/${new Date().toISOString().slice(0, 10)}-${Date.now()}-${safe}`;
+    const path = `${projectId}/files/${new Date().toISOString().slice(0, 10)}-${Date.now()}-${safe}`;
     const { error } = await supabase.storage.from('shots').upload(path, file, {
       contentType: file.type || undefined,
       upsert: false,
