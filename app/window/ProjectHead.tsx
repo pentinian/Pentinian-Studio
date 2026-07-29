@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Files from './Files';
+import Console from './Console';
 
 // The project header, which opens onto everything the project has collected.
 //
@@ -21,16 +21,34 @@ export default function ProjectHead({
   progress,
   status,
   projectId,
+  staff = false,
+  openTo = null,
+  openToken = 0,
 }: {
   name: string;
   phase: string;
   progress: number;
   status: string | null;
   projectId: string | null;
+  staff?: boolean;
+  /** Set by the Contact button in the header, which opens straight onto Requests
+   *  rather than making someone find the face themselves. */
+  openTo?: 'files' | 'brand' | 'inspiration' | 'requests' | null;
+  /** Bumped each press, so Contact reopens the console after it has been closed
+   *  rather than doing nothing the second time. */
+  openToken?: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [face, setFace] = useState<'files' | 'brand' | 'inspiration' | 'requests'>('files');
+
   const [peek, setPeek] = useState<string[]>([]);
   const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!openTo || !openToken) return;
+    setFace(openTo);
+    setOpen(true);
+  }, [openTo, openToken]);
 
   // A small, cheap look at the shelf: newest three, signed just for the preview.
   const load = useCallback(async () => {
@@ -57,10 +75,10 @@ export default function ProjectHead({
     <div className={'pj-wrap' + (open ? ' open' : '')}>
       <button
         className="pj-head"
-        onClick={() => projectId && has && setOpen(!open)}
-        disabled={!projectId || !has}
+        onClick={() => projectId && setOpen(!open)}
+        disabled={!projectId}
         aria-expanded={open}
-        title={has ? 'Everything this project has collected' : undefined}
+        title={projectId ? 'Files, brand, inspiration and requests' : undefined}
       >
         <div className="ring" style={{ ['--p' as any]: progress }}>
           <b>{progress}%</b>
@@ -95,14 +113,23 @@ export default function ProjectHead({
               )}
             </span>
             <span className="pj-meta">
-              <b>{count == null ? '' : has ? count : 'Nothing yet'}</b>
-              {has && <i>{open ? 'close' : count === 1 ? 'file' : 'files'}</i>}
+              <b>{count == null ? '' : has ? count : '0'}</b>
+              <i>{open ? 'close' : has ? (count === 1 ? 'file' : 'files') : 'open'}</i>
             </span>
           </span>
         )}
       </button>
 
-      {open && projectId && <Files projectId={projectId} projectName={name} />}
+      {open && projectId && (
+        <Console
+          projectId={projectId}
+          projectName={name}
+          staff={staff}
+          face={face}
+          setFace={setFace}
+          fileCount={count}
+        />
+      )}
     </div>
   );
 }
