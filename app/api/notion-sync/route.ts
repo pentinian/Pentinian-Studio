@@ -106,7 +106,13 @@ export async function POST(request: Request) {
   }
 
   if (rows.length) {
-    const { error } = await admin.from('work_log_raw').upsert(rows, { onConflict: 'notion_id' });
+    let { error } = await admin.from('work_log_raw').upsert(rows, { onConflict: 'notion_id' });
+    // Tolerate a pending migration: pull everything else rather than nothing. See
+    // supabase/links.sql, after which this branch stops being reachable.
+    if (error && /links/.test(error.message)) {
+      const stripped = rows.map(({ links, ...rest }) => rest);
+      ({ error } = await admin.from('work_log_raw').upsert(stripped, { onConflict: 'notion_id' }));
+    }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

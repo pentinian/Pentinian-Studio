@@ -100,15 +100,25 @@ export default function Log({ projectId }: { projectId: string | null }) {
     // the right square once it is shifted into the studio's timezone.
     const from = new Date(cursor.y, cursor.m, 0).toISOString();
     const to = new Date(cursor.y, cursor.m + 1, 2).toISOString();
-    const { data } = await supabase
-      .from('work_log_released')
-      .select('id,project_id,title,area,eli5,why,started_at,ended_at,minutes,shots,links,release_at')
-      .eq('project_id', projectId)
-      .not('started_at', 'is', null)
-      .gte('started_at', from)
-      .lte('started_at', to)
-      .order('started_at', { ascending: true });
-    setEntries(data ?? []);
+    // Asked for with links, and again without if that column is not there yet.
+    // A pending migration should degrade to one missing feature, not a blank page:
+    // PostgREST refuses the whole query over one unknown column, so without this the
+    // Window would go empty between deploying the code and running the SQL.
+    const base =
+      'id,project_id,title,area,eli5,why,started_at,ended_at,minutes,shots,release_at';
+    const ask = (cols: string) =>
+      supabase
+        .from('work_log_released')
+        .select(cols)
+        .eq('project_id', projectId)
+        .not('started_at', 'is', null)
+        .gte('started_at', from)
+        .lte('started_at', to)
+        .order('started_at', { ascending: true });
+
+    let { data, error } = await ask(`${base},links`);
+    if (error) ({ data } = await ask(base));
+    setEntries((data as unknown as Entry[]) ?? []);
     setLoading(false);
   }, [projectId, cursor.y, cursor.m]);
 

@@ -39,9 +39,14 @@ export async function GET() {
     .limit(200);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const { data: released } = await db
+  // With links, or without if that column has not been added yet. See Log.tsx: one
+  // unknown column makes PostgREST refuse the entire query.
+  const relCols =
+    'id,raw_id,title,eli5,why,area,started_at,ended_at,minutes,visible,release_at,shots,project_id';
+  let { data: released, error: relErr } = await db
     .from('work_log_released')
-    .select('id,raw_id,title,eli5,why,area,started_at,ended_at,minutes,visible,release_at,shots,links,project_id');
+    .select(`${relCols},links`);
+  if (relErr) ({ data: released } = await db.from('work_log_released').select(relCols));
 
   const { data: projects } = await db.from('projects').select('id,name,client_facing');
 
@@ -122,9 +127,18 @@ export async function POST(request: Request) {
     .or(source.notion_id ? `notion_id.eq.${source.notion_id},raw_id.eq.${source.id}` : `raw_id.eq.${source.id}`)
     .limit(1);
 
-  const { data, error } = existing?.length
-    ? await db.from('work_log_released').update(row).eq('id', existing[0].id).select().single()
-    : await db.from('work_log_released').insert(row).select().single();
+  const write = (r: any) =>
+    existing?.length
+      ? db.from('work_log_released').update(r).eq('id', existing[0].id).select().single()
+      : db.from('work_log_released').insert(r).select().single();
+
+  let { data, error } = await write(row);
+  // Same tolerance as the reads: if the links column has not been added yet, release
+  // the entry without it rather than refusing to publish anything at all.
+  if (error && /links/.test(error.message)) {
+    const { links, ...withoutLinks } = row;
+    ({ data, error } = await write(withoutLinks));
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, entry: data });
