@@ -41,7 +41,7 @@ export async function GET() {
 
   const { data: released } = await db
     .from('work_log_released')
-    .select('id,raw_id,title,eli5,why,area,started_at,ended_at,minutes,visible,release_at,shots,project_id');
+    .select('id,raw_id,title,eli5,why,area,started_at,ended_at,minutes,visible,release_at,shots,links,project_id');
 
   const { data: projects } = await db.from('projects').select('id,name,client_facing');
 
@@ -99,6 +99,7 @@ export async function POST(request: Request) {
     ended_at: source.ended_at,
     minutes: source.minutes,
     shots: Array.isArray(body.shots) ? body.shots : source.shots ?? [],
+    links: Array.isArray(body.links) ? body.links : source.links ?? [],
     visible: body.visible !== false,
     release_at: body.release_at || null,
   };

@@ -173,8 +173,34 @@ a{color:inherit}
 .wl-dayhead h4{font:400 17px/1.2 var(--serif); color:var(--ink); margin:0}
 .wl-dayhead .meta{font:400 11px/1 var(--mono); color:var(--ink-3); margin-left:auto}
 
-.wl-panel .win-entry{border:1px solid var(--line); border-radius:9px; padding:15px 16px;
-  background:var(--bone); margin-bottom:12px}
+/* Collapsed: duration, headline, thumbnail. A day with six blocks reads as a list you
+   can scan rather than a wall of prose you scroll past to find the one you want. */
+.wl-panel .win-entry{border:1px solid var(--line); border-radius:9px; background:var(--bone);
+  margin-bottom:9px; overflow:hidden; transition:border-color .18s ease}
+.wl-panel .win-entry:hover{border-color:var(--line-2)}
+.wl-panel .win-entry.open{border-color:var(--line-2)}
+.we-head{display:flex; align-items:center; gap:13px; width:100%; padding:13px 15px;
+  background:none; border:0; cursor:pointer; text-align:left; font-family:inherit}
+.we-dur{flex:none; min-width:52px; font:500 11.5px/1 var(--mono); color:var(--ink-2)}
+.we-headline{flex:1; min-width:0}
+.we-headline b{display:block; font:400 14.5px/1.35 var(--serif); color:var(--ink); font-weight:400}
+.we-headline .we-area{display:block; margin-bottom:3px}
+.we-thumb{flex:none; width:64px; height:40px; object-fit:cover; object-position:top left;
+  border-radius:4px; border:1px solid var(--line)}
+.we-thumb.skel{background:var(--paper-2); display:block}
+.we-caret{flex:none; font-size:10px; color:var(--ink-3)}
+.we-body{padding:0 15px 15px; border-top:1px solid var(--line); margin-top:2px; padding-top:13px}
+
+/* Links. Worth having: a client can poke at the build mid-flight. */
+.we-links{margin-top:13px; padding-top:12px; border-top:1px solid var(--line)}
+.we-links-l{display:block; font:500 9px/1 var(--mono); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:7px}
+.we-links a{display:inline-block; font:400 12.5px/1 var(--sans); color:var(--sage-deep);
+  text-decoration:none; border:1px solid rgba(126,146,112,.4); border-radius:5px;
+  padding:7px 10px; margin:0 6px 6px 0; background:rgba(126,146,112,.07)}
+.we-links a:hover{border-color:var(--sage); background:rgba(126,146,112,.14)}
+.we-links a i{font-style:normal; opacity:.65}
+.we-links-note{font:400 11px/1.6 var(--sans); color:var(--ink-3); margin:5px 0 0; max-width:62ch}
 /* Screenshots of an interface are wide, pale and detailed. The first version cropped
    them into 104x70 thumbnails, which showed a meaningless patch of empty page and
    read as a broken image even when the file had loaded perfectly. A screenshot in a
@@ -231,8 +257,8 @@ a{color:inherit}
 .rooms a:hover{color:var(--ink-2)}
 .rooms a.on{color:var(--ink); background:var(--bone); box-shadow:0 1px 2px rgba(60,52,30,.08)}
 .room-solo{font:500 11.5px/1 var(--sans); color:var(--ink-3); letter-spacing:.04em}
-.tb-mail{font-size:12.5px; color:var(--ink-3)}
-@media (max-width:700px){ .tb-mail{display:none} }
+.tb-who{font:400 12.5px/1 var(--sans); color:var(--ink-2)}
+@media (max-width:700px){ .tb-who{display:none} }
 .switch label{font:400 12px/1 var(--sans); color:var(--ink-3)}
 .proj-pick{font:500 12.5px/1 var(--sans); color:var(--ink); background:none; border:0;
   cursor:pointer; padding:2px 4px; max-width:210px}

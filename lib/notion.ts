@@ -4,6 +4,7 @@
 //   Entry (title) · Detail · ELI5 · Why · Area · Start · End · Date · Hours
 //   Project (relation) · Stage (select) · Client-visible (checkbox) · Release date
 //   Shot paths (rich_text, storage paths written by scripts/push-shots.mjs)
+//   Links (url or rich_text, whitespace separated, http(s) only)
 //
 // Detail is staff-only and lands in the Quarry. ELI5 and Why are the only fields
 // ever shown to a client, and only after release in the Atelier.
@@ -26,6 +27,7 @@ export type NotionEntry = {
   client_visible: boolean;
   release_at: string | null;
   shots: string[];
+  links: string[];
   project_page_id: string | null;
   out_of_scope: boolean;
 };
@@ -103,6 +105,11 @@ export async function fetchWorkLog(): Promise<NotionEntry[]> {
           .split(/[\n,]+/)
           .map((s) => s.trim())
           .filter(Boolean),
+        // Split on newlines and whitespace only, never commas: a URL may contain one.
+        links: (props.Links?.url ? [props.Links.url] : [])
+          .concat(text(props.Links?.rich_text).split(/\s+/))
+          .map((s) => s.trim())
+          .filter((s) => /^https?:\/\//.test(s)),
         project_page_id: props.Project?.relation?.[0]?.id ?? null,
         out_of_scope: props['Out of scope']?.checkbox ?? false,
       });

@@ -13,7 +13,8 @@ type Raw = {
   id: string; notion_id: string | null; project_id: string | null;
   body: string | null; eli5: string | null; why: string | null; area: string | null;
   started_at: string | null; ended_at: string | null; minutes: number | null;
-  shots: string[] | null; stage: string | null; client_visible: boolean | null;
+  shots: string[] | null; links: string[] | null;
+  stage: string | null; client_visible: boolean | null;
 };
 type Released = { id: string; raw_id: string | null; visible: boolean; title: string };
 type Project = { id: string; name: string; client_facing: boolean };
@@ -209,9 +210,10 @@ export default function Curation({
 
             {/* the preview, using the Window's own classes */}
             <div className="win-entry preview">
-              {/* What the client reads: effort, not a clock window. See Log.tsx. */}
+              {/* What the client reads: effort, not a clock window. The approximate
+                  sign carries the hedge so no word has to. See Log.tsx. */}
               <div className="we-time">
-                <b>{dur(sel.minutes) ? `About ${dur(sel.minutes)} of work` : 'Duration not recorded'}</b>
+                <b>{dur(sel.minutes) ? `~${dur(sel.minutes)}` : 'no time recorded'}</b>
               </div>
               {/* Area above the title, matching the Window exactly. These had drifted
                   into different orders, which is precisely the drift the shared classes
@@ -222,6 +224,12 @@ export default function Curation({
               <p className="we-eli5">{draft.eli5 || 'No plain-language summary yet. The client would see nothing here.'}</p>
               {draft.why && <p className="we-why">{draft.why}</p>}
               {!!sel.shots?.length && <div className="we-shots">{sel.shots.length} screenshot(s) attached</div>}
+              {!!sel.links?.length && (
+                <div className="we-shots">
+                  {sel.links.length} link{sel.links.length === 1 ? '' : 's'}, shown with the standing
+                  caveat that builds move and some will already be dead
+                </div>
+              )}
             </div>
 
             {/* what they will never see. The first line is the heading shown above,

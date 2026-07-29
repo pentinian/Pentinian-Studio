@@ -96,6 +96,7 @@ export async function POST(request: Request) {
       why: e.why,
       area: e.area,
       shots: e.shots,
+      links: e.links,
       stage: e.stage,
       // Carried across as a hint for the Atelier queue. It releases nothing.
       client_visible: e.client_visible,

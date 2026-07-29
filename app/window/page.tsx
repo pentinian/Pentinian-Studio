@@ -46,7 +46,12 @@ export default async function WindowPage({
 
   return (
     <>
-      <StudioHeader room="window" staff={isAdmin} email={user?.email ?? null}>
+      <StudioHeader
+        room="window"
+        staff={isAdmin}
+        email={user?.email ?? null}
+        name={(user?.user_metadata?.name as string) ?? null}
+      >
         {isAdmin && (projects?.length ?? 0) > 1 ? (
           // Staff only. A client has one project and no choice to make, so they get
           // the plain label rather than a control that does nothing.

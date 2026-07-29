@@ -11,19 +11,31 @@
 
 const FOYER = process.env.NEXT_PUBLIC_FOYER_URL || 'https://pentinian-site.vercel.app';
 
+/** "Pen Artinian" gives PA. An address gives the first two letters, which is the
+ *  fallback and looks like one, so a missing name is visible rather than disguised. */
+function initialsFrom(name: string | null, email: string | null) {
+  if (name) {
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || 'P';
+  }
+  return (email ?? 'C').slice(0, 2).toUpperCase();
+}
+
 export default function StudioHeader({
   room,
   staff,
   email,
+  name = null,
   children,
 }: {
   room: 'window' | 'atelier';
   staff: boolean;
   email: string | null;
+  /** Display name. An address is an identifier, not a name, and a client reading
+   *  their own Window should see a person there rather than a login. */
+  name?: string | null;
   children?: React.ReactNode;
 }) {
-  const initials = (email ?? 'C').slice(0, 2).toUpperCase();
-
   return (
     <div className="topbar">
       <a className="brand" href={FOYER} title="Back to pentinian.com">
@@ -53,8 +65,12 @@ export default function StudioHeader({
       {children}
 
       <span className="tb-right">
-        {email && <span className="tb-mail">{email}</span>}
-        <span className="ava">{initials}</span>
+        {/* The address stays as the tooltip, so which account you are in is one hover
+            away rather than gone. */}
+        <span className="tb-who" title={email ?? undefined}>
+          {name || email}
+        </span>
+        <span className="ava">{initialsFrom(name, email)}</span>
         <form action="/auth/signout" method="post">
           <button className="signout" type="submit">
             Sign out

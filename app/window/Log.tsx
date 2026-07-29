@@ -29,8 +29,21 @@ type Entry = {
   ended_at: string | null;
   minutes: number | null;
   shots: string[] | null;
+  links: string[] | null;
   release_at: string | null;
 };
+
+/** A bare URL is not a label. Show the host and the last path segment, which is
+ *  usually the only part that says anything. */
+function labelFor(url: string) {
+  try {
+    const u = new URL(url);
+    const last = u.pathname.split('/').filter(Boolean).pop();
+    return last ? `${u.host}/${last}` : u.host;
+  } catch {
+    return url;
+  }
+}
 
 type Comment = {
   id: string;
@@ -71,6 +84,7 @@ export default function Log({ projectId }: { projectId: string | null }) {
   const [cursor, setCursor] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [entries, setEntries] = useState<Entry[]>([]);
   const [openDay, setOpenDay] = useState<string | null>(null);
+  const [openEntry, setOpenEntry] = useState<string | null>(null);
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [shotUrls, setShotUrls] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -88,7 +102,7 @@ export default function Log({ projectId }: { projectId: string | null }) {
     const to = new Date(cursor.y, cursor.m + 1, 2).toISOString();
     const { data } = await supabase
       .from('work_log_released')
-      .select('id,project_id,title,area,eli5,why,started_at,ended_at,minutes,shots,release_at')
+      .select('id,project_id,title,area,eli5,why,started_at,ended_at,minutes,shots,links,release_at')
       .eq('project_id', projectId)
       .not('started_at', 'is', null)
       .gte('started_at', from)
@@ -145,6 +159,7 @@ export default function Log({ projectId }: { projectId: string | null }) {
 
   async function open(key: string) {
     setOpenDay(key);
+    setOpenEntry(null);
 
     const supabase = createClient();
     const ids = (byDay[key] ?? []).map((e) => e.id);
@@ -285,63 +300,99 @@ export default function Log({ projectId }: { projectId: string | null }) {
               </span>
             </div>
 
-            {(byDay[openDay] ?? []).map((e) => (
-              <div className="win-entry" key={e.id}>
-                {/* Effort, not a timesheet.
-                    This showed a wall-clock window, "3:00 PM to 4:45 PM", which makes a
-                    factual claim about when someone sat down and invites a client to
-                    watch the clock. The claim actually being made is how much work a
-                    piece took, so that is what it says. Pen is commissioned for
-                    projects, not employed by the hour, and the log is here to make the
-                    work legible rather than to timestamp a shift. */}
-                <div className="we-time">
-                  <b>{dur(e.minutes) ? `About ${dur(e.minutes)} of work` : 'Duration not recorded'}</b>
-                </div>
-                {e.area && <div className="we-area">{e.area}</div>}
-                <h4 className="we-title">{e.title || 'Work'}</h4>
-                {e.eli5 && <p className="we-eli5">{e.eli5}</p>}
-                {e.why && <p className="we-why">{e.why}</p>}
-
-                {!!e.shots?.length && (
-                  <div className="we-gal">
-                    {e.shots.map((p) =>
-                      shotUrls[p] ? (
-                        <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={shotUrls[p]} alt="" loading="lazy" />
-                        </a>
+            {/* Collapsed by default: the duration, the title, and a thumbnail. A day
+                with six blocks in it should read as a list you can scan, not a wall of
+                prose you have to scroll past to find the one you care about. Everything
+                else waits behind a click. */}
+            {(byDay[openDay] ?? []).map((e) => {
+              const isOpen = openEntry === e.id;
+              const firstShot = e.shots?.[0];
+              return (
+                <div className={'win-entry' + (isOpen ? ' open' : '')} key={e.id}>
+                  <button className="we-head" onClick={() => setOpenEntry(isOpen ? null : e.id)}>
+                    {/* The approximate sign carries the hedge, so no word has to. */}
+                    <span className="we-dur">{dur(e.minutes) ? `~${dur(e.minutes)}` : 'no time'}</span>
+                    <span className="we-headline">
+                      {e.area && <i className="we-area">{e.area}</i>}
+                      <b>{e.title || 'Work'}</b>
+                    </span>
+                    {firstShot &&
+                      (shotUrls[firstShot] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="we-thumb" src={shotUrls[firstShot]} alt="" loading="lazy" />
                       ) : (
-                        <span key={p} className="we-shot-skel" />
-                      )
-                    )}
-                  </div>
-                )}
+                        <span className="we-thumb skel" />
+                      ))}
+                    <span className="we-caret">{isOpen ? '▾' : '▸'}</span>
+                  </button>
 
-                <div className="wl-talk">
-                  {(comments[e.id] ?? []).map((c) => (
-                    <div key={c.id} className={'wl-c' + (c.from_staff ? ' staff' : '')}>
-                      <span className="who">{c.from_staff ? 'Pentinian' : 'You'}</span>
-                      <p>{c.body}</p>
+                  {isOpen && (
+                    <div className="we-body">
+                      {e.eli5 && <p className="we-eli5">{e.eli5}</p>}
+                      {e.why && <p className="we-why">{e.why}</p>}
+
+                      {!!e.shots?.length && (
+                        <div className="we-gal">
+                          {e.shots.map((p) =>
+                            shotUrls[p] ? (
+                              <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={shotUrls[p]} alt="" loading="lazy" />
+                              </a>
+                            ) : (
+                              <span key={p} className="we-shot-skel" />
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {!!e.links?.length && (
+                        <div className="we-links">
+                          <span className="we-links-l">Have a look</span>
+                          {e.links.map((u) => (
+                            <a key={u} href={u} target="_blank" rel="noopener noreferrer">
+                              {labelFor(u)} <i>&#8599;</i>
+                            </a>
+                          ))}
+                          {/* Said plainly and once, rather than an asterisk on every link.
+                              A dead link a client was warned about is a shrug. One they
+                              were not warned about looks like the work went missing. */}
+                          <p className="we-links-note">
+                            These point at wherever the thing was living when I wrote the note.
+                            Builds move, so some will already be dead. I keep them mostly for my
+                            own record. While one still answers, poke at it.
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="wl-talk">
+                        {(comments[e.id] ?? []).map((c) => (
+                          <div key={c.id} className={'wl-c' + (c.from_staff ? ' staff' : '')}>
+                            <span className="who">{c.from_staff ? 'Pentinian' : 'You'}</span>
+                            <p>{c.body}</p>
+                          </div>
+                        ))}
+                        <div className="wl-say">
+                          <input
+                            placeholder="Ask about this, or say something…"
+                            value={draft[e.id] ?? ''}
+                            onChange={(ev) => setDraft((p) => ({ ...p, [e.id]: ev.target.value }))}
+                            onKeyDown={(ev) => ev.key === 'Enter' && say(e)}
+                          />
+                          <button
+                            className="mini-btn"
+                            onClick={() => say(e)}
+                            disabled={busy === e.id || !(draft[e.id] ?? '').trim()}
+                          >
+                            Send
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                  <div className="wl-say">
-                    <input
-                      placeholder="Ask about this, or say something…"
-                      value={draft[e.id] ?? ''}
-                      onChange={(ev) => setDraft((p) => ({ ...p, [e.id]: ev.target.value }))}
-                      onKeyDown={(ev) => ev.key === 'Enter' && say(e)}
-                    />
-                    <button
-                      className="mini-btn"
-                      onClick={() => say(e)}
-                      disabled={busy === e.id || !(draft[e.id] ?? '').trim()}
-                    >
-                      Send
-                    </button>
-                  </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </>
         )}
       </div>

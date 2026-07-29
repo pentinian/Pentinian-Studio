@@ -39,6 +39,7 @@ export default function AtelierPage() {
   });
   const [msg, setMsg] = useState('');
   const [email, setEmail] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
   // Bumped after a sync so the queue below reloads with it, rather than reporting a
   // pull that the list it sits above never reflects.
   const [refreshKey, setRefreshKey] = useState(0);
@@ -74,6 +75,7 @@ export default function AtelierPage() {
       data: { user },
     } = await supabase.auth.getUser();
     setEmail(user?.email ?? null);
+    setName((user?.user_metadata?.name as string) ?? null);
     const { data: cfg } = await supabase.from('site_config').select('config').eq('id', 1).single();
     if (cfg?.config) setConfig((c: any) => ({ ...c, ...cfg.config }));
   }, []);
@@ -136,7 +138,7 @@ export default function AtelierPage() {
   return (
     <>
       {/* Same header the Window uses, so the two read as rooms rather than products. */}
-      <StudioHeader room="atelier" staff email={email}>
+      <StudioHeader room="atelier" staff email={email} name={name}>
         <button className="mini-btn pri" onClick={sync} style={{ marginLeft: 'auto' }}>
           Sync Notion
         </button>
