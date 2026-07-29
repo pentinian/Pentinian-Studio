@@ -1,4 +1,4 @@
-import { fetchWorkLog, fetchPageTitle } from '@/lib/notion';
+import { fetchWorkLog, fetchConsole, fetchPageTitle } from '@/lib/notion';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
@@ -116,6 +116,53 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // ------------------------------------------------------------------- the Console
+  //
+  // Same road, same gate. These land staged (released_at stays null) and wait for a
+  // press in the Atelier, exactly as work-log entries do. The one thing this must
+  // never touch is a row a client wrote themselves: those carry no notion_id, and the
+  // upsert keys on notion_id, so a client's pinned image cannot be overwritten by a
+  // sync no matter what is in the database.
+  let consoleRows: any[] = [];
+  let consoleSkipped = 0;
+  try {
+    const items = await fetchConsole();
+    for (const it of items) {
+      const project_id = await resolveProject(it.project_page_id);
+      // No project means nowhere to land. Counted rather than dropped in silence.
+      if (!project_id) { consoleSkipped += 1; continue; }
+      consoleRows.push({
+        notion_id: it.notion_id,
+        notion_url: it.notion_url,
+        project_id,
+        kind: it.kind,
+        facet: it.facet,
+        title: it.title || null,
+        body: it.body || null,
+        swatch: it.swatch,
+        url: it.url,
+        shot: it.shot,
+        sort: it.sort,
+        from_client: false,
+        status: it.kind === 'request' ? 'open' : 'none',
+      });
+    }
+  } catch (e: any) {
+    // A Console failure must not lose the work log that already pulled cleanly.
+    consoleSkipped = -1;
+  }
+
+  let consoleError: string | null = null;
+  if (consoleRows.length) {
+    // Never send released_at in the payload. Omitting it means a re-sync of an already
+    // released item edits its text in place and leaves it released, which is what you
+    // want when you fix a typo in Notion. Sending null would silently retract it.
+    const { error } = await admin
+      .from('project_notes')
+      .upsert(consoleRows, { onConflict: 'notion_id' });
+    if (error) consoleError = error.message;
+  }
+
   return NextResponse.json({
     ok: true,
     pulled: rows.length,
@@ -123,5 +170,10 @@ export async function POST(request: Request) {
     // Surfaced rather than swallowed: a project named in Notion with no matching
     // Supabase row means those entries have nowhere to land in a client's Window.
     unmatchedProjects: [...unmatched],
+    console: {
+      pulled: consoleRows.length,
+      skipped: consoleSkipped,
+      error: consoleError,
+    },
   });
 }

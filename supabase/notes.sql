@@ -4,7 +4,7 @@
 --
 -- One table rather than three, because they are the same shape: a small thing pinned
 -- to a project, sometimes with a link, sometimes with an image, sometimes with a
--- colour, sometimes carrying a status. Three tables would have meant three sets of
+-- color, sometimes carrying a status. Three tables would have meant three sets of
 -- policies to keep in step, which is three chances to get one wrong.
 
 create table if not exists project_notes (

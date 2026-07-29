@@ -1,25 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Attach, { isImage } from './Attach';
+import Attach from './Attach';
 import Files from './Files';
 
-// The project console: what I made, what we decided, what you want, what you asked for.
+// The project console: what we settled, what you want it to feel like, what you asked
+// for, and everything the project holds.
 //
-// One table under all of it, because they are the same shape. But they are not the
-// same THING, and an earlier version drew them identically, which made the brand face
-// read like a list of notes rather than a set of decisions. Each face now knows what
-// it holds: brand has colours, typefaces, rules and assets; inspiration is a picture
-// with what you thought about it; a request is what you want with a shot of where.
+// One table under all of it, because the rows are the same shape. They are not the
+// same THING, and the first version drew them identically, which made a brand board
+// read like a list of notes. Each face knows what it holds now.
 //
-// What a client can do is deliberately uneven and enforced in the database. They add
-// inspiration and requests as themselves. They cannot author a brand decision, which
-// is a decision rather than a contribution, and cannot set a status, because a
-// request they mark done is not done.
+// Who may write what is uneven on purpose and enforced in the database. Brand is
+// authored in the Atelier and released deliberately, because a brand decision is a
+// decision. Inspiration and requests are the client's to add, and their own additions
+// appear to them at once: gating someone's own pinned image behind approval would be
+// absurd, and they already know what they wrote.
 
 export type Face = 'files' | 'brand' | 'inspiration' | 'requests';
-type Facet = 'colour' | 'type' | 'rule' | 'asset';
+type Facet = 'color' | 'type' | 'rule' | 'asset';
 
 export type Note = {
   id: string;
@@ -35,21 +35,21 @@ export type Note = {
   created_at: string;
 };
 
-// A remove control that does not compete with the thing it removes. The first pass
-// spelled the word out in caps, which put "REMOVE" at the same optical weight as the
-// colour it was attached to and made every chip twice as wide. It is a glyph now,
-// nearly transparent until the row is under the cursor.
-const Del = ({ onClick }: { onClick: () => void }) => (
-  <button className="cn-x" onClick={onClick} title="Remove" aria-label="Remove">
-    &#215;
-  </button>
-);
-
 const STATUS: Record<string, string> = {
   open: 'Open', doing: 'In hand', done: 'Done', declined: 'Not doing', none: '',
 };
 const host = (u: string) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return u; } };
 const day = (s: string) => new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+// Whether a swatch needs light text on it. Perceived luminance, not the average of the
+// channels: green reads far brighter than blue at the same number, and a plain average
+// puts dark text on a navy chip.
+const lightOn = (h: string) => {
+  const v = h.replace('#', '');
+  if (v.length !== 6) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.55;
+};
 
 export default function Console({
   projectId, projectName, staff, face, setFace,
@@ -70,8 +70,9 @@ export default function Console({
   const load = useCallback(async () => {
     const supabase = createClient();
     const cols = 'id,kind,title,body,url,swatch,shot,status,from_client,created_at';
-    // Tolerant of a pending migration, same as everywhere else: one unknown column
-    // makes PostgREST refuse the whole query.
+    // Tolerant of a pending migration: one unknown column makes PostgREST refuse the
+    // entire query, so a half-applied schema would blank the console rather than
+    // degrade it.
     const ask = (select: string) => supabase.from('project_notes')
       .select(select).eq('project_id', projectId)
       .order('sort', { ascending: true }).order('created_at', { ascending: false });
@@ -106,7 +107,7 @@ export default function Console({
     const { data: { user } } = await supabase.auth.getUser();
     const payload: any = {
       project_id: projectId,
-      from_client: !staff,
+      from_client: true,
       author_id: user?.id,
       status: row.kind === 'request' ? 'open' : 'none',
       ...row,
@@ -120,15 +121,10 @@ export default function Console({
     setMsg(''); load(); return true;
   }
 
-  async function setStatus(n: Note, status: string) {
-    const supabase = createClient();
-    await supabase.from('project_notes').update({ status }).eq('id', n.id);
-    load();
-  }
-
   async function remove(n: Note) {
     const supabase = createClient();
-    await supabase.from('project_notes').delete().eq('id', n.id);
+    const { error } = await supabase.from('project_notes').delete().eq('id', n.id);
+    if (error) return setMsg(error.message);
     load();
   }
 
@@ -149,31 +145,26 @@ export default function Console({
       </div>
 
       {face && missing && (
-        <p className="cur-warn">
-          The console table is not there yet. Run supabase/notes.sql, then reload.
-        </p>
+        <p className="cur-warn">The console table is not there yet. Run supabase/notes.sql, then reload.</p>
       )}
 
       {face === 'files' && <Files projectId={projectId} projectName={projectName} />}
 
       {face === 'brand' && !missing && (
-        <Brand
-          notes={of('brand')} staff={staff} ready={ready} projectId={projectId}
-          shotUrls={shotUrls} add={add} remove={remove}
-        />
+        <Brand notes={of('brand')} ready={ready} staff={staff} shotUrls={shotUrls} />
       )}
 
       {face === 'inspiration' && !missing && (
         <Inspiration
           notes={of('inspiration')} ready={ready} projectId={projectId}
-          shotUrls={shotUrls} add={add} remove={remove} staff={staff}
+          shotUrls={shotUrls} add={add} remove={remove}
         />
       )}
 
       {face === 'requests' && !missing && (
         <Requests
-          notes={of('request')} ready={ready} projectId={projectId} staff={staff}
-          shotUrls={shotUrls} add={add} setStatus={setStatus}
+          notes={of('request')} ready={ready} projectId={projectId}
+          shotUrls={shotUrls} add={add}
         />
       )}
 
@@ -183,139 +174,131 @@ export default function Console({
 }
 
 /* ------------------------------------------------------------------ brand ----- */
-// Colours, typefaces, rules and assets. Four shapes, shown as four rows, and a row
-// with nothing in it is not drawn at all.
-function Brand({ notes, staff, ready, projectId, shotUrls, add, remove }: any) {
-  const [open, setOpen] = useState<Facet | null>(null);
-  const [d, setD] = useState({ title: '', body: '', url: '', swatch: '#7E9270' });
+// Read only here. Brand is authored in the Atelier and passed deliberately, so this
+// side is a board to look at rather than a form to fill in.
+//
+// Colours sit on one row as pure swatches. The name and the purpose live underneath
+// the cursor, because five labelled chips is a table and a table is not a palette: you
+// look at a palette to see the colors next to each other, which is exactly what a
+// caption on every one prevents.
+function Brand({ notes, ready, staff, shotUrls }: any) {
+  const [hover, setHover] = useState<string | null>(null);
 
   const group = (f: Facet) => notes.filter((n: Note) => (n.facet ?? 'rule') === f);
-  const colours = group('colour'), type = group('type'), rules = group('rule'), assets = group('asset');
+  const colors = group('color'), type = group('type'), rules = group('rule'), assets = group('asset');
+  const lit = colors.find((n: Note) => n.id === hover) ?? null;
 
-  const submit = async (facet: Facet) => {
-    const ok = await add({
-      kind: 'brand', facet,
-      title: d.title.trim() || null,
-      body: d.body.trim() || null,
-      url: facet === 'asset' ? null : d.url.trim() || null,
-      swatch: facet === 'colour' ? d.swatch : null,
-      shot: facet === 'asset' ? d.url || null : null,
-    });
-    if (ok) { setD({ title: '', body: '', url: '', swatch: '#7E9270' }); setOpen(null); }
-  };
-
-  const empty = !colours.length && !type.length && !rules.length && !assets.length;
+  if (ready && !notes.length) {
+    return (
+      <div className="cn-body">
+        <p className="cur-empty">
+          Nothing settled yet. Colors, type and the decisions we make appear here as we
+          make them, so neither of us has to remember what we agreed.
+          {staff && ' Author them in the Atelier under Console, then release.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="cn-body">
-      {ready && empty && !staff && (
-        <p className="cur-empty">
-          Nothing formalised yet. Colours, type and the rules we settle appear here as we
-          settle them, so neither of us has to remember what we agreed.
-        </p>
+      {colors.length > 0 && (
+        <Row label="Color">
+          {/* One row, and one caption slot under it that changes rather than five
+              captions competing. The slot keeps its height whether or not anything is
+              hovered, so the rows below do not jump as the cursor crosses. */}
+          <div className="pal" onMouseLeave={() => setHover(null)}>
+            {colors.map((n: Note) => (
+              <button
+                key={n.id}
+                className={'pal-c' + (hover === n.id ? ' on' : '')}
+                style={{ background: n.swatch ?? '#ccc' }}
+                onMouseEnter={() => setHover(n.id)}
+                onFocus={() => setHover(n.id)}
+                aria-label={`${n.title ?? 'Color'}${n.body ? `, ${n.body}` : ''}`}
+              >
+                <span className={'pal-hex' + (lightOn(n.swatch ?? '') ? ' lit' : '')}>
+                  {(n.swatch ?? '').replace('#', '')}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="pal-cap" aria-live="polite">
+            {lit ? (
+              <>
+                <b>{lit.title}</b>
+                {lit.body && <span>{lit.body}</span>}
+                <i>{lit.swatch}</i>
+              </>
+            ) : (
+              <span className="pal-rest">
+                {colors.length} color{colors.length === 1 ? '' : 's'}. Hover one to see what it is for.
+              </span>
+            )}
+          </p>
+        </Row>
       )}
 
-      {colours.length > 0 && (
-        <Row label="Colour">
-          <div className="bd-cols">
-            {colours.map((n: Note) => (
-              <div className="bd-col" key={n.id}>
-                <span className="bd-chip" style={{ background: n.swatch ?? '#ccc' }} />
-                <b>{n.title}</b>
-                <i>{n.swatch}</i>
-                {staff && <Del onClick={() => remove(n)} />}
+      {type.length > 0 && (
+        <Row label="Type">
+          <div className="bx-grid">
+            {type.map((n: Note) => (
+              <div className="bx" key={n.id}>
+                <b className="bx-spec" style={{ fontFamily: `'${n.title}', var(--serif)` }}>
+                  {n.title}
+                </b>
+                <span className="bx-name">{n.title}</span>
+                {n.body && <p>{n.body}</p>}
+                {n.url && (
+                  <a href={n.url} target="_blank" rel="noopener noreferrer">{host(n.url)} &#8599;</a>
+                )}
               </div>
             ))}
           </div>
         </Row>
       )}
 
-      {type.length > 0 && (
-        <Row label="Type">
-          {type.map((n: Note) => (
-            <div className="bd-type" key={n.id}>
-              <b style={{ fontFamily: `${n.title}, var(--serif)` }}>{n.title}</b>
-              {n.body && <span>{n.body}</span>}
-              {n.url && <a href={n.url} target="_blank" rel="noopener noreferrer">{host(n.url)} &#8599;</a>}
-              {staff && <Del onClick={() => remove(n)} />}
-            </div>
-          ))}
-        </Row>
-      )}
-
       {rules.length > 0 && (
-        <Row label="Rules">
-          {rules.map((n: Note) => (
-            <div className="bd-rule" key={n.id}>
-              <b>{n.title}{staff && <Del onClick={() => remove(n)} />}</b>
-              {n.body && <p>{n.body}</p>}
-            </div>
-          ))}
+        <Row label="Decisions">
+          <div className="bx-grid wide">
+            {rules.map((n: Note) => (
+              <div className="bx" key={n.id}>
+                <b>{n.title}</b>
+                {n.body && <p>{n.body}</p>}
+                {n.url && (
+                  <a href={n.url} target="_blank" rel="noopener noreferrer">{host(n.url)} &#8599;</a>
+                )}
+              </div>
+            ))}
+          </div>
         </Row>
       )}
 
       {assets.length > 0 && (
         <Row label="Assets">
           <div className="cn-grid">
-            {assets.map((n: Note) => (
-              <Thumb key={n.id} note={n} url={n.shot ? shotUrls[n.shot] : undefined}
-                     onRemove={staff ? () => remove(n) : undefined} />
-            ))}
+            {assets.map((n: Note) => {
+              const u = n.shot ? shotUrls[n.shot] : undefined;
+              const ext = (n.shot ?? '').split('.').pop()?.toUpperCase() ?? 'FILE';
+              const img = /\.(png|jpe?g|webp|gif|svg)$/i.test(n.shot ?? '');
+              return (
+                <div className="cn-thumb" key={n.id}>
+                  {u && img ? (
+                    <a href={u} target="_blank" rel="noopener noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={u} alt="" loading="lazy" />
+                    </a>
+                  ) : u ? (
+                    <a className="cn-doc" href={u} target="_blank" rel="noopener noreferrer">{ext}</a>
+                  ) : (
+                    <span className="cn-doc" />
+                  )}
+                  <span className="cn-cap">{n.title}{n.body && <i>{n.body}</i>}</span>
+                </div>
+              );
+            })}
           </div>
         </Row>
-      )}
-
-      {staff && (
-        <div className="cn-add">
-          <div className="cn-pick-row">
-            {(['colour', 'type', 'rule', 'asset'] as Facet[]).map((f) => (
-              <button key={f} className={'cn-fchip' + (open === f ? ' on' : '')}
-                      onClick={() => setOpen(open === f ? null : f)}>
-                {f === 'colour' ? 'Colour' : f === 'type' ? 'Typeface' : f === 'rule' ? 'Rule' : 'Asset'}
-              </button>
-            ))}
-          </div>
-
-          {open === 'colour' && (
-            <div className="cn-add-row">
-              <input type="color" className="cn-colour" value={d.swatch}
-                     onChange={(e) => setD({ ...d, swatch: e.target.value })} />
-              <input placeholder="What it is for. Deep sage, the primary." value={d.title}
-                     onChange={(e) => setD({ ...d, title: e.target.value })} />
-              <button className="mini-btn pri" onClick={() => submit('colour')}>Add</button>
-            </div>
-          )}
-          {open === 'type' && (
-            <div className="cn-add-row">
-              <input placeholder="Family name, exactly as it is set" value={d.title}
-                     onChange={(e) => setD({ ...d, title: e.target.value })} />
-              <input placeholder="Where it is used" value={d.body}
-                     onChange={(e) => setD({ ...d, body: e.target.value })} />
-              <button className="mini-btn pri" onClick={() => submit('type')}>Add</button>
-            </div>
-          )}
-          {open === 'rule' && (
-            <>
-              <input placeholder="The decision" value={d.title}
-                     onChange={(e) => setD({ ...d, title: e.target.value })} />
-              <div className="cn-add-row">
-                <input placeholder="Why, or what it rules out" value={d.body}
-                       onChange={(e) => setD({ ...d, body: e.target.value })} />
-                <button className="mini-btn pri" onClick={() => submit('rule')}>Add</button>
-              </div>
-            </>
-          )}
-          {open === 'asset' && (
-            <div className="cn-add-row">
-              <input placeholder="What it is. The wordmark, the favicon." value={d.title}
-                     onChange={(e) => setD({ ...d, title: e.target.value })} />
-              <Attach projectId={projectId} label="Choose a file"
-                      accept="image/*,application/pdf,font/*"
-                      onDone={(p) => setD((x) => ({ ...x, url: p }))} />
-              <button className="mini-btn pri" disabled={!d.url} onClick={() => submit('asset')}>Add</button>
-            </div>
-          )}
-        </div>
       )}
     </div>
   );
@@ -324,16 +307,19 @@ function Brand({ notes, staff, ready, projectId, shotUrls, add, remove }: any) {
 /* ------------------------------------------------------------ inspiration ----- */
 // A picture and what you thought about it. The thought is the point: a board of
 // images with no words is a mood, and a mood cannot be built from.
-function Inspiration({ notes, ready, projectId, shotUrls, add, remove, staff }: any) {
+function Inspiration({ notes, ready, projectId, shotUrls, add, remove }: any) {
   const [d, setD] = useState({ body: '', url: '', shot: '' });
+  const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     if (!d.body.trim() && !d.url.trim() && !d.shot) return;
+    setBusy(true);
     const ok = await add({
       kind: 'inspiration', facet: null,
       title: null, body: d.body.trim() || null,
       url: d.url.trim() || null, shot: d.shot || null,
     });
+    setBusy(false);
     if (ok) setD({ body: '', url: '', shot: '' });
   };
 
@@ -367,7 +353,11 @@ function Inspiration({ notes, ready, projectId, shotUrls, add, remove, staff }: 
                 )}
                 <span className="cn-who">
                   {n.from_client ? 'Yours' : 'Pentinian'} · {day(n.created_at)}
-                  {(staff || n.from_client) && <Del onClick={() => remove(n)} />}
+                  {n.from_client && (
+                    <button className="cn-x" onClick={() => remove(n)} title="Remove" aria-label="Remove">
+                      &#215;
+                    </button>
+                  )}
                 </span>
               </figcaption>
             </figure>
@@ -383,7 +373,9 @@ function Inspiration({ notes, ready, projectId, shotUrls, add, remove, staff }: 
                  onChange={(e) => setD({ ...d, url: e.target.value })} />
           <Attach projectId={projectId} label={d.shot ? 'Image ready' : 'Add an image'}
                   onDone={(p) => setD((x) => ({ ...x, shot: p }))} />
-          <button className="mini-btn pri" onClick={submit}>Pin it</button>
+          <button className="mini-btn pri" onClick={submit} disabled={busy}>
+            {busy ? 'Pinning…' : 'Pin it'}
+          </button>
         </div>
       </div>
     </div>
@@ -393,16 +385,19 @@ function Inspiration({ notes, ready, projectId, shotUrls, add, remove, staff }: 
 /* --------------------------------------------------------------- requests ----- */
 // What you want, and a shot of where you mean. Pointing at the page beats describing
 // it, and it removes a whole round of "which header".
-function Requests({ notes, ready, projectId, staff, shotUrls, add, setStatus }: any) {
+function Requests({ notes, ready, projectId, shotUrls, add }: any) {
   const [d, setD] = useState({ title: '', body: '', shot: '' });
+  const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     if (!d.title.trim() && !d.body.trim()) return;
+    setBusy(true);
     const ok = await add({
       kind: 'request', facet: null,
       title: d.title.trim() || null, body: d.body.trim() || null,
       shot: d.shot || null, url: null,
     });
+    setBusy(false);
     if (ok) setD({ title: '', body: '', shot: '' });
   };
 
@@ -429,14 +424,6 @@ function Requests({ notes, ready, projectId, staff, shotUrls, add, setStatus }: 
             )}
             <span className="cn-who">{n.from_client ? 'You' : 'Pentinian'} · {day(n.created_at)}</span>
           </div>
-          {staff && (
-            <select className="cn-pick" value={n.status}
-                    onChange={(e) => setStatus(n, e.target.value)} aria-label="status">
-              {['open', 'doing', 'done', 'declined'].map((s) => (
-                <option key={s} value={s}>{STATUS[s]}</option>
-              ))}
-            </select>
-          )}
         </div>
       ))}
 
@@ -448,7 +435,9 @@ function Requests({ notes, ready, projectId, staff, shotUrls, add, setStatus }: 
         <div className="cn-add-row">
           <Attach projectId={projectId} label={d.shot ? 'Shot ready' : 'Show me where'}
                   onDone={(p) => setD((x) => ({ ...x, shot: p }))} />
-          <button className="mini-btn pri" onClick={submit}>Send</button>
+          <button className="mini-btn pri" onClick={submit} disabled={busy}>
+            {busy ? 'Sending…' : 'Send'}
+          </button>
         </div>
       </div>
     </div>
@@ -456,35 +445,15 @@ function Requests({ notes, ready, projectId, staff, shotUrls, add, setStatus }: 
 }
 
 /* ------------------------------------------------------------------ shared ---- */
+// A labelled row. The label column is wide enough for the longest word it will ever
+// hold: at 88px "SCREENSHOTS" overflowed and printed straight through the heading
+// beside it, which is the sort of thing that reads as carelessness everywhere else on
+// the page too.
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="cn-row">
       <span className="cn-row-l">{label}</span>
       <div className="cn-row-b">{children}</div>
-    </div>
-  );
-}
-
-function Thumb({ note, url, onRemove }: { note: Note; url?: string; onRemove?: () => void }) {
-  const p = note.shot ?? '';
-  return (
-    <div className="cn-thumb">
-      {url && isImage(p) ? (
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="" loading="lazy" />
-        </a>
-      ) : url ? (
-        <a className="cn-doc" href={url} target="_blank" rel="noopener noreferrer">
-          {(p.split('.').pop() ?? 'file').toUpperCase()}
-        </a>
-      ) : (
-        <span className="cn-doc" />
-      )}
-      <span className="cn-cap">
-        {note.title}
-        {onRemove && <Del onClick={onRemove} />}
-      </span>
     </div>
   );
 }

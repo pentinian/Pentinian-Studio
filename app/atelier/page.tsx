@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import ConsoleDesk from './ConsoleDesk';
 import Curation from './Curation';
 import Passkeys from './Passkeys';
 import Replies from './Replies';
@@ -27,7 +28,7 @@ type Proj = {
 };
 
 export default function AtelierPage() {
-  const [tab, setTab] = useState<'curation' | 'replies' | 'site' | 'access'>('curation');
+  const [tab, setTab] = useState<'curation' | 'console' | 'replies' | 'site' | 'access'>('curation');
   const [waiting, setWaiting] = useState(0);
   const [projects, setProjects] = useState<Proj[]>([]);
   const [orphaned, setOrphaned] = useState(0);
@@ -112,6 +113,12 @@ export default function AtelierPage() {
         ? `Pulled ${j.pulled} entries into the Quarry.` +
             (j.unmatchedProjects?.length
               ? ` ${j.unmatchedProjects.length} named a project that does not exist here, so those cannot reach anyone: ${j.unmatchedProjects.join(', ')}.`
+              : '') +
+            (j.console
+              ? ` ${j.console.pulled} console item${j.console.pulled === 1 ? '' : 's'}, staged.` +
+                (j.console.skipped > 0 ? ` ${j.console.skipped} had no project and went nowhere.` : '') +
+                (j.console.skipped === -1 ? ' The Console database could not be read: check NOTION_CONSOLE_DB and that it is shared with the integration.' : '') +
+                (j.console.error ? ` Console write failed: ${j.console.error}` : '')
               : '')
         : `Sync error: ${j.error}`
     );
@@ -207,6 +214,9 @@ export default function AtelierPage() {
             <button className={tab === 'curation' ? 'on' : ''} onClick={() => setTab('curation')}>
               Curation
             </button>
+            <button className={tab === 'console' ? 'on' : ''} onClick={() => setTab('console')}>
+              Console
+            </button>
             <button className={tab === 'replies' ? 'on' : ''} onClick={() => setTab('replies')}>
               Replies
               {waiting > 0 && <span className="tab-n">{waiting}</span>}
@@ -223,6 +233,10 @@ export default function AtelierPage() {
 
           {tab === 'curation' && (
             <Curation projectId={selId} projectName={project?.name ?? null} refreshKey={refreshKey} />
+          )}
+
+          {tab === 'console' && (
+            <ConsoleDesk projectId={selId} projectName={project?.name ?? null} refreshKey={refreshKey} />
           )}
 
           {tab === 'replies' && <Replies />}

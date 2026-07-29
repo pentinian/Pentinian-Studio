@@ -3,17 +3,17 @@
 -- Paste into the Supabase SQL editor and run. Safe to run twice.
 
 -- ---------------------------------------------------------------- what a note is
--- A brand note is not one thing. A colour, a typeface, a rule and a logo file all
+-- A brand note is not one thing. A color, a typeface, a rule and a logo file all
 -- belong on the brand face and none of them render the same way. Inferring the kind
 -- from which columns happen to be filled works until two of them are filled at once,
 -- so the row says what it is.
 alter table project_notes add column if not exists facet text;
 
--- 'colour' | 'type' | 'rule' | 'asset'  on brand
+-- 'color' | 'type' | 'rule' | 'asset'  on brand
 -- null on inspiration and requests, which are uniform
 alter table project_notes drop constraint if exists project_notes_facet_check;
 alter table project_notes add constraint project_notes_facet_check
-  check (facet is null or facet in ('colour', 'type', 'rule', 'asset'));
+  check (facet is null or facet in ('color', 'type', 'rule', 'asset'));
 
 -- ------------------------------------------------------------------ real files
 -- The bucket only accepted images, which made "files" a promise it could not keep.

@@ -301,7 +301,7 @@ export default function Log({ projectId }: { projectId: string | null }) {
                       (openDay === key ? ' on' : '') +
                       (key === todayKey ? ' today' : '')
                     }
-                    // Depth of colour is hours, so a heavy day reads as heavier at a glance.
+                    // Depth of color is hours, so a heavy day reads as heavier at a glance.
                     style={worked ? ({ ['--w' as any]: (mins / busiest).toFixed(2) }) : undefined}
                     onClick={() => worked && openThe(key)}
                     disabled={!worked}

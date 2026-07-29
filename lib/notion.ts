@@ -121,6 +121,93 @@ export async function fetchWorkLog(): Promise<NotionEntry[]> {
   return out;
 }
 
+// ------------------------------------------------------------------- the Console
+//
+// A second database, feeding the four faces on the project header. Property names must
+// match exactly. As of 2026-07-29 they are:
+//   Item (title) · Project (relation) · Face (select) · Facet (select)
+//   Purpose · Swatch · Link (url) · Shot path · Order (number)
+//
+// There is deliberately no Stage here, unlike the Work Log. Two places that look like
+// they release something, only one of which does, is how a control stops being
+// trusted. Everything in this database arrives staged; the Atelier is the only gate.
+
+export type NotionConsoleItem = {
+  notion_id: string;
+  notion_url: string | null;
+  kind: 'brand' | 'inspiration' | 'request';
+  facet: 'color' | 'type' | 'rule' | 'asset' | null;
+  title: string;
+  body: string;
+  swatch: string | null;
+  url: string | null;
+  shot: string | null;
+  sort: number;
+  project_page_id: string | null;
+};
+
+const FACE: Record<string, NotionConsoleItem['kind']> = {
+  brand: 'brand', inspiration: 'inspiration', request: 'request', requests: 'request',
+};
+const FACET: Record<string, NonNullable<NotionConsoleItem['facet']>> = {
+  color: 'color', /* tolerate the British spelling on input */ colour: 'color', type: 'type', typeface: 'type',
+  rule: 'rule', asset: 'asset',
+};
+
+/** A hex, normalised, or null. Anything that is not one is not a colour and is
+ *  dropped rather than passed along to be rendered as a grey box. */
+const hex = (s: string): string | null => {
+  const v = s.trim().replace(/^#?/, '#').toUpperCase();
+  if (/^#[0-9A-F]{6}$/.test(v)) return v;
+  if (/^#[0-9A-F]{3}$/.test(v)) return '#' + v.slice(1).split('').map((c) => c + c).join('');
+  return null;
+};
+
+export async function fetchConsole(): Promise<NotionConsoleItem[]> {
+  const db = process.env.NOTION_CONSOLE_DB;
+  if (!process.env.NOTION_TOKEN || !db) return [];
+
+  const out: NotionConsoleItem[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const data = await notion(`databases/${db}/query`, {
+      method: 'POST',
+      body: JSON.stringify({ page_size: 100, start_cursor: cursor }),
+    });
+
+    for (const p of data.results ?? []) {
+      const props = p.properties ?? {};
+      const kind = FACE[(props.Face?.select?.name ?? '').trim().toLowerCase()];
+      // A row with no Face has not been decided yet. Skipping it is right: guessing
+      // would put a half-written thought on a client's brand board.
+      if (!kind) continue;
+
+      const facet = kind === 'brand'
+        ? FACET[(props.Facet?.select?.name ?? '').trim().toLowerCase()] ?? 'rule'
+        : null;
+
+      out.push({
+        notion_id: p.id,
+        notion_url: p.url ?? null,
+        kind,
+        facet,
+        title: text(props.Item?.title),
+        body: text(props.Purpose?.rich_text),
+        swatch: facet === 'color' ? hex(text(props.Swatch?.rich_text)) : null,
+        url: (props.Link?.url ?? '').trim() || null,
+        shot: text(props['Shot path']?.rich_text).split(/[\n,]+/)[0]?.trim() || null,
+        sort: props.Order?.number ?? 0,
+        project_page_id: props.Project?.relation?.[0]?.id ?? null,
+      });
+    }
+
+    cursor = data.has_more ? data.next_cursor : undefined;
+  } while (cursor);
+
+  return out;
+}
+
 /** Title of a Notion page, used to match a project row by name. */
 export async function fetchPageTitle(pageId: string): Promise<string | null> {
   try {
