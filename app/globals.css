@@ -104,7 +104,11 @@ a{color:inherit}
 .pj-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:11px}
 .pj-grid a{display:block; text-decoration:none; border:1px solid var(--line); border-radius:7px; overflow:hidden; background:var(--paper-2)}
 .pj-grid a:hover{border-color:var(--sage)}
-.pj-grid img{width:100%; aspect-ratio:16/10; object-fit:cover; object-position:top left; display:block}
+/* Contained, not cropped. A cropped corner of a pale wide interface screenshot is an
+   empty rectangle; the whole frame at least shows the shape of the thing, which is
+   what you are scanning for. The letterboxing is honest about the aspect. */
+.pj-grid img{width:100%; aspect-ratio:16/10; object-fit:contain; display:block;
+  background:var(--paper-2); padding:5px}
 .pj-cap{display:block; padding:8px 9px; font:400 11px/1.35 var(--sans); color:var(--ink-2); background:var(--bone)}
 .pj-cap i{display:block; font-style:normal; margin-top:3px; font:400 9.5px/1 var(--mono); color:var(--ink-3)}
 .pj-skel{aspect-ratio:16/10; border-radius:7px; background:var(--paper-2); border:1px solid var(--line); display:block}
