@@ -2,15 +2,21 @@
 //
 // Walks the console pipeline against the live database.
 //
-//   node scripts/verify-console.mjs          (after: set -a; source .env.local; set +a)
+//   set -a; source .env.local; set +a
+//   node scripts/verify-console.mjs                 everything
+//   node scripts/verify-console.mjs --part=1        schema, gate, who may write
+//   node scripts/verify-console.mjs --part=2        sync contract, storage, endpoint
+//   node scripts/verify-console.mjs --sweep         remove debris from a killed run
 //
 // Schema files are not evidence. Row Level Security was once believed to be on when it
 // was not, and only a probe found it. Everything below asks the database, as a real
 // client with a real session, and reports what it actually answered.
 //
-// Creates a scratch project, a scratch client and a scratch user, and tears all three
-// down in a finally block so a timeout cannot leave test debris in Pen's Atelier. That
-// has happened twice.
+// Teardown is in a finally block, which covers a throw and a failed assertion but NOT a
+// kill: a process that is terminated does not run its own finally. That happened, and
+// left a scratch project and two users in the real Atelier. Hence --part, so each half
+// finishes inside a short window, and --sweep, so cleaning up is one documented command
+// rather than something reconstructed under pressure.
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -24,11 +30,54 @@ if (!URL || !SERVICE || !ANON) {
 
 const db = createClient(URL, SERVICE, { auth: { persistSession: false } });
 const TAG = `vc-${Date.now()}`;
+const ARGS = process.argv.slice(2);
+const PART = Number((ARGS.find((a) => a.startsWith('--part=')) ?? '').split('=')[1] || 0);
+const wants = (p) => PART === 0 || PART === p;
+
+// Everything this script creates is prefixed vc-, in every table it touches, so a sweep
+// can find all of it by name without needing to know what a given run got as far as.
+if (ARGS.includes('--sweep')) {
+  const { data: projects } = await db.from('projects').select('id,name').ilike('name', 'vc-%');
+  const { data: clients } = await db.from('clients').select('id').ilike('name', 'vc-%');
+  const { data: users } = await db.auth.admin.listUsers();
+  const stray = (users?.users ?? []).filter((u) => (u.email ?? '').startsWith('vc-'));
+
+  for (const p of projects ?? []) {
+    const { data: objs } = await db.storage.from('shots').list(p.id, { limit: 200 });
+    const paths = (objs ?? []).map((o) => `${p.id}/${o.name}`);
+    if (paths.length) await db.storage.from('shots').remove(paths);
+    await db.from('project_notes').delete().eq('project_id', p.id);
+    await db.from('work_log_released').delete().eq('project_id', p.id);
+    await db.from('work_log_raw').delete().eq('project_id', p.id);
+  }
+  await db.from('project_notes').delete().ilike('title', 'vc-%');
+  await db.from('work_log_raw').delete().ilike('notion_id', 'vc-%');
+  for (const p of projects ?? []) await db.from('projects').delete().eq('id', p.id);
+  for (const c of clients ?? []) await db.from('clients').delete().eq('id', c.id);
+  for (const u of stray) await db.auth.admin.deleteUser(u.id);
+
+  console.log(`swept ${projects?.length ?? 0} project(s), ${clients?.length ?? 0} client(s), ${stray.length} user(s)`);
+  process.exit(0);
+}
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra = '') => {
   if (cond) { pass += 1; console.log(`  ok   ${name}`); }
   else { fail += 1; console.log(`  FAIL ${name}${extra ? '  ' + extra : ''}`); }
+};
+
+// A negative assertion must check that the refusal is the RIGHT refusal.
+//
+// Every "may NOT" test here used to assert only that an error came back. Then a policy
+// recursed, every insert failed for that reason, and the whole suite read green except
+// the two positive cases. A test that passes when the thing it guards is broken is worse
+// than no test, because it is trusted. So: a refusal counts only if it is a policy
+// refusal or a constraint refusal, and anything else is reported as the fault it is.
+const refused = (name, error) => {
+  if (!error) return ok(name, false, 'it was ALLOWED');
+  const m = error.message ?? String(error);
+  const policy = /row-level security|violates row-level|new row violates|permission denied|check constraint/i.test(m);
+  return ok(name, policy, policy ? '' : `refused for the wrong reason: ${m}`);
 };
 
 const made = { users: [], projects: [], clients: [] };
@@ -62,6 +111,11 @@ try {
     .insert({ name: `${TAG} project`, client_id: cl.id, client_facing: true }).select().single();
   made.projects.push(pr.id);
 
+  // Both halves need real sessions, so these are created outside the part blocks.
+  const client = await asUser(clientEmail, pw);
+  const stranger = await asUser(strangerEmail, pw);
+
+  if (wants(1)) {
   // ------------------------------------------------------------- the schema itself
   console.log('\nschema');
   for (const col of ['facet', 'notion_id', 'released_at', 'notion_url']) {
@@ -71,12 +125,12 @@ try {
   {
     const { error } = await db.from('project_notes')
       .insert({ project_id: pr.id, kind: 'brand', facet: 'colour', title: 'x' });
-    ok('facet refuses the British spelling', Boolean(error));
+    refused('facet refuses the British spelling', error);
   }
   {
     const { error } = await db.from('project_notes')
       .insert({ project_id: pr.id, kind: 'brand', facet: 'nonsense', title: 'x' });
-    ok('facet refuses anything outside the four', Boolean(error));
+    refused('facet refuses anything outside the four', error);
   }
 
   // -------------------------------------------------------------------- the gate
@@ -91,7 +145,6 @@ try {
     body: 'passed', from_client: false, released_at: new Date().toISOString(),
   }).select().single();
 
-  const client = await asUser(clientEmail, pw);
   const { data: seen } = await client.from('project_notes').select('id,title').eq('project_id', pr.id);
   const ids = new Set((seen ?? []).map((r) => r.id));
   ok('a released item reaches the client', ids.has(live.id));
@@ -128,14 +181,14 @@ try {
       project_id: pr.id, kind: 'brand', facet: 'color', title: `${TAG} sneaked in`,
       from_client: false, author_id: cu.user.id,
     });
-    ok('but may NOT author one as Pentinian', Boolean(error));
+    refused('but may NOT author one as Pentinian', error);
   }
   {
     const { error } = await client.from('project_notes').insert({
       project_id: pr.id, kind: 'brand', facet: 'color', title: `${TAG} self approved`,
       from_client: true, author_id: cu.user.id, status: 'done',
     });
-    ok('and may NOT mark their own suggestion accepted', Boolean(error));
+    refused('and may NOT mark their own suggestion accepted', error);
   }
   if (suggestion) {
     const { data } = await client.from('project_notes')
@@ -158,14 +211,14 @@ try {
       project_id: pr.id, kind: 'request', title: `${TAG} self released`,
       from_client: true, author_id: cu.user.id, released_at: new Date().toISOString(),
     });
-    ok('a client may NOT release their own row', Boolean(error));
+    refused('a client may NOT release their own row', error);
   }
   {
     const { error } = await client.from('project_notes').insert({
       project_id: pr.id, kind: 'request', title: `${TAG} not mine`,
       from_client: false, author_id: cu.user.id,
     });
-    ok('a client may NOT post as Pentinian', Boolean(error));
+    refused('a client may NOT post as Pentinian', error);
   }
   {
     // The one an insert-only policy would miss: reaching a staged row through UPDATE.
@@ -178,7 +231,6 @@ try {
 
   // ------------------------------------------------------ another client's project
   console.log('\nreach across projects');
-  const stranger = await asUser(strangerEmail, pw);
   {
     const { data } = await stranger.from('project_notes').select('id').eq('project_id', pr.id);
     ok('a stranger sees nothing on a project that is not theirs', (data ?? []).length === 0);
@@ -188,9 +240,12 @@ try {
       project_id: pr.id, kind: 'request', title: `${TAG} trespass`,
       from_client: true, author_id: su.user.id,
     });
-    ok('a stranger may not write into it either', Boolean(error));
+    refused('a stranger may not write into it either', error);
   }
 
+  } // end part 1
+
+  if (wants(2)) {
   // ------------------------------------------------------------- the sync contract
   console.log('\nthe sync contract');
   {
@@ -282,6 +337,7 @@ try {
         `got ${res.status}`);
     }
   }
+  } // end part 2
 } catch (e) {
   fail += 1;
   console.log(`\n  FAIL threw: ${e.message}`);
