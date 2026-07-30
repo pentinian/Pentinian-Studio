@@ -91,7 +91,11 @@ export default function HomePage() {
     setBusy(false);
     if (error) return setMsg(`Could not save: ${error.message}`);
     setSaved(content);
-    setMsg('Saved. The site picks it up on the next load.');
+    // Honest about the edge cache. /api/site-config sets s-maxage=60, so a save is not
+    // instant on the public site, and saying "next load" sends someone to refresh three
+    // times and conclude it is broken. It is the right cache to keep: the Foyer hits
+    // this on every visit and it must stay fast.
+    setMsg('Saved. The live site picks it up within a minute, since the config is cached at the edge.');
     setNudge((n) => n + 1);
   }
 
@@ -167,14 +171,17 @@ export default function HomePage() {
           <div className="hp-frame">
             <iframe
               key={`${page}-${nudge}`}
-              src={page === 'home' ? SITE : `${SITE}/pen.html`}
+              // Cache-busted, so a reload after saving fetches a fresh page rather
+              // than the copy the browser is already holding.
+              src={`${page === 'home' ? SITE : `${SITE}/pen.html`}?v=${nudge}`}
               title="The live site"
               loading="lazy"
             />
           </div>
           <span className="cn-note">
-            The live page. It reloads when you save, so what you see here is what anyone
-            else would get.
+            The live page, not a rendering of it. It reloads when you save, though the
+            config is cached at the edge for a minute, so give it a moment and press
+            Save again to reload if a change has not appeared yet.
           </span>
         </div>
       </div>
