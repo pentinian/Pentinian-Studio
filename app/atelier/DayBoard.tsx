@@ -28,10 +28,17 @@ export type Block = {
   released: boolean;
 };
 
-const HOUR = 56;          // px per hour, enough that a 30 minute block is still legible
+// 72px an hour, because at 56 a thirty minute block was 28px tall and its own title was
+// sliced through the middle. A block you cannot read is not a block, it is a smear with
+// a tooltip. Anything under 45 minutes also drops to a single line, below.
+const HOUR = 72;
 const START_HOUR = 6;     // the grid runs 6am to 11pm; earlier hours are almost always empty
 const END_HOUR = 23;
 const SNAP = 5;           // minutes
+const TIGHT = 45;         // minutes below which a block goes to one line
+// A press that moves less than this is a click, not a drag. Without it every attempt to
+// open an entry nudged it by a few minutes.
+const SLOP = 4;
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOW = ['S','M','T','W','T','F','S'];
@@ -74,6 +81,7 @@ export default function DayBoard({
   const grid = useRef<HTMLDivElement>(null);
   const drag = useRef<null | {
     id: string; mode: 'move' | 'size'; startY: number; baseOffset: number; baseMinutes: number;
+    moved: boolean;
   }>(null);
 
   // An edited block reads from the draft, everything else from the server.
@@ -118,6 +126,11 @@ export default function DayBoard({
       const d = drag.current;
       if (!d || !openDay) return;
       const dy = ev.clientY - d.startY;
+      // Below the slop threshold this is still a click on its way to happening. Moving
+      // the block now would mean every attempt to open an entry nudged its time.
+      if (!d.moved && Math.abs(dy) < SLOP) return;
+      d.moved = true;
+      document.body.classList.add('dragging');
       const dm = Math.round((dy / HOUR) * 60 / SNAP) * SNAP;
 
       if (d.mode === 'move') {
@@ -136,11 +149,20 @@ export default function DayBoard({
         setEdits((e) => ({ ...e, [d.id]: { started_at: started.toISOString(), minutes } }));
       }
     };
-    const up = () => { drag.current = null; document.body.classList.remove('dragging'); };
+    // A press that never moved is a click, and a click opens the entry. Reviewing and
+    // releasing is the thing done all day; rearranging is occasional. The first version
+    // had that backwards, with drag as the default gesture and opening behind a double
+    // click, which made the common act the hidden one.
+    const up = () => {
+      const d = drag.current;
+      drag.current = null;
+      document.body.classList.remove('dragging');
+      if (d && !d.moved && d.mode === 'move') onOpen(d.id);
+    };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
-  }, [openDay]);
+  }, [openDay, onOpen]);
 
   function grab(ev: React.PointerEvent, b: Block, mode: 'move' | 'size') {
     ev.preventDefault();
@@ -150,8 +172,8 @@ export default function DayBoard({
       id: b.id, mode, startY: ev.clientY,
       baseOffset: offsetOf(b.started_at),
       baseMinutes: b.minutes ?? 60,
+      moved: false,
     };
-    document.body.classList.add('dragging');
   }
 
   async function save() {
@@ -291,27 +313,31 @@ export default function DayBoard({
               const mins = b.minutes ?? 60;
               const l = lanes[b.id] ?? { lane: 0, of: 1 };
               const w = 100 / l.of;
+              // A short block drops to one line. At the old scale a thirty minute block
+              // was 28px tall holding 52px of content, so its own title came out sliced
+              // through the middle of the letters.
+              const tight = mins < TIGHT;
               return (
                 <div
                   key={b.id}
                   className={
                     'db-block' + (b.released ? ' live' : '') +
+                    (tight ? ' tight' : '') +
                     (edits[b.id] ? ' moved' : '') +
                     (selectedId === b.id ? ' sel' : '')
                   }
                   style={{
                     top: (off / 60) * HOUR,
-                    height: Math.max(22, (mins / 60) * HOUR),
+                    height: Math.max(26, (mins / 60) * HOUR - 2),
                     left: `calc(58px + ${l.lane * w}% - ${l.lane * w * 0.58}px)`,
                     width: `calc(${w}% - ${w * 0.58}px - 6px)`,
                   }}
                   onPointerDown={(e) => grab(e, b, 'move')}
-                  onDoubleClick={() => onOpen(b.id)}
-                  title="Drag to move, drag the bottom edge to change how long it reads as taking, double click to open"
+                  title="Click to open it. Drag to move it, drag the bottom edge to change how long it reads as taking."
                 >
                   <span className="db-when">{clock(b.started_at!)} · {dur(mins)}</span>
                   <span className="db-title">{b.title}</span>
-                  {b.area && <span className="db-area">{b.area}</span>}
+                  {b.area && !tight && <span className="db-area">{b.area}</span>}
                   <span className="db-state">{b.released ? 'Released' : 'Staged'}</span>
                   <span className="db-handle" onPointerDown={(e) => grab(e, b, 'size')} aria-hidden="true" />
                 </div>
@@ -320,12 +346,55 @@ export default function DayBoard({
           </div>
         )}
 
+        {/* Moving a day wholesale, and moving one block to another day. Dragging across
+            two separate components is fragile and easy to do by accident, and this is
+            the same capability with the ambiguity removed. */}
+        {openDay && day.length > 0 && (
+          <div className="db-shift">
+            <span className="db-shift-l">Shift the whole day</span>
+            {[-60, -30, -15, 15, 30, 60].map((n) => (
+              <button key={n} className="db-nudge" onClick={() => {
+                setEdits((e) => {
+                  const next = { ...e };
+                  for (const b of day) {
+                    if (!b.started_at) continue;
+                    const t = new Date(new Date(b.started_at).getTime() + n * 60000);
+                    next[b.id] = { started_at: t.toISOString(), minutes: b.minutes ?? 60 };
+                  }
+                  return next;
+                });
+              }}>
+                {n > 0 ? `+${n}` : n}m
+              </button>
+            ))}
+            {selectedId && day.some((b) => b.id === selectedId) && (
+              <label className="db-moveto">
+                Move the selected one to
+                <input
+                  type="date"
+                  value={openDay}
+                  onChange={(ev) => {
+                    const b = day.find((x) => x.id === selectedId);
+                    if (!b?.started_at || !ev.target.value) return;
+                    const old = new Date(b.started_at);
+                    const [y, m, d] = ev.target.value.split('-').map(Number);
+                    const t = new Date(y, m - 1, d, old.getHours(), old.getMinutes());
+                    setEdits((e) => ({ ...e, [b.id]: { started_at: t.toISOString(), minutes: b.minutes ?? 60 } }));
+                    setOpenDay(ev.target.value);
+                  }}
+                />
+              </label>
+            )}
+          </div>
+        )}
+
         {openDay && day.length > 0 && (
           <p className="cn-note db-hint">
-            Drag a block to move it, drag its bottom edge to change how long it reads as
-            taking. This is the effort a client sees, not a record of when you sat down,
-            so arrange the day the way it should be read. Nothing saves until you press
-            Save, and anything already released moves in their Window too.
+            Click a block to open it. Drag it to move it, drag its bottom edge to change
+            how long the piece reads as taking. This is the effort a client sees, not a
+            record of when you sat down, so arrange the day the way it should be read.
+            Nothing saves until you press Save, and anything already released moves in
+            their Window too.
           </p>
         )}
       </div>

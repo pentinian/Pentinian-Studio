@@ -313,14 +313,38 @@ a{color:inherit}
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .db-area{display:block; margin-top:2px; font:500 8.5px/1.3 var(--mono); letter-spacing:.08em;
   text-transform:uppercase; color:var(--ink-3); overflow:hidden; white-space:nowrap}
+/* A short block goes to one line: the clock inline with the title, no area, nothing
+   that can spill. At the previous scale a thirty minute block was 28px tall holding
+   52px of content, so its own title rendered cut through the middle of the letters. */
+.db-block.tight{padding:5px 9px; display:flex; align-items:center; gap:9px}
+.db-block.tight .db-when{flex:none; margin:0}
+.db-block.tight .db-title{margin:0; font-size:11.5px; min-width:0; flex:1}
+.db-block.tight .db-state{position:static; margin-left:auto; flex:none}
 .db-state{position:absolute; top:6px; right:8px; font:500 8px/1 var(--mono);
   letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
 .db-block.live .db-state{color:var(--sage-deep)}
-/* The resize grip. Wide enough to hit, quiet enough to ignore. */
-.db-handle{position:absolute; left:0; right:0; bottom:0; height:9px; cursor:ns-resize}
+/* The resize grip. Faintly present at rest so it can be found, firm on hover. Invisible
+   until hover meant the one control someone has to discover was the one control that
+   never announced itself. */
+.db-handle{position:absolute; left:0; right:0; bottom:0; height:10px; cursor:ns-resize}
 .db-handle::after{content:""; position:absolute; left:50%; bottom:3px; width:22px; height:2px;
-  margin-left:-11px; border-radius:2px; background:var(--line-3); opacity:0; transition:opacity .15s ease}
-.db-block:hover .db-handle::after{opacity:1}
+  margin-left:-11px; border-radius:2px; background:var(--line-3); opacity:.35;
+  transition:opacity .15s ease, width .15s ease}
+.db-block:hover .db-handle::after{opacity:1; width:30px}
+
+/* Shifting a whole day, and sending one block to another date. */
+.db-shift{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:12px;
+  padding-top:12px; border-top:1px solid var(--line)}
+.db-shift-l{font:500 9px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink-3); margin-right:4px}
+.db-nudge{font:400 10.5px/1 var(--mono); color:var(--ink-2); background:var(--paper);
+  border:1px solid var(--line); border-radius:6px; padding:6px 8px; cursor:pointer;
+  font-family:inherit}
+.db-nudge:hover{border-color:var(--sage); color:var(--sage-deep)}
+.db-moveto{display:flex; align-items:center; gap:8px; margin-left:auto;
+  font:400 10.5px/1 var(--sans); color:var(--ink-3)}
+.db-moveto input{font:400 10.5px/1 var(--mono); color:var(--ink-2); background:var(--bone);
+  border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-family:inherit}
 body.dragging{cursor:grabbing; user-select:none}
 body.dragging .db-block{cursor:grabbing}
 .db-hint{margin-top:12px; max-width:70ch}
