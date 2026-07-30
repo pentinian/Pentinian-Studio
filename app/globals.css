@@ -260,6 +260,149 @@ a{color:inherit}
 .sg-form.big{border-left:2px solid var(--clay); padding-left:15px; border-top:0; margin-top:16px}
 .sg-lead{font:400 12.5px/1.65 var(--sans); color:var(--ink-2); margin:0; max-width:60ch}
 
+/* the day board, in the Atelier ---------------------------------------------- */
+/* A flat queue is fine at seventeen entries and unusable at three hundred, and what it
+   hides is the arrangement of a day, which is the thing actually being composed. Client
+   facing time is representative effort, so this is the surface where a day is written
+   rather than merely listed. */
+.db{display:grid; grid-template-columns:224px 1fr; gap:20px; align-items:start}
+@media (max-width:900px){ .db{grid-template-columns:1fr} }
+.db-cal{position:sticky; top:12px}
+.db-day{aspect-ratio:1; display:grid; place-items:center; position:relative; border-radius:6px;
+  border:1px solid transparent; background:none; font:400 11px/1 var(--mono);
+  color:var(--ink-3); cursor:pointer; padding:0}
+.db-day:hover{background:rgba(35,37,30,.05); color:var(--ink-2)}
+.db-day.has{color:var(--ink); background:rgba(126,146,112,.14); border-color:rgba(126,146,112,.3)}
+.db-day.on{border-color:var(--sage-deep); box-shadow:0 0 0 1px var(--sage-deep) inset}
+/* A clay dot means something on that day is still staged. It is the one thing worth
+   spotting from a month away. */
+.db-dot{position:absolute; right:3px; bottom:3px; width:4px; height:4px; border-radius:50%;
+  background:var(--clay)}
+.db-undated{margin-top:16px; padding-top:14px; border-top:1px solid var(--line)}
+.db-undated-h{display:block; font:500 9px/1 var(--mono); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--clay-deep); margin-bottom:8px}
+.db-un{display:block; width:100%; text-align:left; font:400 11.5px/1.4 var(--sans);
+  color:var(--ink-2); background:var(--paper); border:1px solid var(--line);
+  border-radius:6px; padding:7px 9px; margin-bottom:5px; cursor:pointer; font-family:inherit}
+.db-un:hover{border-color:var(--sage)}
+
+.db-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:12px}
+.db-head h4{margin:0; font:400 17px/1.2 var(--serif); color:var(--ink)}
+.db-total{font:400 10.5px/1 var(--mono); color:var(--ink-3)}
+.db-save{margin-left:auto; display:flex; gap:7px}
+
+/* The grid itself. Hour lines behind, blocks in front, absolutely placed by minute so
+   the geometry IS the data rather than a rendering of it. */
+.db-grid{position:relative; border:1px solid var(--line); border-radius:10px;
+  background:var(--paper); overflow:hidden}
+.db-hour{position:absolute; left:0; right:0; border-top:1px solid var(--line)}
+.db-hour:first-child{border-top:0}
+.db-hour span{position:absolute; left:8px; top:4px; font:400 9px/1 var(--mono); color:var(--ink-3)}
+.db-block{position:absolute; border-radius:7px; padding:7px 9px 8px; cursor:grab;
+  border:1px solid var(--line-2); border-left:2px solid var(--clay);
+  background:var(--bone); overflow:hidden; user-select:none; touch-action:none;
+  box-shadow:0 1px 3px -2px rgba(60,52,30,.5)}
+.db-block:hover{border-color:var(--line-3)}
+.db-block.live{border-left-color:var(--sage); background:rgba(126,146,112,.1)}
+.db-block.sel{box-shadow:0 0 0 2px var(--sage-deep)}
+/* An unsaved move announces itself, because a drag is an experiment until you press
+   Save and the difference has to be visible. */
+.db-block.moved{border-style:dashed; box-shadow:0 0 0 1px rgba(176,128,92,.5)}
+.db-when{display:block; font:400 9px/1.3 var(--mono); color:var(--ink-3)}
+.db-title{display:block; margin-top:2px; font:400 12px/1.3 var(--serif); color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.db-area{display:block; margin-top:2px; font:500 8.5px/1.3 var(--mono); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-3); overflow:hidden; white-space:nowrap}
+.db-state{position:absolute; top:6px; right:8px; font:500 8px/1 var(--mono);
+  letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+.db-block.live .db-state{color:var(--sage-deep)}
+/* The resize grip. Wide enough to hit, quiet enough to ignore. */
+.db-handle{position:absolute; left:0; right:0; bottom:0; height:9px; cursor:ns-resize}
+.db-handle::after{content:""; position:absolute; left:50%; bottom:3px; width:22px; height:2px;
+  margin-left:-11px; border-radius:2px; background:var(--line-3); opacity:0; transition:opacity .15s ease}
+.db-block:hover .db-handle::after{opacity:1}
+body.dragging{cursor:grabbing; user-select:none}
+body.dragging .db-block{cursor:grabbing}
+.db-hint{margin-top:12px; max-width:70ch}
+.cur-view{font:500 9.5px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); background:none; border:1px solid var(--line); border-radius:999px;
+  padding:5px 9px; cursor:pointer; margin-left:8px; font-family:inherit}
+.cur-view:hover{color:var(--ink-2); border-color:var(--line-2)}
+
+/* the project overview ------------------------------------------------------- */
+/* The same released work cut along its other axis. The log is chronological because a
+   build moves day by day; this is by area because three months later nobody remembers
+   which Tuesday, they remember which part of the thing. */
+.ov-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:1px;
+  background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden;
+  margin:18px 0 0}
+.ov-stats div{background:var(--paper); padding:14px 16px}
+.ov-stats b{display:block; font:400 21px/1 var(--serif); color:var(--ink); font-weight:400}
+.ov-stats span{display:block; margin-top:6px; font:400 10.5px/1.4 var(--sans); color:var(--ink-3)}
+.ov-span{margin:12px 0 4px; font:400 12px/1.6 var(--sans); color:var(--ink-3)}
+.ov-span b{color:var(--ink-2); font-weight:500; margin-right:8px}
+
+.ov-area{border-bottom:1px solid var(--line)}
+.ov-area:last-child{border-bottom:0}
+.ov-head{display:grid; grid-template-columns:28px 1fr 90px auto 16px; gap:14px; align-items:center;
+  width:100%; padding:14px 0; background:none; border:0; cursor:pointer; text-align:left;
+  font-family:inherit}
+.ov-n{font:400 13px/1 var(--serif); color:var(--line-3)}
+.ov-name{font:400 15px/1.3 var(--serif); color:var(--ink); min-width:0}
+/* The proportion bar, same treatment the day summary uses, so the two read as one
+   system rather than two charts that happen to share a page. */
+.ov-bar{height:4px; border-radius:2px; background:rgba(35,37,30,.07); overflow:hidden}
+.ov-bar i{display:block; height:100%; background:var(--sage); border-radius:2px}
+.ov-mins{font:400 10.5px/1 var(--mono); color:var(--ink-3); white-space:nowrap}
+.ov-caret{font:400 14px/1 var(--sans); color:var(--ink-3); text-align:center}
+.ov-head:hover .ov-name{color:var(--sage-deep)}
+.ov-area.open .ov-name{color:var(--ink)}
+
+.ov-list{list-style:none; margin:0 0 16px; padding:0 0 0 42px}
+.ov-list li{display:grid; grid-template-columns:52px 1fr auto; gap:14px; padding:11px 0;
+  border-top:1px solid var(--line)}
+.ov-when{font:400 10px/1.6 var(--mono); color:var(--ink-3)}
+.ov-b b{display:block; font:400 13.5px/1.4 var(--serif); color:var(--ink); font-weight:400}
+.ov-b p{font:400 12px/1.65 var(--sans); color:var(--ink-2); margin:5px 0 0; max-width:62ch}
+.ov-b .ov-why{color:var(--ink-3); font-size:11.5px}
+.ov-dur{font:400 10px/1.6 var(--mono); color:var(--ink-3); white-space:nowrap}
+.ov-links{list-style:none; margin:0; padding:0}
+.ov-links li{padding:6px 0; border-bottom:1px solid var(--line)}
+.ov-links li:last-child{border-bottom:0}
+.ov-links a{font:400 11.5px/1.5 var(--mono); color:var(--sage-deep); text-decoration:none;
+  word-break:break-all}
+.ov-links a:hover{border-bottom:1px solid rgba(126,146,112,.5)}
+@media (max-width:700px){
+  .ov-head{grid-template-columns:24px 1fr auto 16px}
+  .ov-bar{display:none}
+  .ov-list{padding-left:0}
+}
+
+/* a day with nothing released ------------------------------------------------ */
+/* Centred in the panel where the work would be, in the same dashed frame the worked
+   examples use, because both are the studio speaking rather than the record showing.
+   A blank panel reads as nothing happened; this reads as someone mid-sentence, which
+   is the honest state of a day whose write-up is not finished. */
+.qd-wrap{display:grid; place-items:center; min-height:320px; padding:26px 18px}
+.qd{max-width:440px; text-align:center; border:1px dashed var(--line-2); border-radius:12px;
+  padding:26px 26px 24px; background:rgba(35,37,30,.015); position:relative}
+.qd-tag{position:absolute; top:-8px; left:50%; transform:translateX(-50%);
+  font:500 8.5px/1 var(--mono); letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-3); background:var(--bone); padding:2px 9px; white-space:nowrap}
+/* Two lines of reserved height, so the card does not resize as the sentence grows and
+   the rest of the panel does not shuffle underneath it. */
+.qd-line{margin:4px 0 0; min-height:2.7em; display:flex; align-items:center;
+  justify-content:center; font:400 16px/1.35 var(--serif); color:var(--ink)}
+.qd-caret{display:inline-block; width:1px; height:1.05em; margin-left:2px;
+  background:var(--sage-deep); vertical-align:text-bottom;
+  animation:qd-blink 1.05s steps(1,end) infinite}
+.qd-caret.still{animation:none; opacity:.35}
+@keyframes qd-blink{0%,45%{opacity:1} 50%,100%{opacity:0}}
+.qd-sub{margin:14px 0 0; font:400 12.5px/1.65 var(--sans); color:var(--ink-2)}
+.qd-rule{display:block; width:34px; height:1px; margin:18px auto 0; background:var(--line-2)}
+.qd-foot{margin:14px 0 0; font:400 11px/1.6 var(--sans); color:var(--ink-3)}
+@media (prefers-reduced-motion: reduce){ .qd-caret{animation:none; opacity:.35} }
+
 /* worked examples ------------------------------------------------------------ */
 /* A blank field on its own asks someone to invent the format as well as the content,
    and the usual answer to that is nothing at all. These are drawings rather than seeded
@@ -561,8 +704,11 @@ a{color:inherit}
 .wl-dow{margin-bottom:5px}
 .wl-dow span{text-align:center; font:500 9px/1 var(--mono); letter-spacing:.06em; color:var(--ink-3)}
 .wl-blank{aspect-ratio:1}
+/* Every day opens now, so every day is a real control. A quiet one still shows its
+   hover, because the answer it gives is worth the click. */
 .wl-day{aspect-ratio:1; display:grid; place-items:center; border-radius:6px; border:1px solid transparent;
-  background:none; font:400 11px/1 var(--mono); color:var(--ink-3); cursor:default; padding:0}
+  background:none; font:400 11px/1 var(--mono); color:var(--ink-3); cursor:pointer; padding:0}
+.wl-day:hover{color:var(--ink-2); background:rgba(35,37,30,.04)}
 /* A worked day is tinted by how many hours it held, so weight reads before numbers do. */
 .wl-day.worked{cursor:pointer; color:var(--ink);
   background:rgba(126,146,112,calc(.12 + var(--w,0) * .5));

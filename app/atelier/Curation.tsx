@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import DayBoard, { type Block } from './DayBoard';
 
 // The gate. Left: everything the Quarry holds. Right: exactly what the client
 // would read if you released it, rendered with the same markup the Window uses,
@@ -50,6 +51,10 @@ export default function Curation({
   // project by definition, so they would otherwise be invisible from every rail
   // position, which is the one state most worth noticing.
   const [scope, setScope] = useState<'project' | 'all'>('project');
+  // A flat list is fine at seventeen entries and unusable at three hundred, and the
+  // thing it hides is the arrangement of a day, which is the thing actually being
+  // composed. The list stays for searching and for anything with no time on it.
+  const [view, setView] = useState<'days' | 'list'>('days');
 
   const load = useCallback(async () => {
     const res = await fetch('/api/quarry', { cache: 'no-store' });
@@ -69,6 +74,29 @@ export default function Curation({
     scope === 'all' || !projectId
       ? raw
       : raw.filter((e) => e.project_id === projectId || !e.project_id);
+
+  // What the day board draws. Released and staged together, because you are arranging
+  // one day and a client reads one day: hiding the released half would mean composing
+  // around furniture you cannot see.
+  const blocks: Block[] = useMemo(
+    () => shown.map((e) => {
+      const out = released.find((r) => r.raw_id === e.id);
+      return {
+        id: e.id,
+        title: (e.body ?? '(no text)').split('\n')[0],
+        area: e.area ?? null,
+        started_at: e.started_at ?? null,
+        minutes: e.minutes ?? null,
+        released: Boolean(out?.visible),
+      };
+    }),
+    [shown, released]
+  );
+
+  function pickById(id: string) {
+    const e = raw.find((r) => r.id === id);
+    if (e) pick(e);
+  }
 
   function pick(e: Raw) {
     setSel(e);
@@ -132,22 +160,38 @@ export default function Curation({
             {scope === 'all' || !projectId ? 'everything' : projectName ?? 'this project'}
           </button>
           <span className="cur-count">{shown.length}</span>
+          <button
+            className="cur-view"
+            onClick={() => setView(view === 'days' ? 'list' : 'days')}
+            title="A month of days, or the flat queue"
+          >
+            {view === 'days' ? 'list' : 'days'}
+          </button>
         </div>
 
+        {view === 'days' && raw.length > 0 && (
+          <DayBoard
+            blocks={blocks}
+            onOpen={pickById}
+            onSaved={load}
+            selectedId={sel?.id ?? null}
+          />
+        )}
+
         {raw.length === 0 && <p className="cur-empty">Nothing here. Press Sync Notion.</p>}
-        {raw.length > 0 && shown.length === 0 && (
+        {view === 'list' && raw.length > 0 && shown.length === 0 && (
           <p className="cur-empty">
             Nothing logged against {projectName ?? 'this project'} yet.
           </p>
         )}
-        {scope === 'project' && unplaced.length > 0 && (
+        {view === 'list' && scope === 'project' && unplaced.length > 0 && (
           <p className="cur-note">
             {unplaced.length} entr{unplaced.length === 1 ? 'y has' : 'ies have'} no project,
             so {unplaced.length === 1 ? 'it shows' : 'they show'} everywhere until linked in Notion.
           </p>
         )}
 
-        {shown.map((e) => {
+        {view === 'list' && shown.map((e) => {
           const out = isReleased(e.id);
           const p = projectOf(e.project_id);
           return (

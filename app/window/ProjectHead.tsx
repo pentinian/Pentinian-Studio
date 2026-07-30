@@ -60,6 +60,7 @@ export default function ProjectHead({
         <Console
           projectId={projectId}
           projectName={name}
+          phase={phase}
           staff={staff}
           face={face}
           // Clicking the open tab closes it, which is the behaviour of a drawer

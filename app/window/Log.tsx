@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import DaySummary from './DaySummary';
+import QuietDay from './QuietDay';
 
 // The client's view of the work: a month of days that had work, and the hours inside
 // whichever day they open.
@@ -303,9 +304,12 @@ export default function Log({ projectId }: { projectId: string | null }) {
                     }
                     // Depth of color is hours, so a heavy day reads as heavier at a glance.
                     style={worked ? ({ ['--w' as any]: (mins / busiest).toFixed(2) }) : undefined}
-                    onClick={() => worked && openThe(key)}
-                    disabled={!worked}
-                    title={worked ? `${es.length} update${es.length === 1 ? '' : 's'}, ${dur(mins)}` : ''}
+                    // Every day opens, not only the ones with work. A disabled square
+                    // answers a question with silence, and the honest answer to "what
+                    // happened on the 14th" is usually "it is not written up yet"
+                    // rather than nothing at all.
+                    onClick={() => openThe(key)}
+                    title={worked ? `${es.length} update${es.length === 1 ? '' : 's'}, ${dur(mins)}` : 'Nothing released'}
                   >
                     {keyToDate(key).getDate()}
                   </button>
@@ -333,7 +337,25 @@ export default function Log({ projectId }: { projectId: string | null }) {
           </div>
         )}
 
-        {openDay && (
+        {/* A day with nothing released still answers. Silence reads as nothing
+            happened, and the true answer is almost always that the write-up is not
+            finished, which is worth saying out loud. */}
+        {openDay && (byDay[openDay] ?? []).length === 0 && (
+          <>
+            <div className="wl-dayhead">
+              <h4>
+                {keyToDate(openDay).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </h4>
+            </div>
+            <QuietDay date={keyToDate(openDay)} />
+          </>
+        )}
+
+        {openDay && (byDay[openDay] ?? []).length > 0 && (
           <>
             <div className="wl-dayhead">
               <h4>

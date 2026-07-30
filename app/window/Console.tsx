@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Attach from './Attach';
 import Files from './Files';
+import Overview from './Overview';
 import { ExampleInspiration, ExampleRequest } from './Mocks';
 
 // The project console: what we settled, what you want it to feel like, what you asked
@@ -19,7 +20,7 @@ import { ExampleInspiration, ExampleRequest } from './Mocks';
 // appear to them at once: gating someone's own pinned image behind approval would be
 // absurd, and they already know what they wrote.
 
-export type Face = 'files' | 'brand' | 'inspiration' | 'requests';
+export type Face = 'overview' | 'files' | 'brand' | 'inspiration' | 'requests';
 type Facet = 'color' | 'type' | 'rule' | 'asset';
 
 export type Note = {
@@ -41,6 +42,12 @@ export type Note = {
 // set: four small diagrams of what is behind the tab, which is enough to find the one
 // you want without reading, and quiet enough not to become decoration.
 const MARK: Record<Face, React.ReactNode> = {
+  overview: (
+    <>
+      <rect x="1.5" y="2.5" width="13" height="11" rx="1.2" />
+      <path d="M4.5 6h7M4.5 8.5h7M4.5 11h4" />
+    </>
+  ),
   files: (
     <>
       <rect x="2.5" y="4.5" width="8" height="9" rx="1" />
@@ -87,11 +94,12 @@ const lightOn = (h: string) => {
 };
 
 export default function Console({
-  projectId, projectName, staff, face, setFace,
+  projectId, projectName, staff, face, setFace, phase,
 }: {
   projectId: string;
   projectName: string;
   staff: boolean;
+  phase?: string | null;
   face: Face | null;
   setFace: (f: Face) => void;
 }) {
@@ -178,6 +186,9 @@ export default function Console({
   return (
     <div className="cn">
       <div className="cn-tabs">
+        {/* First, because it is the question someone arriving actually has. The log
+            answers what happened on a day; this answers what the thing is. */}
+        {tab('overview', 'The project', null, 'Everything built so far')}
         {tab('files', 'Files', fileCount, 'Everything the project holds')}
         {tab('brand', 'Brand', settledBrand.length, 'What we have settled')}
         {tab('inspiration', 'Inspiration', of('inspiration').length, 'What it should feel like')}
@@ -186,6 +197,10 @@ export default function Console({
 
       {face && missing && (
         <p className="cur-warn">The console table is not there yet. Run supabase/notes.sql, then reload.</p>
+      )}
+
+      {face === 'overview' && (
+        <Overview projectId={projectId} projectName={projectName} phase={phase} />
       )}
 
       {face === 'files' && <Files projectId={projectId} projectName={projectName} />}

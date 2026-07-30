@@ -145,14 +145,55 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true, entry: data });
 }
 
-/** Pull something back: hide it, or delete the released copy entirely. */
+/**
+ * Three jobs, told apart by what arrives.
+ *
+ *   { moves: [...] }        arrange a day: move blocks, change how long they read as taking
+ *   { id, withdraw: true }  pull a released entry back out of the Window
+ *   { id, visible }         show or hide one already released
+ *
+ * MOVES EDIT THE REPRESENTATIVE TIME, which is the only time a client ever sees. Pen is
+ * commissioned for projects, not employed by the hour, so a day is composed rather than
+ * recorded: the point is that a client can weigh a piece of work and answer it, in
+ * chunks they can keep up with, without being handed a record of when someone sat down.
+ *
+ * A move writes to work_log_raw AND to the released row if there is one, because
+ * otherwise arranging a day in the Atelier would change nothing a client sees and the
+ * arrangement would silently be a draft.
+ */
 export async function PATCH(request: Request) {
   if (!(await staffOnly())) return NextResponse.json({ error: 'Not permitted' }, { status: 403 });
 
   const body = await request.json().catch(() => null);
+  const db = admin();
+
+  if (Array.isArray(body?.moves)) {
+    const done: string[] = [];
+    for (const m of body.moves) {
+      if (!m?.id || !m?.started_at) continue;
+      const started = new Date(m.started_at);
+      if (Number.isNaN(started.getTime())) continue;
+
+      // Clamped, and the end recomputed from the start rather than trusted from the
+      // browser. A duration that disagrees with its own start and end renders fine and
+      // reads as nonsense, which is the worst kind of wrong.
+      const minutes = Math.max(5, Math.min(16 * 60, Math.round(Number(m.minutes) || 0)));
+      const patch = {
+        started_at: started.toISOString(),
+        ended_at: new Date(started.getTime() + minutes * 60000).toISOString(),
+        minutes,
+      };
+
+      const { error } = await db.from('work_log_raw').update(patch).eq('id', m.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      await db.from('work_log_released').update(patch).eq('raw_id', m.id);
+      done.push(m.id);
+    }
+    return NextResponse.json({ ok: true, moved: done.length });
+  }
+
   if (!body?.id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  const db = admin();
   if (body.withdraw) {
     const { error } = await db.from('work_log_released').delete().eq('id', body.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
