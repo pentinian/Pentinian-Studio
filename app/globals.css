@@ -143,10 +143,14 @@ a{color:inherit}
    on every one is precisely what prevents. The names live under the cursor. */
 .pal{display:flex; gap:0; border:1px solid var(--line); border-radius:9px;
   overflow:hidden; background:var(--paper)}
-.pal-c{flex:1 1 0; min-width:0; height:62px; border:0; padding:0; cursor:pointer;
+/* The inset ring rather than a border, so a swatch that is nearly the page still reads
+   as a swatch. Two of these five are Paper and Bone, and without it the row appears to
+   start a third of the way along. */
+.pal-c{flex:1 1 0; min-width:0; height:66px; border:0; padding:0; cursor:pointer;
   position:relative; display:grid; place-items:center; font-family:inherit;
+  box-shadow:inset 0 0 0 1px rgba(35,37,30,.07);
   transition:flex-grow .32s cubic-bezier(.2,.7,.3,1)}
-.pal-c + .pal-c{box-shadow:inset 1px 0 0 rgba(35,37,30,.08)}
+.pal-c + .pal-c{box-shadow:inset 0 0 0 1px rgba(35,37,30,.07), inset 1px 0 0 rgba(35,37,30,.1)}
 /* The hovered one takes a little more room. It is the only motion in here and it
    means something: this is the one you are reading about below. */
 .pal:hover .pal-c{flex-grow:.88}
@@ -186,10 +190,14 @@ a{color:inherit}
    so the specimen leads at a size you can actually judge and the label follows it. */
 .bx.spec{padding-top:0; overflow:hidden}
 .bx.spec::before{top:0; bottom:0}
-.bx-spec{display:block; font-size:56px; line-height:1; color:var(--ink); font-weight:400;
-  padding:16px 0 4px}
-.bx-set{display:block; font-size:12.5px; line-height:1.5; color:var(--ink-3);
-  padding-bottom:13px; border-bottom:1px solid var(--line); word-break:break-all}
+/* Selector written to beat `.bx > b`, which is (0,1,1) and was silently winning the
+   font-size out of its shorthand, so a specimen meant to be judged at 56px rendered at
+   body size. The same trap as --mono: a shorthand quietly overriding a longhand set
+   somewhere less specific. */
+.bx > b.bx-spec{display:block; font:400 56px/1 var(--serif); color:var(--ink);
+  padding:18px 0 6px; letter-spacing:-.01em}
+.bx-set{display:block; font-size:12.5px; line-height:1.55; color:var(--ink-3);
+  padding-bottom:14px; border-bottom:1px solid var(--line); word-break:break-all}
 .bx-name{display:block; margin-top:11px; font:500 9.5px/1 var(--mono); letter-spacing:.12em;
   text-transform:uppercase; color:var(--ink-2)}
 

@@ -68,9 +68,12 @@ export function ExampleInspiration() {
           </svg>
         </span>
         <figcaption>
+          {/* This has to describe what is actually drawn above it. The first version
+              praised having no frame while sitting inside one, which is the same fault
+              I would flag in anyone else's work. */}
           <p>
-            The way the picture runs right to the edge with no frame around it. Feels
-            calm rather than staged.
+            The way the image carries the whole card and the words sit quietly under it.
+            Calm rather than staged.
           </p>
           <span className="in-src">pinterest.com <i>&#8599;</i></span>
         </figcaption>
