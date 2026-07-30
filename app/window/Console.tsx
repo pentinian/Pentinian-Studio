@@ -142,36 +142,18 @@ export default function Console({
   const settledBrand = of('brand').filter((n) => !n.from_client);
   const suggestions = of('brand').filter((n) => n.from_client);
 
+  // Posts through a route rather than inserting directly, so the studio can be told
+  // something arrived. The insert still runs on the caller's own session inside that
+  // route, so Row Level Security gates it exactly as it did before: the route adds a
+  // notification, not an authority.
   async function add(row: Partial<Note> & { kind: Note['kind'] }) {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const payload: any = {
-      project_id: projectId,
-      from_client: true,
-      author_id: user?.id,
-      status: row.kind === 'request' || row.kind === 'brand' ? 'open' : 'none',
-      ...row,
-    };
-    const tryInsert = async (p: any) => (await supabase.from('project_notes').insert(p)).error;
-    let error = await tryInsert(payload);
-    // Degrade through the columns a pending migration might not have yet, rather than
-    // refusing to accept what someone just typed.
-    if (error && /parent_id/.test(error.message)) {
-      const { parent_id, ...lean } = payload;
-      error = await tryInsert(lean);
-    }
-    if (error && /facet/.test(error.message)) {
-      const { facet, parent_id, ...lean } = payload;
-      error = await tryInsert(lean);
-    }
-    if (error) {
-      // The one refusal worth translating: the database is still on the old policy that
-      // forbade a client writing to the brand face at all.
-      setMsg(/row-level security/i.test(error.message) && row.kind === 'brand'
-        ? 'Suggestions are not switched on yet. Run supabase/brand-feedback.sql.'
-        : error.message);
-      return false;
-    }
+    const res = await fetch('/api/console-note', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: projectId, ...row }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) { setMsg(d.error ?? 'That did not save. Try again in a moment.'); return false; }
     setMsg(''); load(); return true;
   }
 
