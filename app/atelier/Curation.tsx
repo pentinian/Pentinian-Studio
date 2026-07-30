@@ -55,6 +55,7 @@ export default function Curation({
   // thing it hides is the arrangement of a day, which is the thing actually being
   // composed. The list stays for searching and for anything with no time on it.
   const [view, setView] = useState<'days' | 'list'>('days');
+  const [when, setWhen] = useState({ date: '', time: '', minutes: 60 });
 
   const load = useCallback(async () => {
     const res = await fetch('/api/quarry', { cache: 'no-store' });
@@ -110,6 +111,32 @@ export default function Curation({
       area: e.area ?? '',
       gap_label: e.gap_label ?? '',
     });
+    // Prefilled from whatever the entry already carries, so the fields describe the
+    // block rather than sitting empty next to one that plainly has a time.
+    const d = e.started_at ? new Date(e.started_at) : null;
+    const p2 = (n: number) => String(n).padStart(2, '0');
+    setWhen({
+      date: d ? `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` : '',
+      time: d ? `${p2(d.getHours())}:${p2(d.getMinutes())}` : '',
+      minutes: e.minutes ?? 60,
+    });
+  }
+
+  async function saveWhen() {
+    if (!sel || !when.date || !when.time) return;
+    const [y, m, dd] = when.date.split('-').map(Number);
+    const [hh, mm] = when.time.split(':').map(Number);
+    const started = new Date(y, m - 1, dd, hh, mm);
+    setBusy(true); setMsg('');
+    const res = await fetch('/api/quarry', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ moves: [{ id: sel.id, started_at: started.toISOString(), minutes: when.minutes }] }),
+    });
+    const j = await res.json().catch(() => ({}));
+    setBusy(false); setOk(res.ok);
+    setMsg(res.ok ? 'Placed. The calendar and their Window both moved.' : `Could not place it: ${j.error}`);
+    if (res.ok) load();
   }
 
   const projectOf = (id: string | null) => projects.find((p) => p.id === id);
@@ -175,6 +202,8 @@ export default function Curation({
             onOpen={pickById}
             onSaved={load}
             selectedId={sel?.id ?? null}
+            projectId={projectId}
+            projectFacing={projectOf(projectId)?.client_facing ?? false}
           />
         )}
 
@@ -303,6 +332,31 @@ export default function Curation({
                   onChange={(e) => setDraft({ ...draft, gap_label: e.target.value })}
                 />
               </label>
+
+              {/* The same placement the board edits, reachable from the side you happen
+                  to be on. Dragging is faster for arranging a day; typing is exact when
+                  you know the answer. Both write through the same endpoint, so neither
+                  can drift from the other. */}
+              <div className="cur-time">
+                <span className="cur-time-l">Where it sits</span>
+                <div className="cur-time-row">
+                  <input type="date" value={when.date}
+                         onChange={(e) => setWhen({ ...when, date: e.target.value })} />
+                  <input type="time" value={when.time}
+                         onChange={(e) => setWhen({ ...when, time: e.target.value })} />
+                  <input type="number" min={5} step={5} value={when.minutes} title="minutes"
+                         onChange={(e) => setWhen({ ...when, minutes: Number(e.target.value) })} />
+                  <button className="mini-btn" disabled={busy || !when.date || !when.time}
+                          onClick={saveWhen}>
+                    Place it
+                  </button>
+                </div>
+                <span className="cn-note">
+                  This is the effort a client reads, not a record of when you sat down.
+                  Moving it here moves it on the calendar, and in their Window if it is
+                  already out.
+                </span>
+              </div>
             </div>
 
             <div className="cur-actions">

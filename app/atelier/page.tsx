@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import ConsoleDesk from './ConsoleDesk';
 import Curation from './Curation';
+import HomePage from './HomePage';
 import Passkeys from './Passkeys';
 import Replies from './Replies';
 import StudioHeader from '../StudioHeader';
@@ -28,7 +29,11 @@ type Proj = {
 };
 
 export default function AtelierPage() {
-  const [tab, setTab] = useState<'curation' | 'console' | 'replies' | 'site' | 'access'>('curation');
+  const [tab, setTab] = useState<'curation' | 'console' | 'replies' | 'site' | 'access' | 'home'>('curation');
+  // Two domains, not one list. Editing the public site is not managing a client's build,
+  // and putting both in the same rail meant every project row sat next to two controls
+  // that had nothing to do with any project.
+  const [domain, setDomain] = useState<'studio' | 'project'>('project');
   const [waiting, setWaiting] = useState(0);
   const [projects, setProjects] = useState<Proj[]>([]);
   const [orphaned, setOrphaned] = useState(0);
@@ -153,6 +158,23 @@ export default function AtelierPage() {
 
       <div className="wr-shell">
         <div className="rail">
+          <div className="rl-label">Pentinian</div>
+          {([
+            ['home', 'Home page'],
+            ['site', 'Site calibration'],
+            ['access', 'Access'],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              className={'ri' + (domain === 'studio' && tab === k ? ' sel' : '')}
+              onClick={() => { setDomain('studio'); setTab(k); }}
+            >
+              <span className="st" style={{ background: 'transparent' }} />
+              <span className="ri-name">{label}</span>
+            </button>
+          ))}
+
+          <div className="rl-sec" />
           <div className="rl-label">Projects · The Spine</div>
 
           {projects.length === 0 && <p className="rl-none">No projects yet.</p>}
@@ -161,7 +183,11 @@ export default function AtelierPage() {
             <button
               key={p.id}
               className={'ri' + (p.client_facing ? ' live' : '') + (p.id === selId ? ' sel' : '')}
-              onClick={() => setSelId(p.id)}
+              onClick={() => {
+                setSelId(p.id);
+                setDomain('project');
+                if (tab === 'site' || tab === 'access' || tab === 'home') setTab('curation');
+              }}
               title={p.client_facing ? 'Client-facing' : 'Internal'}
             >
               <span className="st" style={p.client_facing ? undefined : { background: 'transparent' }} />
@@ -188,8 +214,11 @@ export default function AtelierPage() {
 
         <div className="wr-main">
           <div className="wr-h">
-            <h2>{project?.name ?? 'Atelier'}</h2>
-            {project && (
+            <h2>{domain === 'studio' ? 'Pentinian' : project?.name ?? 'Atelier'}</h2>
+            {domain === 'studio' && (
+              <span className="wr-sub">The public site, and who can get in</span>
+            )}
+            {domain === 'project' && project && (
               <>
                 <button
                   className={'facing-tog' + (project.client_facing ? ' on' : '')}
@@ -210,23 +239,36 @@ export default function AtelierPage() {
             )}
           </div>
 
+          {/* The tabs belong to whichever domain is open. Showing a project's Curation
+              beside the site's Access meant five tabs of which two were about something
+              else entirely. */}
           <div className="tabs">
-            <button className={tab === 'curation' ? 'on' : ''} onClick={() => setTab('curation')}>
-              Curation
-            </button>
-            <button className={tab === 'console' ? 'on' : ''} onClick={() => setTab('console')}>
-              Console
-            </button>
-            <button className={tab === 'replies' ? 'on' : ''} onClick={() => setTab('replies')}>
-              Replies
-              {waiting > 0 && <span className="tab-n">{waiting}</span>}
-            </button>
-            <button className={tab === 'site' ? 'on' : ''} onClick={() => setTab('site')}>
-              The Window (site calibration)
-            </button>
-            <button className={tab === 'access' ? 'on' : ''} onClick={() => setTab('access')}>
-              Access
-            </button>
+            {domain === 'project' ? (
+              <>
+                <button className={tab === 'curation' ? 'on' : ''} onClick={() => setTab('curation')}>
+                  Curation
+                </button>
+                <button className={tab === 'console' ? 'on' : ''} onClick={() => setTab('console')}>
+                  Console
+                </button>
+                <button className={tab === 'replies' ? 'on' : ''} onClick={() => setTab('replies')}>
+                  Replies
+                  {waiting > 0 && <span className="tab-n">{waiting}</span>}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className={tab === 'home' ? 'on' : ''} onClick={() => setTab('home')}>
+                  Home page
+                </button>
+                <button className={tab === 'site' ? 'on' : ''} onClick={() => setTab('site')}>
+                  Site calibration
+                </button>
+                <button className={tab === 'access' ? 'on' : ''} onClick={() => setTab('access')}>
+                  Access
+                </button>
+              </>
+            )}
           </div>
 
           {msg && <p style={{ fontSize: 12.5, color: 'var(--sage-deep)', margin: '0 0 14px' }}>{msg}</p>}
@@ -240,6 +282,8 @@ export default function AtelierPage() {
           )}
 
           {tab === 'replies' && <Replies />}
+
+          {tab === 'home' && <HomePage />}
 
           {tab === 'access' && <Passkeys />}
 

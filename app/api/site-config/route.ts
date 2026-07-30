@@ -55,6 +55,27 @@ export async function GET() {
       // Only sent when it is genuinely an array. Anything else is treated as unset
       // by the Foyer, which then shows every card rather than guessing.
       public_projects: Array.isArray(c.public_projects) ? c.public_projects.map(String) : null,
+      // The words on the page, keyed by the data-cms attribute that carries them.
+      //
+      // Still assembled rather than spread, which is the rule this whole route exists
+      // to keep: a private field added to that JSON later cannot ride along to a public
+      // endpoint by accident. Values are coerced to strings and anything else is
+      // dropped, so a malformed record cannot put an object where text belongs.
+      content: (() => {
+        const raw = c.content;
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+        const out: Record<string, string> = {};
+        for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+          if (typeof v !== 'string') continue;
+          const text = v.trim();
+          // Empty means "leave the page as authored", which is what makes this safe:
+          // a blank record can never blank the site.
+          if (!text) continue;
+          if (!/^[a-z][a-z0-9]*(\.[a-z0-9]+)*$/i.test(k)) continue;
+          out[k] = text.slice(0, 4000);
+        }
+        return Object.keys(out).length ? out : null;
+      })(),
     },
     { headers: CORS }
   );

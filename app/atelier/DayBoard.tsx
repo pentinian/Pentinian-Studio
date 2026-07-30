@@ -19,6 +19,95 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 // arranging one day and a client sees one day. Hiding the released half would mean
 // composing around furniture you cannot see.
 
+// Writing one by hand. Not everything comes through Notion: a thing noticed mid
+// afternoon, a piece parked half finished, work that predates this system. An entry
+// written here is an ordinary Quarry row, with no notion_id, so no sync can key onto it
+// and overwrite what was typed. Time is optional, which is what makes it a draft.
+function Draft({
+  projectId, day, onDone,
+}: {
+  projectId: string | null;
+  day: string | null;
+  onDone: () => void;
+}) {
+  const [d, setD] = useState({
+    title: '', area: '', detail: '',
+    date: day ?? '', time: '', minutes: 60, timed: false,
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  const save = async () => {
+    if (!d.title.trim()) return setErr('It needs a title.');
+    if (!projectId) return setErr('Pick a project in the rail first.');
+    setBusy(true); setErr('');
+
+    let started_at: string | null = null;
+    if (d.timed && d.date && d.time) {
+      const [y, m, dd] = d.date.split('-').map(Number);
+      const [hh, mm] = d.time.split(':').map(Number);
+      started_at = new Date(y, m - 1, dd, hh, mm).toISOString();
+    }
+
+    const res = await fetch('/api/quarry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        create: {
+          project_id: projectId,
+          title: d.title.trim(),
+          area: d.area.trim(),
+          detail: d.detail.trim(),
+          started_at,
+          minutes: d.minutes,
+        },
+      }),
+    });
+    const j = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return setErr(j.error ?? 'That did not save.');
+    setD({ title: '', area: '', detail: '', date: day ?? '', time: '', minutes: 60, timed: false });
+    onDone();
+  };
+
+  return (
+    <div className="db-draft">
+      <input placeholder="What it is" value={d.title}
+             onChange={(e) => setD({ ...d, title: e.target.value })} />
+      <input placeholder="Which part of the build" value={d.area}
+             onChange={(e) => setD({ ...d, area: e.target.value })} />
+      <textarea rows={2} placeholder="Notes to yourself, optional" value={d.detail}
+                onChange={(e) => setD({ ...d, detail: e.target.value })} />
+
+      <label className="db-timed">
+        <input type="checkbox" checked={d.timed}
+               onChange={(e) => setD({ ...d, timed: e.target.checked })} />
+        Put it on the calendar
+      </label>
+
+      {d.timed && (
+        <div className="db-when-row">
+          <input type="date" value={d.date} onChange={(e) => setD({ ...d, date: e.target.value })} />
+          <input type="time" value={d.time} onChange={(e) => setD({ ...d, time: e.target.value })} />
+          <input type="number" min={5} step={5} value={d.minutes}
+                 onChange={(e) => setD({ ...d, minutes: Number(e.target.value) })} title="minutes" />
+        </div>
+      )}
+
+      {err && <p className="cur-msg bad">{err}</p>}
+      <div className="cn-add-row">
+        <button className="mini-btn pri" onClick={save} disabled={busy}>
+          {busy ? 'Saving…' : d.timed ? 'Add to the day' : 'Park it'}
+        </button>
+        <span className="cn-note">
+          It lands staged, like everything else. Nothing reaches a client without a
+          release.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export type Block = {
   id: string;
   title: string;
@@ -66,13 +155,16 @@ const offsetOf = (iso: string) => {
 };
 
 export default function DayBoard({
-  blocks, onOpen, onSaved, selectedId,
+  blocks, onOpen, onSaved, selectedId, projectId, projectFacing,
 }: {
   blocks: Block[];
   onOpen: (id: string) => void;
   onSaved: () => void;
   selectedId?: string | null;
+  projectId: string | null;
+  projectFacing?: boolean;
 }) {
+  const [drafting, setDrafting] = useState(false);
   const [cursor, setCursor] = useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, { started_at: string; minutes: number }>>({});
@@ -196,6 +288,28 @@ export default function DayBoard({
   const day = openDay ? byDay[openDay] ?? [] : [];
   const dayTotal = day.reduce((n, b) => n + (b.minutes ?? 0), 0);
   const dirty = Object.keys(edits).length;
+  const staged = day.filter((b) => !b.released);
+
+  async function releaseDay() {
+    if (!staged.length) return;
+    setBusy(true); setMsg('');
+    const res = await fetch('/api/quarry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ release_ids: staged.map((b) => b.id) }),
+    });
+    const d = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return setMsg(d.error ?? 'That did not go.');
+    // Partial success is reported as partial. A batch that half worked and said
+    // "Released" would be the worst possible answer.
+    setMsg(
+      d.failed
+        ? `${d.released} released, ${d.failed} refused. ${d.reason ?? ''}`
+        : `Released ${d.released} piece${d.released === 1 ? '' : 's'}. The whole day is in their Window now.`
+    );
+    onSaved();
+  }
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
   // Blocks that overlap share the width, so a double-booked hour is visible rather than
@@ -262,18 +376,42 @@ export default function DayBoard({
           })}
         </div>
 
-        {undated.length > 0 && (
-          <div className="db-undated">
-            <span className="db-undated-h">{undated.length} with no time on them</span>
-            {undated.map((b) => (
-              <button key={b.id} className="db-un" onClick={() => onOpen(b.id)}>{b.title}</button>
-            ))}
-            <p className="cn-note">
-              These carry no start, so they cannot be placed on a day. Give them a Start
-              in Notion and re-sync, or open one to release it as it is.
-            </p>
+        {/* The workbench. Not everything comes through Notion: a thing noticed mid
+            afternoon, a piece parked half finished, work done before this existed. This
+            is where those are written, and where the ones with no time on them wait. */}
+        <div className="db-bench">
+          <div className="db-bench-h">
+            <span>Workbench</span>
+            <button className="db-new" onClick={() => setDrafting((d) => !d)}>
+              {drafting ? 'Close' : 'Write one'}
+            </button>
           </div>
-        )}
+
+          {drafting && (
+            <Draft
+              projectId={projectId}
+              day={openDay}
+              onDone={() => { setDrafting(false); onSaved(); }}
+            />
+          )}
+
+          {undated.length > 0 && (
+            <>
+              <span className="db-undated-h">{undated.length} with no time yet</span>
+              {undated.map((b) => (
+                <button key={b.id} className="db-un" onClick={() => onOpen(b.id)}>{b.title}</button>
+              ))}
+              <p className="cn-note">
+                These carry no start, so they sit off the grid until one is given. Open
+                one to write its time, or release it as it stands.
+              </p>
+            </>
+          )}
+
+          {!drafting && undated.length === 0 && (
+            <p className="cn-note">Nothing waiting. Write one to park an idea or log something by hand.</p>
+          )}
+        </div>
       </div>
 
       <div className="db-day-wrap">
@@ -284,6 +422,21 @@ export default function DayBoard({
               : 'No day chosen'}
           </h4>
           {openDay && <span className="db-total">{day.length} block{day.length === 1 ? '' : 's'} · {dur(dayTotal)}</span>}
+          {/* A day is the unit a client reads, so it is a reasonable unit to release.
+              Held back until the arrangement is saved, because releasing a block you
+              have just dragged and not committed would publish the old position. */}
+          {openDay && staged.length > 0 && dirty === 0 && (
+            <button
+              className="mini-btn pri db-relday"
+              onClick={releaseDay}
+              disabled={busy || !projectFacing}
+              title={projectFacing
+                ? 'Pass everything staged on this day'
+                : 'This project is internal, so nothing can be released into it'}
+            >
+              {busy ? 'Releasing…' : `Release this day (${staged.length})`}
+            </button>
+          )}
           {dirty > 0 && (
             <div className="db-save">
               <button className="mini-btn" onClick={() => { setEdits({}); setMsg(''); }}>Discard</button>

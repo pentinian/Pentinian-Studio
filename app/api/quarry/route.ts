@@ -67,61 +67,142 @@ export async function POST(request: Request) {
   if (!(await staffOnly())) return NextResponse.json({ error: 'Not permitted' }, { status: 403 });
 
   const body = await request.json().catch(() => null);
-  if (!body?.raw_id) return NextResponse.json({ error: 'raw_id required' }, { status: 400 });
-
   const db = admin();
-  const { data: source, error: srcErr } = await db
-    .from('work_log_raw').select('*').eq('id', body.raw_id).single();
-  if (srcErr || !source) return NextResponse.json({ error: 'No such entry' }, { status: 404 });
 
-  if (!source.project_id) {
-    return NextResponse.json(
-      { error: 'That entry has no project, so it has nowhere to land. Link it in Notion first.' },
-      { status: 409 }
-    );
+  // ------------------------------------------------------------- write one by hand
+  //
+  // Not everything comes through Notion. A thing noticed mid-afternoon, a piece parked
+  // half-finished, work done before this system existed. An entry written here is an
+  // ordinary Quarry row in every respect: no notion_id, so no sync can key onto it and
+  // overwrite it, and it passes exactly the same gate as everything else.
+  if (body?.create) {
+    const c = body.create;
+    if (!c?.project_id) return NextResponse.json({ error: 'Pick a project first' }, { status: 400 });
+
+    const title = String(c.title ?? '').trim();
+    if (!title) return NextResponse.json({ error: 'It needs a title' }, { status: 400 });
+
+    // A draft may have no time at all: that is what makes it a draft. If it has one,
+    // the end is computed from the start rather than taken on trust.
+    let started: string | null = null;
+    let ended: string | null = null;
+    let minutes: number | null = null;
+    if (c.started_at) {
+      const s = new Date(c.started_at);
+      if (!Number.isNaN(s.getTime())) {
+        minutes = Math.max(5, Math.min(16 * 60, Math.round(Number(c.minutes) || 60)));
+        started = s.toISOString();
+        ended = new Date(s.getTime() + minutes * 60000).toISOString();
+      }
+    }
+
+    const { data, error } = await db.from('work_log_raw').insert({
+      project_id: c.project_id,
+      // Same shape the sync writes: title first, then the detail after a blank line.
+      body: [title, String(c.detail ?? '').trim()].filter(Boolean).join('\n\n'),
+      eli5: String(c.eli5 ?? '').trim() || null,
+      why: String(c.why ?? '').trim() || null,
+      area: String(c.area ?? '').trim() || null,
+      started_at: started,
+      ended_at: ended,
+      minutes,
+      logged_at: started ?? new Date().toISOString(),
+      notion_id: null,
+      client_visible: false,
+    }).select().single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, entry: data });
   }
 
-  // Never release into a project that is not client-facing. A Window is a promise
-  // to a person, and this is the last place to catch it going somewhere it should not.
+  // ------------------------------------------------------------ release a whole day
+  //
+  // Everything staged on one day, passed in one press. A day is the unit a client
+  // reads, so it is a reasonable unit to release. It refuses partially rather than
+  // silently: anything that cannot go reports why, and everything that can still goes,
+  // because failing the whole batch over one bad row would be worse.
+  if (Array.isArray(body?.release_ids)) {
+    const results: { id: string; ok: boolean; error?: string }[] = [];
+    for (const id of body.release_ids) {
+      const res = await releaseOne(db, { raw_id: id, visible: true });
+      results.push({ id, ok: res.ok, error: res.error });
+    }
+    const done = results.filter((r) => r.ok).length;
+    const failed = results.filter((r) => !r.ok);
+    return NextResponse.json({
+      ok: true,
+      released: done,
+      failed: failed.length,
+      // The first reason is enough: they are nearly always the same reason.
+      reason: failed[0]?.error ?? null,
+    });
+  }
+
+  if (!body?.raw_id) return NextResponse.json({ error: 'raw_id required' }, { status: 400 });
+
+  const res = await releaseOne(db, body);
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status ?? 500 });
+  return NextResponse.json({ ok: true, entry: res.entry });
+}
+
+/**
+ * Release one entry, or edit one already released.
+ *
+ * Pulled out of POST so that releasing a whole day runs the identical path rather than a
+ * second implementation of it. Two code paths that both publish to a client is exactly
+ * the shape where one of them quietly stops checking something the other checks.
+ */
+async function releaseOne(
+  db: ReturnType<typeof admin>,
+  body: any
+): Promise<{ ok: boolean; error?: string; status?: number; entry?: any }> {
+  const { data: source, error: srcErr } = await db
+    .from('work_log_raw').select('*').eq('id', body.raw_id).single();
+  if (srcErr || !source) return { ok: false, error: 'No such entry', status: 404 };
+
+  if (!source.project_id) {
+    return { ok: false, status: 409,
+      error: 'That entry has no project, so it has nowhere to land. Link it in Notion first.' };
+  }
+
+  // Never release into a project that is not client-facing. A Window is a promise to a
+  // person, and this is the last place to catch it going somewhere it should not.
   const { data: project } = await db
     .from('projects').select('id,client_facing,name').eq('id', source.project_id).single();
   if (!project?.client_facing) {
-    return NextResponse.json(
-      { error: `"${project?.name ?? 'That project'}" is internal. Mark it client-facing before releasing.` },
-      { status: 409 }
-    );
+    return { ok: false, status: 409,
+      error: `"${project?.name ?? 'That project'}" is internal. Mark it client-facing before releasing.` };
   }
 
+  // Releasing a whole day sends no text, so each field falls back to what the entry
+  // already holds rather than being blanked. A batch release must never quietly empty
+  // the words someone wrote.
+  const first = (source.body ?? '').split('\n')[0];
   const row = {
     project_id: source.project_id,
     raw_id: source.id,
     notion_id: source.notion_id,
-    title: (body.title ?? '').trim() || 'Work',
-    eli5: (body.eli5 ?? '').trim() || null,
-    why: (body.why ?? '').trim() || null,
+    title: (body.title ?? '').trim() || first.slice(0, 120) || 'Work',
+    eli5: (body.eli5 ?? source.eli5 ?? '').trim() || null,
+    why: (body.why ?? source.why ?? '').trim() || null,
     area: (body.area ?? source.area ?? '').trim() || null,
     started_at: source.started_at,
     ended_at: source.ended_at,
     minutes: source.minutes,
     shots: Array.isArray(body.shots) ? body.shots : source.shots ?? [],
     links: Array.isArray(body.links) ? body.links : source.links ?? [],
-    gap_label: (body.gap_label ?? '').trim() || null,
+    gap_label: (body.gap_label ?? source.gap_label ?? '').trim() || null,
     visible: body.visible !== false,
     release_at: body.release_at || null,
   };
 
   // Pressing Release twice edits rather than duplicates.
   //
-  // This was an upsert on notion_id, which never worked: the unique index on that
-  // column is PARTIAL (`where notion_id is not null`), and Postgres cannot infer a
-  // partial index from ON CONFLICT unless the statement repeats the predicate, which
-  // PostgREST does not emit. Every release failed with "no unique or exclusion
-  // constraint matching the ON CONFLICT specification", printed in small text under
-  // the buttons, so it read as nothing happening rather than as an error.
-  //
-  // Looking the row up first needs no schema change and no migration to run. It is
-  // two queries instead of one, at a volume where that costs nothing, and it also
-  // handles entries with no notion_id, which the upsert never could.
+  // This was an upsert on notion_id, which never worked: the unique index on that column
+  // is PARTIAL, and Postgres cannot infer a partial index from ON CONFLICT unless the
+  // statement repeats the predicate, which PostgREST does not emit. Every release failed
+  // with "no unique or exclusion constraint matching the ON CONFLICT specification",
+  // printed in small text under the buttons, so it read as nothing happening.
   const { data: existing } = await db
     .from('work_log_released')
     .select('id')
@@ -134,15 +215,15 @@ export async function POST(request: Request) {
       : db.from('work_log_released').insert(r).select().single();
 
   let { data, error } = await write(row);
-  // Same tolerance as the reads: if the links column has not been added yet, release
-  // the entry without it rather than refusing to publish anything at all.
+  // Same tolerance as the reads: if a column has not been added yet, release the entry
+  // without it rather than refusing to publish anything at all.
   if (error && /links|gap_label/.test(error.message)) {
     const { links, gap_label, ...lean } = row;
     ({ data, error } = await write(lean));
   }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, entry: data });
+  if (error) return { ok: false, error: error.message, status: 500 };
+  return { ok: true, entry: data };
 }
 
 /**
