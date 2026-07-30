@@ -1018,3 +1018,10 @@ body.dragging .db-block{cursor:grabbing}
 .ds-keys span:nth-child(3) i{background:var(--haze); opacity:.7}
 .ds-keys span:nth-child(4) i{background:var(--sage-soft)}
 .ds-keys b{font:500 11px/1 var(--mono); color:var(--ink-2)}
+
+/* Which build is on screen. Quiet, and the only thing in the header that is not about
+   the person using it, because the question it answers is only ever asked when
+   something looks wrong. */
+.tb-build{font:400 9.5px/1 var(--mono); color:var(--line-3); text-decoration:none;
+  padding:4px 6px; border:1px solid transparent; border-radius:5px}
+.tb-build:hover{color:var(--ink-3); border-color:var(--line)}

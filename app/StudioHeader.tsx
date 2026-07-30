@@ -21,6 +21,11 @@ function initialsFrom(name: string | null, email: string | null) {
   return (email ?? 'C').slice(0, 2).toUpperCase();
 }
 
+// Vercel sets this at build time when System Environment Variables are exposed, which
+// they are on this project. Read once at module scope: it cannot change while the page
+// is open, and if it is absent the stamp simply does not render.
+const sha = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? '';
+
 export default function StudioHeader({
   room,
   staff,
@@ -65,6 +70,23 @@ export default function StudioHeader({
       {children}
 
       <span className="tb-right">
+        {/* Which build you are actually looking at.
+            Three separate exchanges were spent on "it looks the same", every one of
+            them a browser holding a cached bundle or a deploy that had not finished.
+            The question was unanswerable from inside the page, so the page answers it:
+            hover for the full sha, and if it does not match what was just pushed, the
+            thing on screen is not the thing that was built. */}
+        {sha && (
+          <a
+            className="tb-build"
+            href={`https://github.com/pentinian/Pentinian-Studio/commit/${sha}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Deployed build ${sha}. If this is not the commit you just pushed, reload with Cmd+Shift+R.`}
+          >
+            {sha.slice(0, 7)}
+          </a>
+        )}
         {/* The address stays as the tooltip, so which account you are in is one hover
             away rather than gone. */}
         <span className="tb-who" title={email ?? undefined}>
