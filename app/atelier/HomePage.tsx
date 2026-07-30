@@ -24,37 +24,59 @@ type Field = {
   hint?: string;
   lines?: number;
   page: 'home' | 'pen';
+  /** Grouped so forty fields read as five short sections rather than one wall. */
+  group: string;
 };
+
+// The six work rows, which are the bulk of the home page. Four fields each: what kind of
+// thing it is, its name, where it stands, and the paragraph that does the actual work.
+const WORK = [
+  ['artinian', 'Artinian Gems'],
+  ['caveman', 'Caveman Gems'],
+  ['limicon', 'LimIcon'],
+  ['unimpact', 'UnImpact'],
+  ['studiolo', 'Studiolo'],
+  ['pentinian', 'Pentinian'],
+] as const;
+
+const workFields: Field[] = WORK.flatMap(([slug, name]) => [
+  { key: `work.${slug}.cat`, label: 'Category', page: 'home', group: name },
+  { key: `work.${slug}.title`, label: 'Name', page: 'home', group: name, lines: 2,
+    hint: 'Two lines. The second renders lighter.' },
+  { key: `work.${slug}.status`, label: 'Status', page: 'home', group: name },
+  { key: `work.${slug}.intro`, label: 'The paragraph', page: 'home', group: name, lines: 6 },
+]);
 
 const FIELDS: Field[] = [
   // ---- home
-  { key: 'hero.eyebrow', label: 'Eyebrow', page: 'home', hint: 'The small line above the headline' },
-  { key: 'hero.title', label: 'Headline', page: 'home', lines: 3,
+  { key: 'hero.eyebrow', label: 'Eyebrow', page: 'home', group: 'The opening', hint: 'The small line above the headline' },
+  { key: 'hero.title', label: 'Headline', page: 'home', group: 'The opening', lines: 3,
     hint: 'Line breaks are kept. The last line renders lighter.' },
-  { key: 'hero.lede', label: 'Opening paragraph', page: 'home', lines: 5 },
-  { key: 'work.heading', label: 'Selected Work heading', page: 'home' },
-  { key: 'work.note', label: 'Selected Work note', page: 'home', lines: 2 },
+  { key: 'hero.lede', label: 'Opening paragraph', page: 'home', group: 'The opening', lines: 5 },
+  { key: 'work.heading', label: 'Selected Work heading', page: 'home', group: 'The opening' },
+  { key: 'work.note', label: 'Selected Work note', page: 'home', group: 'The opening', lines: 2 },
 
   // ---- the waitlist
-  { key: 'wl.eyebrow', label: 'Waitlist eyebrow', page: 'home' },
-  { key: 'wl.title', label: 'Waitlist heading', page: 'home' },
-  { key: 'wl.lede', label: 'Waitlist intro', page: 'home', lines: 3 },
-  { key: 'wl.name', label: 'Name field', page: 'home' },
-  { key: 'wl.email', label: 'Email field', page: 'home' },
-  { key: 'wl.venture', label: 'Venture field', page: 'home' },
-  { key: 'wl.idea', label: 'Idea field', page: 'home' },
-  { key: 'wl.inspiration', label: 'Inspiration field', page: 'home' },
-  { key: 'wl.budget', label: 'Budget field', page: 'home' },
-  { key: 'wl.timeline', label: 'Timeline field', page: 'home' },
-  { key: 'wl.submit', label: 'Submit button', page: 'home' },
-  { key: 'wl.note', label: 'Note under the button', page: 'home' },
+  { key: 'wl.eyebrow', label: 'Waitlist eyebrow', page: 'home', group: 'The waitlist' },
+  { key: 'wl.title', label: 'Waitlist heading', page: 'home', group: 'The waitlist' },
+  { key: 'wl.lede', label: 'Waitlist intro', page: 'home', group: 'The waitlist', lines: 3 },
+  { key: 'wl.name', label: 'Name field', page: 'home', group: 'The waitlist' },
+  { key: 'wl.email', label: 'Email field', page: 'home', group: 'The waitlist' },
+  { key: 'wl.venture', label: 'Venture field', page: 'home', group: 'The waitlist' },
+  { key: 'wl.idea', label: 'Idea field', page: 'home', group: 'The waitlist' },
+  { key: 'wl.inspiration', label: 'Inspiration field', page: 'home', group: 'The waitlist' },
+  { key: 'wl.budget', label: 'Budget field', page: 'home', group: 'The waitlist' },
+  { key: 'wl.timeline', label: 'Timeline field', page: 'home', group: 'The waitlist' },
+  { key: 'wl.submit', label: 'Submit button', page: 'home', group: 'The waitlist' },
+  { key: 'wl.note', label: 'Note under the button', page: 'home', group: 'The waitlist' },
 
   // ---- the Pen page
-  { key: 'pen.eyebrow', label: 'Eyebrow', page: 'pen' },
-  { key: 'pen.title', label: 'Heading', page: 'pen', lines: 2 },
-  { key: 'pen.lede', label: 'Opening paragraph', page: 'pen', lines: 5 },
-  { key: 'pen.body', label: 'The rest', page: 'pen', lines: 10,
+  { key: 'pen.eyebrow', label: 'Eyebrow', page: 'pen', group: 'The Pen page' },
+  { key: 'pen.title', label: 'Heading', page: 'pen', group: 'The Pen page', lines: 2 },
+  { key: 'pen.lede', label: 'Opening paragraph', page: 'pen', group: 'The Pen page', lines: 5 },
+  { key: 'pen.body', label: 'The rest', page: 'pen', group: 'The Pen page', lines: 10,
     hint: 'A blank line starts a new paragraph.' },
+  ...workFields,
 ];
 
 const SITE = 'https://pentinian-site.vercel.app';
@@ -66,6 +88,9 @@ export default function HomePage() {
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [nudge, setNudge] = useState(0);
+  // One section open at a time. Everything expanded is the same wall the grouping was
+  // meant to remove.
+  const [openGroup, setOpenGroup] = useState<string | null>('The opening');
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -101,6 +126,11 @@ export default function HomePage() {
 
   const dirty = FIELDS.some((f) => (content[f.key] ?? '') !== (saved[f.key] ?? ''));
   const fields = FIELDS.filter((f) => f.page === page);
+  // Order preserved from the field list, so sections read down the page the way the
+  // page itself reads.
+  const groups = Array.from(
+    fields.reduce((m, f) => (m.set(f.group, [...(m.get(f.group) ?? []), f]), m), new Map<string, Field[]>())
+  );
 
   return (
     <div className="hp">
@@ -131,30 +161,50 @@ export default function HomePage() {
 
       <div className="hp-body">
         <div className="hp-fields">
-          {fields.map((f) => {
-            const changed = (content[f.key] ?? '') !== (saved[f.key] ?? '');
+          {groups.map(([name, gf]) => {
+            const on = openGroup === name;
+            // A group carrying an unsaved edit says so on its closed header, so a
+            // change cannot hide inside a collapsed section.
+            const touched = gf.filter((f) => (content[f.key] ?? '') !== (saved[f.key] ?? '')).length;
+            const written = gf.filter((f) => (content[f.key] ?? '').trim()).length;
             return (
-              <label className={'hp-f' + (changed ? ' changed' : '')} key={f.key}>
-                <span className="hp-l">
-                  {f.label}
-                  <i>{f.key}</i>
-                </span>
-                {f.lines && f.lines > 1 ? (
-                  <textarea
-                    rows={f.lines}
-                    value={content[f.key] ?? ''}
-                    placeholder="As written on the page"
-                    onChange={(e) => setContent({ ...content, [f.key]: e.target.value })}
-                  />
-                ) : (
-                  <input
-                    value={content[f.key] ?? ''}
-                    placeholder="As written on the page"
-                    onChange={(e) => setContent({ ...content, [f.key]: e.target.value })}
-                  />
-                )}
-                {f.hint && <small>{f.hint}</small>}
-              </label>
+              <section className={'hp-g' + (on ? ' open' : '')} key={name}>
+                <button className="hp-g-h" onClick={() => setOpenGroup(on ? null : name)}>
+                  <span className="hp-g-n">{name}</span>
+                  <span className="hp-g-m">
+                    {touched > 0 && <i className="hp-g-d">{touched} unsaved</i>}
+                    {written > 0 ? `${written} of ${gf.length} edited` : `${gf.length} fields`}
+                  </span>
+                  <span className="hp-g-c" aria-hidden="true">{on ? '−' : '+'}</span>
+                </button>
+
+                {on && gf.map((f) => {
+                  const changed = (content[f.key] ?? '') !== (saved[f.key] ?? '');
+                  return (
+                    <label className={'hp-f' + (changed ? ' changed' : '')} key={f.key}>
+                      <span className="hp-l">
+                        {f.label}
+                        <i>{f.key}</i>
+                      </span>
+                      {f.lines && f.lines > 1 ? (
+                        <textarea
+                          rows={f.lines}
+                          value={content[f.key] ?? ''}
+                          placeholder="As written on the page"
+                          onChange={(e) => setContent({ ...content, [f.key]: e.target.value })}
+                        />
+                      ) : (
+                        <input
+                          value={content[f.key] ?? ''}
+                          placeholder="As written on the page"
+                          onChange={(e) => setContent({ ...content, [f.key]: e.target.value })}
+                        />
+                      )}
+                      {f.hint && <small>{f.hint}</small>}
+                    </label>
+                  );
+                })}
+              </section>
             );
           })}
 

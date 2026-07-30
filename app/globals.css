@@ -1093,3 +1093,21 @@ body.dragging .db-un{cursor:grabbing}
   background:none; border:1px solid var(--line); border-radius:6px; padding:6px 9px;
   cursor:pointer; font-family:inherit}
 .hz-refresh:hover{color:var(--ink-2); border-color:var(--line-2)}
+
+/* grouped fields in the home page editor -------------------------------------- */
+/* Forty boxes open at once is the wall the grouping exists to remove, so one section
+   is open at a time and a closed one still reports what is inside it. */
+.hp-g{border:1px solid var(--line); border-radius:9px; background:var(--paper); overflow:hidden}
+.hp-g.open{border-color:var(--line-2)}
+.hp-g-h{display:flex; align-items:center; gap:12px; width:100%; padding:11px 13px;
+  background:none; border:0; cursor:pointer; font-family:inherit; text-align:left}
+.hp-g-n{font:400 13.5px/1.3 var(--serif); color:var(--ink)}
+.hp-g-m{margin-left:auto; display:flex; align-items:center; gap:8px;
+  font:400 9.5px/1 var(--mono); color:var(--ink-3)}
+/* An unsaved change must not be able to hide inside a collapsed section. */
+.hp-g-d{font-style:normal; color:var(--clay-deep); background:rgba(176,128,92,.12);
+  border-radius:999px; padding:3px 6px}
+.hp-g-c{font:400 13px/1 var(--sans); color:var(--ink-3); width:10px; text-align:center}
+.hp-g.open .hp-g-h{border-bottom:1px solid var(--line)}
+.hp-g .hp-f{padding:11px 13px 0}
+.hp-g .hp-f:last-of-type{padding-bottom:13px}
