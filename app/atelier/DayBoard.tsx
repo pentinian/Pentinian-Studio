@@ -145,6 +145,13 @@ const dur = (m: number) => {
   const h = Math.floor(m / 60), r = m % 60;
   return h ? (r ? `${h}h ${r}m` : `${h}h`) : `${r}m`;
 };
+/** The clock face for a minute offset inside a given day, for the drop preview. */
+const clockOf = (dayk: string, offset: number) => {
+  const d = keyToDate(dayk);
+  d.setHours(START_HOUR, 0, 0, 0);
+  return new Date(d.getTime() + offset * 60000)
+    .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+};
 const clock = (iso: string) =>
   new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
@@ -167,13 +174,20 @@ export default function DayBoard({
   const [drafting, setDrafting] = useState(false);
   const [cursor, setCursor] = useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
   const [openDay, setOpenDay] = useState<string | null>(null);
-  const [edits, setEdits] = useState<Record<string, { started_at: string; minutes: number }>>({});
+  // A null time is not missing data, it is a decision: the piece is real and where it
+  // sits has not been settled. That is the whole point of the holding area, so the edit
+  // shape has to be able to express it.
+  const [edits, setEdits] = useState<Record<string, { started_at: string | null; minutes: number }>>({});
+  // Which zone the pointer is over mid-drag, and where inside the grid it would land.
+  const [over, setOver] = useState<null | 'grid' | 'bench'>(null);
+  const [ghost, setGhost] = useState<number | null>(null);
+  const bench = useRef<HTMLDivElement>(null);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const grid = useRef<HTMLDivElement>(null);
   const drag = useRef<null | {
     id: string; mode: 'move' | 'size'; startY: number; baseOffset: number; baseMinutes: number;
-    moved: boolean;
+    moved: boolean; from: 'grid' | 'bench';
   }>(null);
 
   // An edited block reads from the draft, everything else from the server.
@@ -213,44 +227,89 @@ export default function DayBoard({
   }, [cursor.y, cursor.m, byDay]);
 
   // ---------------------------------------------------------------- dragging
+  //
+  // Two zones and both directions. Onto the grid gives a piece a time; onto the bench
+  // takes it away again. The zone is decided by where the pointer actually is rather
+  // than by which element the press started on, because a drag that begins in one place
+  // and ends in another is the entire gesture.
+  //
+  // HTML5 drag and drop is not used on purpose: it cannot show a live position inside
+  // an hour grid, its drag image is not stylable, and it does not fire on touch.
   useEffect(() => {
+    const zoneAt = (x: number, y: number): 'grid' | 'bench' | null => {
+      const g = grid.current?.getBoundingClientRect();
+      if (g && x >= g.left && x <= g.right && y >= g.top && y <= g.bottom) return 'grid';
+      const b = bench.current?.getBoundingClientRect();
+      if (b && x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) return 'bench';
+      return null;
+    };
+
+    // Minutes from the top of the grid for a viewport y, snapped and clamped.
+    const minutesAt = (y: number, len: number) => {
+      const g = grid.current?.getBoundingClientRect();
+      if (!g) return 0;
+      const raw = ((y - g.top) / HOUR) * 60;
+      const total = (END_HOUR - START_HOUR) * 60;
+      return Math.max(0, Math.min(total - len, Math.round(raw / SNAP) * SNAP));
+    };
+
     const move = (ev: PointerEvent) => {
       const d = drag.current;
-      if (!d || !openDay) return;
+      if (!d) return;
       const dy = ev.clientY - d.startY;
-      // Below the slop threshold this is still a click on its way to happening. Moving
-      // the block now would mean every attempt to open an entry nudged its time.
+      // Below the slop threshold this is still a click on its way to happening.
       if (!d.moved && Math.abs(dy) < SLOP) return;
       d.moved = true;
       document.body.classList.add('dragging');
-      const dm = Math.round((dy / HOUR) * 60 / SNAP) * SNAP;
 
-      if (d.mode === 'move') {
+      const zone = zoneAt(ev.clientX, ev.clientY);
+      setOver(zone);
+
+      // Resizing never leaves the block it started on.
+      if (d.mode === 'size') {
+        if (!openDay) return;
         const total = (END_HOUR - START_HOUR) * 60;
-        const offset = Math.max(0, Math.min(total - d.baseMinutes, d.baseOffset + dm));
-        const base = keyToDate(openDay);
-        base.setHours(START_HOUR, 0, 0, 0);
-        const started = new Date(base.getTime() + offset * 60000);
-        setEdits((e) => ({ ...e, [d.id]: { started_at: started.toISOString(), minutes: d.baseMinutes } }));
-      } else {
-        const total = (END_HOUR - START_HOUR) * 60;
+        const dm = Math.round((dy / HOUR) * 60 / SNAP) * SNAP;
         const minutes = Math.max(SNAP, Math.min(total - d.baseOffset, d.baseMinutes + dm));
         const base = keyToDate(openDay);
         base.setHours(START_HOUR, 0, 0, 0);
-        const started = new Date(base.getTime() + d.baseOffset * 60000);
-        setEdits((e) => ({ ...e, [d.id]: { started_at: started.toISOString(), minutes } }));
+        setEdits((e) => ({
+          ...e,
+          [d.id]: { started_at: new Date(base.getTime() + d.baseOffset * 60000).toISOString(), minutes: minutes },
+        }));
+        return;
+      }
+
+      if (zone === 'grid' && openDay) {
+        // Coming off the bench the cursor holds the top of the block; coming off the
+        // grid it holds wherever it was grabbed, so the offset is carried through.
+        const offset = d.from === 'bench'
+          ? minutesAt(ev.clientY, d.baseMinutes)
+          : Math.max(0, Math.min((END_HOUR - START_HOUR) * 60 - d.baseMinutes, d.baseOffset + Math.round((dy / HOUR) * 60 / SNAP) * SNAP));
+        setGhost(offset);
+        const base = keyToDate(openDay);
+        base.setHours(START_HOUR, 0, 0, 0);
+        setEdits((e) => ({
+          ...e,
+          [d.id]: { started_at: new Date(base.getTime() + offset * 60000).toISOString(), minutes: d.baseMinutes },
+        }));
+      } else if (zone === 'bench') {
+        setGhost(null);
+        setEdits((e) => ({ ...e, [d.id]: { started_at: null, minutes: d.baseMinutes } }));
       }
     };
+
     // A press that never moved is a click, and a click opens the entry. Reviewing and
-    // releasing is the thing done all day; rearranging is occasional. The first version
-    // had that backwards, with drag as the default gesture and opening behind a double
-    // click, which made the common act the hidden one.
+    // releasing is what happens all day; rearranging is occasional.
     const up = () => {
       const d = drag.current;
       drag.current = null;
       document.body.classList.remove('dragging');
+      setOver(null);
+      setGhost(null);
       if (d && !d.moved && d.mode === 'move') onOpen(d.id);
     };
+
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
@@ -259,17 +318,22 @@ export default function DayBoard({
   function grab(ev: React.PointerEvent, b: Block, mode: 'move' | 'size') {
     ev.preventDefault();
     ev.stopPropagation();
-    if (!b.started_at) return;
     drag.current = {
       id: b.id, mode, startY: ev.clientY,
-      baseOffset: offsetOf(b.started_at),
+      // A benched piece has no offset yet; the cursor decides it on the way over.
+      baseOffset: b.started_at ? offsetOf(b.started_at) : 0,
       baseMinutes: b.minutes ?? 60,
       moved: false,
+      from: b.started_at ? 'grid' : 'bench',
     };
   }
 
   async function save() {
-    const moves = Object.entries(edits).map(([id, v]) => ({ id, ...v }));
+    // started_at is sent explicitly, null included, because the endpoint distinguishes
+    // "put this back on the bench" from "this key was not in the payload".
+    const moves = Object.entries(edits).map(([id, v]) => ({
+      id, started_at: v.started_at, minutes: v.minutes,
+    }));
     if (!moves.length) return;
     setBusy(true); setMsg('');
     const res = await fetch('/api/quarry', {
@@ -281,7 +345,12 @@ export default function DayBoard({
     setBusy(false);
     if (!res.ok) return setMsg(d.error ?? 'That did not save.');
     setEdits({});
-    setMsg(`Moved ${d.moved} block${d.moved === 1 ? '' : 's'}. Anything already released moved in their Window too.`);
+    const parked = Object.values(edits).filter((v) => v.started_at === null).length;
+    setMsg(
+      parked
+        ? `Saved. ${parked} back on the workbench, the rest placed. Anything already released moved in their Window too.`
+        : `Moved ${d.moved} block${d.moved === 1 ? '' : 's'}. Anything already released moved in their Window too.`
+    );
     onSaved();
   }
 
@@ -376,12 +445,17 @@ export default function DayBoard({
           })}
         </div>
 
-        {/* The workbench. Not everything comes through Notion: a thing noticed mid
-            afternoon, a piece parked half finished, work done before this existed. This
-            is where those are written, and where the ones with no time on them wait. */}
-        <div className="db-bench">
+        {/* The workbench. A holding area, not a leftovers tray: things waiting for a
+            time, things pulled off a day to be reordered, and things written by hand
+            that have not been placed yet. Drag out of it onto an hour, or drag a block
+            off the day back into it. */}
+        <div
+          ref={bench}
+          className={'db-bench' + (over === 'bench' ? ' target' : '') + (drag.current ? ' armed' : '')}
+        >
           <div className="db-bench-h">
             <span>Workbench</span>
+            {undated.length > 0 && <i className="db-bench-n">{undated.length}</i>}
             <button className="db-new" onClick={() => setDrafting((d) => !d)}>
               {drafting ? 'Close' : 'Write one'}
             </button>
@@ -395,21 +469,31 @@ export default function DayBoard({
             />
           )}
 
-          {undated.length > 0 && (
-            <>
-              <span className="db-undated-h">{undated.length} with no time yet</span>
-              {undated.map((b) => (
-                <button key={b.id} className="db-un" onClick={() => onOpen(b.id)}>{b.title}</button>
-              ))}
-              <p className="cn-note">
-                These carry no start, so they sit off the grid until one is given. Open
-                one to write its time, or release it as it stands.
-              </p>
-            </>
-          )}
+          <div className="db-bench-list">
+            {undated.map((b) => (
+              <div
+                key={b.id}
+                className={'db-un' + (edits[b.id] ? ' moved' : '')}
+                onPointerDown={(e) => grab(e, b, 'move')}
+                title="Click to open it. Drag it onto an hour to give it a time."
+              >
+                <span className="db-un-grip" aria-hidden="true" />
+                <span className="db-un-t">{b.title}</span>
+                {b.area && <span className="db-un-a">{b.area}</span>}
+              </div>
+            ))}
+          </div>
 
-          {!drafting && undated.length === 0 && (
-            <p className="cn-note">Nothing waiting. Write one to park an idea or log something by hand.</p>
+          {undated.length === 0 && !drafting && (
+            <p className="cn-note">
+              Nothing waiting. Drag a block off the day to park it here, or write one.
+            </p>
+          )}
+          {undated.length > 0 && (
+            <p className="cn-note">
+              Waiting for a time. Drag one onto an hour to place it, or open it to
+              release it as it stands.
+            </p>
           )}
         </div>
       </div>
@@ -460,6 +544,13 @@ export default function DayBoard({
                 <span>{h % 12 === 0 ? 12 : h % 12}{h < 12 ? 'am' : 'pm'}</span>
               </div>
             ))}
+
+            {/* Where it would land. A drop with no preview is a guess. */}
+            {ghost != null && over === 'grid' && (
+              <div className="db-ghost" style={{ top: (ghost / 60) * HOUR }} aria-hidden="true">
+                <span>{clockOf(openDay!, ghost)}</span>
+              </div>
+            )}
 
             {day.map((b) => {
               const off = offsetOf(b.started_at!);

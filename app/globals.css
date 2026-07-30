@@ -1025,3 +1025,39 @@ body.dragging .db-block{cursor:grabbing}
 .tb-build{font:400 9.5px/1 var(--mono); color:var(--line-3); text-decoration:none;
   padding:4px 6px; border:1px solid transparent; border-radius:5px}
 .tb-build:hover{color:var(--ink-3); border-color:var(--line)}
+
+/* the workbench as a holding area ------------------------------------------- */
+/* Not a leftovers tray. Things waiting for a time, things pulled off a day to be
+   reordered, and things written by hand that have not been placed. Both directions:
+   drag out onto an hour, drag a block back in to park it. */
+.db-bench{margin-top:16px; padding:12px; border:1px dashed var(--line-2); border-radius:10px;
+  background:rgba(35,37,30,.012); transition:border-color .15s ease, background .15s ease}
+/* Armed while any drag is running, so the target is visible before the cursor
+   arrives rather than only once it is already there. */
+.db-bench.armed{border-color:var(--line-3)}
+.db-bench.target{border-color:var(--sage); background:rgba(126,146,112,.09)}
+.db-bench-n{font-style:normal; font:500 9px/1 var(--mono); color:var(--ink-3);
+  background:rgba(35,37,30,.06); border-radius:999px; padding:3px 6px}
+.db-bench-list{display:flex; flex-direction:column; gap:5px; margin:4px 0 8px}
+.db-un{display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  font:400 11.5px/1.35 var(--sans); color:var(--ink-2); background:var(--paper);
+  border:1px solid var(--line); border-left:2px solid var(--clay);
+  border-radius:6px; padding:8px 9px; cursor:grab; font-family:inherit;
+  user-select:none; touch-action:none}
+.db-un:hover{border-color:var(--line-2); color:var(--ink)}
+.db-un.moved{border-style:dashed; box-shadow:0 0 0 1px rgba(176,128,92,.5)}
+/* The grip is the affordance. Without it a card that can be dragged looks exactly
+   like a card that cannot. */
+.db-un-grip{flex:none; width:8px; height:12px; opacity:.4;
+  background-image:radial-gradient(circle, var(--ink-3) 1px, transparent 1px);
+  background-size:4px 4px}
+.db-un:hover .db-un-grip{opacity:.75}
+.db-un-t{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.db-un-a{flex:none; font:500 8px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-3)}
+body.dragging .db-un{cursor:grabbing}
+/* Where a drop would land. A drop with no preview is a guess. */
+.db-ghost{position:absolute; left:58px; right:6px; height:0; border-top:1.5px dashed var(--sage);
+  pointer-events:none; z-index:5}
+.db-ghost span{position:absolute; left:0; top:-8px; font:400 9px/1 var(--mono);
+  color:var(--sage-deep); background:var(--bone); padding:2px 5px; border-radius:4px}

@@ -251,7 +251,21 @@ export async function PATCH(request: Request) {
   if (Array.isArray(body?.moves)) {
     const done: string[] = [];
     for (const m of body.moves) {
-      if (!m?.id || !m?.started_at) continue;
+      if (!m?.id) continue;
+
+      // A null time is a decision, not missing data: the piece has been put back on the
+      // workbench because where it sits is not settled. Distinguished from an absent
+      // field so a partial payload cannot un-time something by omission.
+      if (m.started_at === null) {
+        const cleared = { started_at: null, ended_at: null, minutes: null };
+        const { error } = await db.from('work_log_raw').update(cleared).eq('id', m.id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        await db.from('work_log_released').update(cleared).eq('raw_id', m.id);
+        done.push(m.id);
+        continue;
+      }
+
+      if (!m.started_at) continue;
       const started = new Date(m.started_at);
       if (Number.isNaN(started.getTime())) continue;
 
