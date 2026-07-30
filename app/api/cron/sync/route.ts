@@ -2,9 +2,15 @@ import { NextResponse } from 'next/server';
 
 // The scheduled pull from Notion.
 //
-// Three times a day, at 6am, noon and 6pm Pacific, expressed in UTC because Vercel
-// crons run in UTC and do not follow daylight saving. The times drift by an hour twice
-// a year, which for filling a staging queue is nothing worth a timezone library.
+// Once a day at 6am Pacific, written as 14:00 UTC because Vercel crons run in UTC and
+// do not follow daylight saving. It drifts by an hour twice a year, which for filling a
+// staging queue is not worth a timezone library.
+//
+// Once and not three times because this account is on Vercel's Hobby plan, where cron
+// jobs are capped at two per project and fire once daily regardless of what the
+// expression asks for. Writing 0 14,20,2 * * * would have looked like three pulls and
+// delivered one, which is the kind of quiet mismatch that gets debugged a month later.
+// The button in the Atelier covers every case where waiting until tomorrow is too slow.
 //
 // It pulls. It does not release. That distinction is the whole system: the Quarry and
 // the staged console fill on their own, and a human still decides what a client sees.
