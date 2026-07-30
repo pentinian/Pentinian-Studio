@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import ConsoleDesk from './ConsoleDesk';
 import Curation from './Curation';
+import Health from './Health';
 import HomePage from './HomePage';
 import Passkeys from './Passkeys';
 import Replies from './Replies';
@@ -213,6 +214,10 @@ export default function AtelierPage() {
         </div>
 
         <div className="wr-main">
+          {/* Above everything, because a failure nobody is looking for has to be in the
+              way of what they are looking at. Quiet when things are fine. */}
+          <Health />
+
           <div className="wr-h">
             <h2>{domain === 'studio' ? 'Pentinian' : project?.name ?? 'Atelier'}</h2>
             {domain === 'studio' && (

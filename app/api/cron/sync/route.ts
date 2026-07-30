@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { record } from '@/lib/events';
 
 // The scheduled pull from Notion.
 //
@@ -46,10 +47,14 @@ export async function GET(request: Request) {
     // slow and unpleasant way to find out.
     if (!res.ok) console.error('scheduled sync failed', res.status, body);
     else console.log('scheduled sync', JSON.stringify(body));
+    // Separate from the sync's own record: "the schedule fired" and "the pull worked"
+    // are different questions, and a cron that stops firing is the quieter failure.
+    await record('cron', res.ok, res.ok ? undefined : `HTTP ${res.status}`, body);
 
     return NextResponse.json({ ok: res.ok, ...body }, { status: res.ok ? 200 : 502 });
   } catch (e: any) {
     console.error('scheduled sync threw', e?.message);
+    await record('cron', false, e?.message ?? 'threw');
     return NextResponse.json({ error: e?.message ?? 'sync failed' }, { status: 502 });
   }
 }

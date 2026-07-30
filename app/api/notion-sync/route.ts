@@ -1,5 +1,6 @@
 import { fetchWorkLog, fetchConsole, fetchPageTitle } from '@/lib/notion';
 import { createClient } from '@/lib/supabase/server';
+import { record } from '@/lib/events';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
   try {
     entries = await fetchWorkLog();
   } catch (e: any) {
+    await record('sync', false, e?.message ?? 'Notion pull failed');
     return NextResponse.json({ error: e?.message ?? 'Notion pull failed' }, { status: 502 });
   }
 
@@ -162,6 +164,16 @@ export async function POST(request: Request) {
       .upsert(consoleRows, { onConflict: 'notion_id' });
     if (error) consoleError = error.message;
   }
+
+  // Recorded so the Atelier can answer "when did this last work" without anyone
+  // reading a platform log. Failures below are already returned to the caller; this
+  // is about the ones nobody is watching, like the 6am cron.
+  await record('sync', !consoleError, consoleError ?? undefined, {
+    pulled: rows.length,
+    withProject: rows.filter((r) => r.project_id).length,
+    console: consoleRows.length,
+    unmatched: unmatched.size,
+  });
 
   return NextResponse.json({
     ok: true,

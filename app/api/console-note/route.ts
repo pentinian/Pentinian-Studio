@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { notifyOfNote } from '@/lib/notify';
+import { record } from '@/lib/events';
 import { NextResponse } from 'next/server';
 
 // A client writing into their own console.
@@ -96,7 +97,14 @@ export async function POST(request: Request) {
     title: data?.title ?? '',
     body: data?.body ?? '',
     about,
-  }).catch((e) => console.error('notifyOfNote failed', e));
+  })
+    .then(() => record('notify', true, 'console note', { kind: b.kind }))
+    .catch((e) => {
+      console.error('notifyOfNote failed', e);
+      // The note is saved either way. This only records that the studio was not told,
+      // which is exactly the failure that is otherwise invisible.
+      record('notify', false, e?.message ?? 'send failed', { kind: b.kind });
+    });
 
   return NextResponse.json({ ok: true, id: data?.id });
 }

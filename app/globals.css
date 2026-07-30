@@ -1061,3 +1061,35 @@ body.dragging .db-un{cursor:grabbing}
   pointer-events:none; z-index:5}
 .db-ghost span{position:absolute; left:0; top:-8px; font:400 9px/1 var(--mono);
   color:var(--sage-deep); background:var(--bone); padding:2px 5px; border-radius:4px}
+
+/* the health strip ----------------------------------------------------------- */
+/* One line saying whether the machinery is running. Quiet when it is: a display that
+   shouts while healthy gets tuned out, and then says nothing when it matters. */
+.hz{border:1px solid var(--line); border-radius:10px; background:var(--paper); margin-bottom:16px}
+.hz.bad{border-color:rgba(176,128,92,.45); background:rgba(176,128,92,.05)}
+.hz-h{display:flex; align-items:center; gap:11px; width:100%; padding:10px 14px;
+  background:none; border:0; cursor:pointer; font-family:inherit; text-align:left}
+.hz-dot{width:7px; height:7px; border-radius:50%; flex:none}
+.hz-dot.good{background:var(--sage)}
+.hz-dot.bad{background:var(--clay)}
+.hz-t{font:500 11.5px/1 var(--sans); color:var(--ink-2)}
+.hz.bad .hz-t{color:var(--clay-deep)}
+.hz-sum{margin-left:auto; font:400 10.5px/1 var(--mono); color:var(--ink-3)}
+.hz-caret{font:400 13px/1 var(--sans); color:var(--ink-3); width:12px; text-align:center}
+.hz-body{padding:2px 14px 12px; border-top:1px solid var(--line)}
+.hz-row{display:grid; grid-template-columns:110px 1fr; gap:12px; padding:8px 0;
+  border-bottom:1px solid var(--line)}
+.hz-row:last-of-type{border-bottom:0}
+.hz-k{font:500 9.5px/1.5 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+.hz-v{font:400 11.5px/1.5 var(--sans); color:var(--ink-2)}
+/* Never configured and broken look identical from outside and need opposite answers,
+   so they are drawn differently: off is grey and unremarkable, bad is clay. */
+.hz-row.s-good .hz-k{color:var(--sage-deep)}
+.hz-row.s-warn .hz-k{color:var(--clay-deep)}
+.hz-row.s-bad .hz-k{color:var(--clay-deep)}
+.hz-row.s-bad .hz-v{color:var(--clay-deep)}
+.hz-row.s-off{opacity:.65}
+.hz-refresh{margin-top:10px; font:400 10px/1 var(--mono); color:var(--ink-3);
+  background:none; border:1px solid var(--line); border-radius:6px; padding:6px 9px;
+  cursor:pointer; font-family:inherit}
+.hz-refresh:hover{color:var(--ink-2); border-color:var(--line-2)}
