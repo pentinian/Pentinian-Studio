@@ -6,6 +6,7 @@
 //   node scripts/verify-console.mjs                 everything
 //   node scripts/verify-console.mjs --part=1        schema, gate, who may write
 //   node scripts/verify-console.mjs --part=2        sync contract, storage, endpoint
+//   node scripts/verify-console.mjs --part=3        the day board: the Quarry, the move contract
 //   node scripts/verify-console.mjs --sweep         remove debris from a killed run
 //
 // Schema files are not evidence. Row Level Security was once believed to be on when it
@@ -338,6 +339,174 @@ try {
     }
   }
   } // end part 2
+
+  if (wants(3)) {
+  // ======================================================================= the day board
+  //
+  // The Quarry, the hour grid, the workbench and release-a-day were the last things here
+  // with no probe on them, and two of them write straight into what a client reads. The
+  // interface for them is a drag: it looks like it worked whether or not anything landed.
+
+  // ---------------------------------------------------------------- the door
+  //
+  // /api/quarry holds the service key. staffOnly() is the whole of its protection, and
+  // nothing tested that it was there. PATCH in particular rewrites released rows, so a
+  // regression here is not a leak, it is a stranger editing somebody's Window.
+  console.log('\nthe quarry endpoint');
+  {
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pentinian-studio.vercel.app';
+    const calls = [
+      ['GET', { method: 'GET' }],
+      ['POST', { method: 'POST', headers: { 'content-type': 'application/json' },
+                 body: JSON.stringify({ create: { project_id: pr.id, title: `${TAG} trespass` } }) }],
+      ['PATCH', { method: 'PATCH', headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ moves: [{ id: '00000000-0000-0000-0000-000000000000', started_at: new Date().toISOString(), minutes: 60 }] }) }],
+    ];
+    for (const [verb, init] of calls) {
+      const res = await fetch(`${base}/api/quarry`, { ...init, cache: 'no-store' });
+      if (res.status === 404) { console.log(`  skip /api/quarry ${verb} is not deployed yet`); continue; }
+      ok(`/api/quarry ${verb} refuses a caller with no session`,
+        res.status === 401 || res.status === 403, `got ${res.status}`);
+    }
+  }
+
+  // -------------------------------------------------------- the Quarry is staff only
+  //
+  // The route's comment says work_log_raw is revoked from the authenticated role outright,
+  // so that no browser JWT can read the unsanitised notes even if a policy were loosened
+  // by accident. That claim had never been checked against the live database.
+  console.log('\nthe quarry itself');
+  {
+    const { error } = await client.from('work_log_raw').select('id').limit(1);
+    refused('a client may NOT read the Quarry at all', error);
+  }
+  {
+    const { error } = await client.from('work_log_raw')
+      .insert({ project_id: pr.id, body: `${TAG} written by a client` });
+    refused('and may NOT write into it', error);
+  }
+
+  // ------------------------------------------------- what a released day looks like
+  console.log('\nwhat a client sees of a day');
+  const day = new Date(); day.setUTCHours(10, 0, 0, 0);
+  const at = (h, m = 60) => ({
+    started_at: new Date(day.getTime() + h * 3600000).toISOString(),
+    ended_at: new Date(day.getTime() + h * 3600000 + m * 60000).toISOString(),
+    minutes: m,
+  });
+
+  const { data: rawShown } = await db.from('work_log_raw').insert({
+    notion_id: `${TAG}-raw-shown`, project_id: pr.id, body: `${TAG} the piece they see`, ...at(0),
+  }).select().single();
+  const { data: rawParked } = await db.from('work_log_raw').insert({
+    notion_id: `${TAG}-raw-parked`, project_id: pr.id, body: `${TAG} on the workbench`,
+    started_at: null, ended_at: null, minutes: null,
+  }).select().single();
+
+  // Released the way releaseOne writes it, raw_id and all.
+  const { data: relShown } = await db.from('work_log_released').insert({
+    project_id: pr.id, raw_id: rawShown.id, title: `${TAG} the piece they see`,
+    eli5: 'out', visible: true, release_at: null, ...at(0),
+  }).select().single();
+  const { data: relHidden } = await db.from('work_log_released').insert({
+    project_id: pr.id, title: `${TAG} hidden`, eli5: 'hidden', visible: false, ...at(2),
+  }).select().single();
+  const { data: relLater } = await db.from('work_log_released').insert({
+    project_id: pr.id, title: `${TAG} scheduled`, eli5: 'later', visible: true,
+    release_at: new Date(Date.now() + 864e5).toISOString(), ...at(4),
+  }).select().single();
+
+  const clientSees = async () => {
+    const { data } = await client.from('work_log_released')
+      .select('id,title,started_at,minutes').eq('project_id', pr.id);
+    return data ?? [];
+  };
+  {
+    const seen = await clientSees();
+    const has = (id) => seen.some((r) => r.id === id);
+    ok('a released, visible entry reaches them', has(relShown.id));
+    ok('one hidden in the Atelier does NOT', !has(relHidden.id));
+    ok('and one scheduled for tomorrow does NOT either', !has(relLater.id));
+  }
+  {
+    // Scheduling has to actually arrive, or it is just a way of losing work.
+    await db.from('work_log_released')
+      .update({ release_at: new Date(Date.now() - 6e4).toISOString() }).eq('id', relLater.id);
+    const seen = await clientSees();
+    ok('once its moment passes, the scheduled one arrives', seen.some((r) => r.id === relLater.id));
+    await db.from('work_log_released')
+      .update({ release_at: new Date(Date.now() + 864e5).toISOString() }).eq('id', relLater.id);
+  }
+  {
+    const { data } = await stranger.from('work_log_released').select('id').eq('project_id', pr.id);
+    ok('a stranger sees none of the day', (data ?? []).length === 0);
+  }
+
+  // ----------------------------------------------------------- the move contract
+  //
+  // Arranging a day writes to work_log_raw AND to the released row, and the only thing
+  // joining the two is work_log_released.raw_id. If that is ever null, or the column is
+  // renamed, .eq('raw_id', id) matches nothing: PATCH still answers { moved: 1 }, the
+  // grid still shows the block where you dropped it, and the client's Window keeps the
+  // old time forever. A silent failure that looks exactly like a success is the reason
+  // this section exists, so the assertions below count affected rows rather than trusting
+  // a response.
+  console.log('\narranging a day');
+  {
+    const { data: back } = await db.from('work_log_released').select('raw_id').eq('id', relShown.id).single();
+    ok('a released entry remembers which Quarry row it came from', back?.raw_id === rawShown.id);
+  }
+  {
+    const moved = at(3, 90);
+    const { data: rawHit } = await db.from('work_log_raw').update(moved).eq('id', rawShown.id).select('id');
+    const { data: relHit } = await db.from('work_log_released').update(moved).eq('raw_id', rawShown.id).select('id');
+    ok('moving a block reaches the Quarry row', (rawHit ?? []).length === 1);
+    ok('and reaches the released row through raw_id', (relHit ?? []).length === 1);
+
+    const seen = (await clientSees()).find((r) => r.id === relShown.id);
+    ok('so the client sees the new time, not the old one', seen?.started_at === moved.started_at);
+    ok('and the new length with it', seen?.minutes === 90);
+  }
+  {
+    // Parking. A null time is a decision, and it has to reach the client too: a piece
+    // pulled back onto the workbench must not keep occupying an hour in their day.
+    const cleared = { started_at: null, ended_at: null, minutes: null };
+    await db.from('work_log_raw').update(cleared).eq('id', rawShown.id);
+    const { data: relHit } = await db.from('work_log_released')
+      .update(cleared).eq('raw_id', rawShown.id).select('id');
+    ok('parking a piece clears the released row too', (relHit ?? []).length === 1);
+    const seen = (await clientSees()).find((r) => r.id === relShown.id);
+    ok('so it stops occupying an hour in their day', seen?.started_at === null);
+  }
+  {
+    // The workbench. A row with no time is not missing data, it is a piece waiting to be
+    // placed, and it has to survive as such rather than being tidied away by a default.
+    const { data: parked } = await db.from('work_log_raw')
+      .select('started_at,minutes').eq('id', rawParked.id).single();
+    ok('an untimed entry keeps its null rather than acquiring a time',
+      parked?.started_at === null && parked?.minutes === null);
+  }
+
+  // ------------------------------------------------- where the client_facing guard is
+  //
+  // Not an assertion, because either answer is defensible and a test that fails when
+  // somebody tightens a policy is a test that teaches people to loosen it back. It is
+  // printed because it says which layer is load bearing, and that is worth knowing before
+  // anybody edits either one.
+  {
+    await db.from('projects').update({ client_facing: false }).eq('id', pr.id);
+    const seen = await clientSees();
+    await db.from('projects').update({ client_facing: true }).eq('id', pr.id);
+    console.log(
+      `  note   client_facing is enforced ${seen.length > 0
+        ? 'in the release route only: the policy would still show these rows, so the route is the guard'
+        : 'in the policy as well as the route, which is stricter than the route assumes'}`
+    );
+  }
+
+  await db.from('work_log_released').delete().eq('project_id', pr.id);
+  await db.from('work_log_raw').delete().eq('project_id', pr.id);
+  } // end part 3
 } catch (e) {
   fail += 1;
   console.log(`\n  FAIL threw: ${e.message}`);
@@ -345,6 +514,10 @@ try {
   // Teardown lives here so a timeout, a throw or a failed assertion still cleans up.
   // Test debris has twice been left in the real Atelier; never again.
   for (const id of made.projects) await db.from('project_notes').delete().eq('project_id', id);
+  // The work log tables too. Part 3 leaves rows in both, and a released row that outlived
+  // its project is precisely the kind of orphan that turns up months later in a Window.
+  for (const id of made.projects) await db.from('work_log_released').delete().eq('project_id', id);
+  for (const id of made.projects) await db.from('work_log_raw').delete().eq('project_id', id);
   for (const id of made.projects) await db.from('projects').delete().eq('id', id);
   for (const id of made.clients) await db.from('clients').delete().eq('id', id);
   for (const id of made.users) await db.auth.admin.deleteUser(id);
