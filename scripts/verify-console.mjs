@@ -416,6 +416,13 @@ try {
     release_at: new Date(Date.now() + 864e5).toISOString(), ...at(4),
   }).select().single();
 
+  // Compare instants, never the text of a timestamp. Date.toISOString() writes 13:00:00.000Z
+  // and PostgREST returns 13:00:00+00:00 for the same moment, so === on the strings reports
+  // a move that plainly landed as a move that did not. It failed in the safe direction, but
+  // a test that cries wolf gets muted, and a muted test is a test that is not there.
+  const sameMoment = (a, b) =>
+    a != null && b != null && new Date(a).getTime() === new Date(b).getTime();
+
   const clientSees = async () => {
     const { data } = await client.from('work_log_released')
       .select('id,title,started_at,minutes').eq('project_id', pr.id);
@@ -464,7 +471,7 @@ try {
     ok('and reaches the released row through raw_id', (relHit ?? []).length === 1);
 
     const seen = (await clientSees()).find((r) => r.id === relShown.id);
-    ok('so the client sees the new time, not the old one', seen?.started_at === moved.started_at);
+    ok('so the client sees the new time, not the old one', sameMoment(seen?.started_at, moved.started_at));
     ok('and the new length with it', seen?.minutes === 90);
   }
   {
