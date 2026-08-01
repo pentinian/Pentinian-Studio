@@ -27,9 +27,73 @@ async function staffOnly() {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-export async function GET() {
+const dur = (m: number) => {
+  const h = Math.floor(m / 60), r = m % 60;
+  return h && r ? `${h}h ${r}m` : h ? `${h}h` : `${r}m`;
+};
+
+export async function GET(request: Request) {
   if (!(await staffOnly())) return NextResponse.json({ error: 'Not permitted' }, { status: 403 });
   const db = admin();
+
+  // ?digest=projectId: prebuild this week's check-in from the released log. It
+  // returns a draft for the composer, never a send: client-facing words pass
+  // through hands in this studio, the same doctrine as the release gate.
+  const digestFor = new URL(request.url).searchParams.get('digest');
+  if (digestFor) {
+    const { data: proj } = await db
+      .from('projects')
+      .select('id,name,client_id, clients:client_id (name,email)')
+      .eq('id', digestFor)
+      .single();
+    if (!proj) return NextResponse.json({ error: 'No such project' }, { status: 404 });
+
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const { data: entries } = await db
+      .from('work_log_released')
+      .select('title,eli5,minutes,started_at,created_at,visible,release_at')
+      .eq('project_id', proj.id)
+      .gte('created_at', weekAgo)
+      .order('started_at', { ascending: true });
+
+    const live = (entries ?? []).filter(
+      (e) => e.visible && (!e.release_at || new Date(e.release_at).getTime() <= Date.now())
+    );
+    if (live.length === 0) {
+      return NextResponse.json({ error: 'Nothing released this week on that project.' }, { status: 404 });
+    }
+
+    const byDay = new Map<string, typeof live>();
+    for (const e of live) {
+      const d = new Date(e.started_at ?? e.created_at).toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric',
+      });
+      byDay.set(d, [...(byDay.get(d) ?? []), e]);
+    }
+    const total = live.reduce((n, e) => n + (e.minutes ?? 0), 0);
+
+    const client: any = proj.clients;
+    const first = (client?.name ?? '').trim().split(/\s+/)[0];
+    const lines: string[] = [];
+    lines.push(`Hello${first ? ' ' + first : ''}.`);
+    lines.push(`Here is the week at the studio on ${proj.name}.`);
+    for (const [day, es] of byDay) {
+      const mins = es.reduce((n, e) => n + (e.minutes ?? 0), 0);
+      lines.push(`${day}${mins ? ` · ${dur(mins)}` : ''}\n` + es.map((e) => `${e.title}${e.eli5 ? `: ${e.eli5}` : ''}`).join('\n'));
+    }
+    lines.push(`${total ? `About ${dur(total)} across ${byDay.size} day${byDay.size === 1 ? '' : 's'} this week. ` : ''}Every entry sits in your Window with the full notes and hours.`);
+    lines.push('Pen');
+
+    return NextResponse.json({
+      draft: {
+        to: client?.email ?? '',
+        client_id: proj.client_id,
+        project_id: proj.id,
+        subject: `The week at the studio: ${proj.name}`,
+        body: lines.join('\n\n'),
+      },
+    });
+  }
   const { data: ledger, error } = await db
     .from('mail_ledger')
     .select('id,kind,to_email,from_email,subject,body,status,scheduled_for,sent_at,created_at,error,client_id,project_id')

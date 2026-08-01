@@ -61,6 +61,9 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [sendOn, setSendOn] = useState('');
+  // A drafted check-in remembers whose week it is, so the ledger can file it.
+  const [draftIds, setDraftIds] = useState<{ client_id?: string | null; project_id?: string | null } | null>(null);
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
 
   const load = useCallback(async () => {
     const [m, p] = await Promise.all([
@@ -69,6 +72,8 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
     ]);
     if (m) setLedger(m.ledger ?? []);
     if (p) setPeople(p.people ?? []);
+    const pr = await fetch('/api/projects', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null));
+    if (pr) setProjects((pr.projects ?? []).filter((x: any) => x.client_facing).map((x: any) => ({ id: x.id, name: x.name })));
   }, []);
 
   useEffect(() => {
@@ -86,7 +91,8 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         to: toEmail,
-        client_id: chosen?.id ?? null,
+        client_id: chosen?.id ?? draftIds?.client_id ?? null,
+        project_id: draftIds?.project_id ?? null,
         subject,
         body,
         send_on: now ? null : sendOn || null,
@@ -102,7 +108,26 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
     setSubject('');
     setBody('');
     setSendOn('');
+    setDraftIds(null);
     load();
+  }
+
+  async function draftWeek(projectId: string) {
+    setMsg('');
+    setBusy(true);
+    const res = await fetch('/api/mail?digest=' + projectId, { cache: 'no-store' });
+    const j = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setMsg(j.error ?? 'Could not draft that week.');
+      return;
+    }
+    setToClient('');
+    setToFree(j.draft.to ?? '');
+    setSubject(j.draft.subject ?? '');
+    setBody(j.draft.body ?? '');
+    setDraftIds({ client_id: j.draft.client_id, project_id: j.draft.project_id });
+    setMsg('Drafted from the released log. Read it, shape it, then send or pile it.');
   }
 
   async function pileAction(m: Mail, action: 'cancel' | 'send-now') {
@@ -157,6 +182,16 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
           <span className="tag sage">Branded, from hello@pentinian.com</span>
         </div>
         <div className="wpb">
+          {projects.length > 0 && (
+            <div className="cor-checkins">
+              <span className="cor-or">Prebuild this week from the log:</span>
+              {projects.map((p) => (
+                <button key={p.id} className="mini-btn" disabled={busy} onClick={() => draftWeek(p.id)}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="cor-form">
             <select className="uline" value={toClient} onChange={(e) => setToClient(e.target.value)}>
               <option value="">To an address I type</option>

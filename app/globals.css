@@ -1166,3 +1166,5 @@ body.dragging .db-un{cursor:grabbing}
 .ppl-row{display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line)}
 .ppl-row:last-child{border-bottom:none}
 .ppl-who{flex:1; min-width:0; font:400 13px/1.4 var(--sans); color:var(--ink)}
+
+.cor-checkins{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px}
