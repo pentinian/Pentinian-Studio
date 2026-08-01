@@ -55,6 +55,16 @@ export default function AtelierPage() {
 
   const project = projects.find((p) => p.id === selId) ?? null;
 
+  // A badge that only appears after its tab has been opened is not a badge. Count the
+  // people at the door on arrival, from anywhere in the Atelier; WantsIn keeps the
+  // number honest once the tab itself is open.
+  useEffect(() => {
+    fetch('/api/access-request', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j && setKnocking(j.waiting ?? 0))
+      .catch(() => {});
+  }, []);
+
   // Note: the client is created inside functions (never at render), so nothing
   // touches Supabase during the static build, only at runtime in the browser.
   const load = useCallback(async () => {

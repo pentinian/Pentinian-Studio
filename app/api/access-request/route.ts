@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
-import { notifyOfAccessRequest } from '@/lib/notify';
+import { notifyOfAccessRequest, notifyOfDecline } from '@/lib/notify';
 import { record } from '@/lib/events';
 import { NextResponse } from 'next/server';
 
@@ -128,7 +128,18 @@ export async function PATCH(request: Request) {
       .from('access_requests')
       .update({ status: 'declined', decided_at: new Date().toISOString() })
       .eq('id', req.id);
-    return NextResponse.json({ ok: true });
+
+    // One kind line back, and the truth about whether it went out. Awaited rather
+    // than fire-and-forget because the panel reports the send, and a report should
+    // describe something that has happened, not something that was hoped.
+    let noted = false;
+    try {
+      noted = await notifyOfDecline({ email: req.email, name: req.name });
+    } catch (e: any) {
+      console.error('notifyOfDecline failed', e);
+      record('notify', false, e?.message ?? 'send failed', { kind: 'decline' });
+    }
+    return NextResponse.json({ ok: true, noted });
   }
 
   // ---- approve: the one place a stranger becomes a client -----------------------

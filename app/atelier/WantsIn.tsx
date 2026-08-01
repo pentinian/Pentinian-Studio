@@ -7,9 +7,9 @@ import { useCallback, useEffect, useState } from 'react';
 // Every ask from the login lands here, newest first, with whatever line they wrote
 // about themselves. Approve does the whole job in one press: the client row, their
 // project, and the invitation email, so the person goes from stranger to a Window of
-// their own without Pen touching anything else. Decline just closes the request;
-// nobody is emailed a rejection, because silence from a studio reads gentler than a
-// form letter.
+// their own without Pen touching anything else. Decline closes the request and sends
+// one kind not-right-now back, so nobody is left checking their inbox for a yes that
+// is not coming.
 
 type Req = {
   id: string;
@@ -65,15 +65,17 @@ export default function WantsIn({ onCount }: { onCount?: (n: number) => void }) 
       body: JSON.stringify({ id: r.id, action }),
     });
     setBusy(null);
+    const j = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
       setMsg(j.error ?? 'That did not go through.');
       return;
     }
     setMsg(
       action === 'approve'
         ? `${r.name || r.email} is in. Their invitation is on its way and their Window exists.`
-        : 'Closed.'
+        : j.noted
+          ? 'Closed, with a gentle not right now on its way to them.'
+          : 'Closed. The not-right-now note starts sending once Resend is set up.'
     );
     load();
   }

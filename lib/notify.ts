@@ -17,6 +17,9 @@ type Reply = {
   text: string;
 };
 
+/** STUDIO_NOTIFY_EMAIL may hold one address or a comma-separated few. */
+const recipients = (to: string) => to.split(',').map((s) => s.trim()).filter(Boolean);
+
 /** Escape anything that came from a person before it goes near HTML. */
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -49,7 +52,7 @@ export async function notifyOfReply(reply: Reply): Promise<void> {
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: process.env.STUDIO_NOTIFY_FROM ?? 'Pentinian <hello@pentinian.com>',
-      to: [to],
+      to: recipients(to),
       // Replies go to the inbox, not to a mailbox, so the studio answers in one place
       // and the client sees it where they wrote it.
       subject: `${project}: a reply from ${reply.from}`,
@@ -125,7 +128,7 @@ export async function notifyOfNote(note: Note): Promise<void> {
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: process.env.STUDIO_NOTIFY_FROM ?? 'Pentinian <hello@pentinian.com>',
-      to: [to],
+      to: recipients(to),
       subject: `${project}: ${esc(note.from)} ${what}`,
       html: `
         <p style="font:400 15px/1.6 system-ui,sans-serif;color:#23251E">
@@ -172,7 +175,7 @@ export async function notifyOfAccessRequest(knock: Knock): Promise<void> {
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: process.env.STUDIO_NOTIFY_FROM ?? 'Pentinian <hello@pentinian.com>',
-      to: [to],
+      to: recipients(to),
       subject: `Someone wants in: ${who}`,
       html: `
         <p style="font:400 15px/1.6 system-ui,sans-serif;color:#23251E">
@@ -187,4 +190,47 @@ export async function notifyOfAccessRequest(knock: Knock): Promise<void> {
   });
 
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+}
+
+// A declined ask gets one line back. Pen chose this over silence: a stranger who
+// hears nothing checks their inbox for a week, and a stranger who hears a kind no
+// is free to move on. This is the only email the studio ever sends to someone who
+// is not a client, so it stays short, warm, and final without being cold.
+//
+// Returns whether it actually went out, so the Atelier can tell Pen the truth
+// instead of implying a send that the missing Resend key quietly swallowed.
+
+type Farewell = { email: string; name?: string | null };
+
+export async function notifyOfDecline(farewell: Farewell): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return false;
+
+  const first = (farewell.name ?? '').trim().split(/\s+/)[0];
+  const hello = first ? `Hello ${esc(first)}.` : 'Hello.';
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: process.env.STUDIO_NOTIFY_FROM ?? 'Pentinian <hello@pentinian.com>',
+      to: [farewell.email],
+      subject: 'Pentinian: not right now',
+      html: `
+        <p style="font:400 15px/1.6 system-ui,sans-serif;color:#23251E">${hello}</p>
+        <p style="font:400 15px/1.6 system-ui,sans-serif;color:#23251E">
+          Thank you for knocking. Pentinian is a small studio on purpose, and right
+          now I do not have room to take this on, so I am closing your request rather
+          than leaving it open to wonder about.
+        </p>
+        <p style="font:400 15px/1.6 system-ui,sans-serif;color:#23251E">
+          Nothing about your ask was wrong. If the timing changes, you are welcome to
+          knock again.
+        </p>
+        <p style="font:400 15px/1.6 system-ui,sans-serif;color:#5B5C51">Pen</p>`,
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  return true;
 }
