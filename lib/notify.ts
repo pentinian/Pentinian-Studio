@@ -209,12 +209,18 @@ export async function notifyOfDecline(farewell: Farewell): Promise<boolean> {
   const first = (farewell.name ?? '').trim().split(/\s+/)[0];
   const hello = first ? `Hello ${esc(first)}.` : 'Hello.';
 
+  // hello@pentinian.com has no mailbox behind it, so a reply to the from address
+  // would fall into nothing. Replies are steered to the studio's real inbox: the
+  // first address in STUDIO_NOTIFY_EMAIL, the same place the knocks land.
+  const home = recipients(process.env.STUDIO_NOTIFY_EMAIL ?? '')[0];
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: process.env.STUDIO_NOTIFY_FROM ?? 'Pentinian <hello@pentinian.com>',
       to: [farewell.email],
+      ...(home ? { reply_to: home } : {}),
       subject: 'Pentinian: not right now',
       html: `
         <p style="font:400 15px/1.6 system-ui,sans-serif;color:#23251E">${hello}</p>
