@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { notifyOfAccessRequest, notifyOfDecline } from '@/lib/notify';
+import { logMail } from '@/lib/mail';
 import { record } from '@/lib/events';
 import { NextResponse } from 'next/server';
 
@@ -175,6 +176,9 @@ export async function PATCH(request: Request) {
     });
     if (invited?.user) {
       userId = invited.user.id;
+      logMail({ kind: 'invite', to_email: email, client_id: client.id,
+        subject: 'You have been invited', body: 'Supabase invitation email',
+        status: 'sent', sent_at: new Date().toISOString() });
     } else if (invErr) {
       // Probably already registered. Find rather than fail.
       const { data: list } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });

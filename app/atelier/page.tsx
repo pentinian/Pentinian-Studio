@@ -7,7 +7,7 @@ import Curation from './Curation';
 import Health from './Health';
 import HomePage from './HomePage';
 import Passkeys from './Passkeys';
-import WantsIn from './WantsIn';
+import Correspondence from './Correspondence';
 import Replies from './Replies';
 import StudioHeader from '../StudioHeader';
 
@@ -31,7 +31,7 @@ type Proj = {
 };
 
 export default function AtelierPage() {
-  const [tab, setTab] = useState<'curation' | 'console' | 'replies' | 'site' | 'access' | 'home'>('curation');
+  const [tab, setTab] = useState<'curation' | 'console' | 'replies' | 'site' | 'access' | 'home' | 'post'>('curation');
   // Two domains, not one list. Editing the public site is not managing a client's build,
   // and putting both in the same rail meant every project row sat next to two controls
   // that had nothing to do with any project.
@@ -175,6 +175,7 @@ export default function AtelierPage() {
           {([
             ['home', 'Home page'],
             ['site', 'Site calibration'],
+            ['post', 'Correspondence'],
             ['access', 'Access'],
           ] as const).map(([k, label]) => (
             <button
@@ -185,7 +186,7 @@ export default function AtelierPage() {
               <span className="st" style={{ background: 'transparent' }} />
               <span className="ri-name">{label}</span>
               {/* The knock is audible from the rail, not only once the tab is open. */}
-              {k === 'access' && knocking > 0 && <span className="ri-n">{knocking}</span>}
+              {k === 'post' && knocking > 0 && <span className="ri-n">{knocking}</span>}
             </button>
           ))}
 
@@ -201,7 +202,7 @@ export default function AtelierPage() {
               onClick={() => {
                 setSelId(p.id);
                 setDomain('project');
-                if (tab === 'site' || tab === 'access' || tab === 'home') setTab('curation');
+                if (tab === 'site' || tab === 'access' || tab === 'home' || tab === 'post') setTab('curation');
               }}
               title={p.client_facing ? 'Client-facing' : 'Internal'}
             >
@@ -283,9 +284,12 @@ export default function AtelierPage() {
                 <button className={tab === 'site' ? 'on' : ''} onClick={() => setTab('site')}>
                   Site calibration
                 </button>
+                <button className={tab === 'post' ? 'on' : ''} onClick={() => setTab('post')}>
+                  Correspondence
+                  {knocking > 0 && <span className="tab-n">{knocking}</span>}
+                </button>
                 <button className={tab === 'access' ? 'on' : ''} onClick={() => setTab('access')}>
                   Access
-                  {knocking > 0 && <span className="tab-n">{knocking}</span>}
                 </button>
               </>
             )}
@@ -305,11 +309,9 @@ export default function AtelierPage() {
 
           {tab === 'home' && <HomePage />}
 
+          {tab === 'post' && domain === 'studio' && <Correspondence onKnock={setKnocking} />}
           {tab === 'access' && (
-            <>
-              <WantsIn onCount={setKnocking} />
-              <Passkeys />
-            </>
+            <Passkeys />
           )}
 
           {tab === 'site' && (

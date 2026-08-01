@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { logMail } from './mail';
 
 // Telling the studio a client said something.
 //
@@ -238,5 +239,7 @@ export async function notifyOfDecline(farewell: Farewell): Promise<boolean> {
   });
 
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  logMail({ kind: 'decline', to_email: farewell.email, subject: 'Pentinian: not right now',
+    body: 'The kind no', status: 'sent', sent_at: new Date().toISOString() });
   return true;
 }

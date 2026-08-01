@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { record } from '@/lib/events';
+import { flushDue } from '@/lib/mail';
 
 // The scheduled pull from Notion.
 //
@@ -50,6 +51,18 @@ export async function GET(request: Request) {
     // Separate from the sync's own record: "the schedule fired" and "the pull worked"
     // are different questions, and a cron that stops firing is the quieter failure.
     await record('cron', res.ok, res.ok ? undefined : `HTTP ${res.status}`, body);
+
+    // The morning post: scheduled letters due by now go out with the same bell.
+    try {
+      const post = await flushDue();
+      if (post.sent || post.failed) {
+        console.log('morning post', JSON.stringify(post));
+        await record('notify', post.failed === 0, `morning post: ${post.sent} sent, ${post.failed} failed`);
+      }
+    } catch (e: any) {
+      console.error('morning post threw', e?.message);
+      await record('notify', false, e?.message ?? 'morning post threw');
+    }
 
     return NextResponse.json({ ok: res.ok, ...body }, { status: res.ok ? 200 : 502 });
   } catch (e: any) {
