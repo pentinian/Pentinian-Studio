@@ -1134,3 +1134,13 @@ body.dragging .db-un{cursor:grabbing}
   font:400 11.5px/1 var(--sans); color:var(--ink-3); text-decoration:underline;
   text-underline-offset:3px; font-family:inherit}
 .auth-flip:hover{color:var(--sage-deep)}
+
+/* ------------------------------------------------ the first-minute Window */
+/* A quiet action inside prose: underlined like a thought, not boxed like a
+   control. The fresh Window uses it to turn bare walls into a doorway. */
+.linklike{
+  background:none; border:none; padding:0; cursor:pointer;
+  font:inherit; color:var(--sage-deep, #5F7355);
+  text-decoration:underline; text-underline-offset:3px;
+}
+.linklike:hover{ color:var(--ink) }

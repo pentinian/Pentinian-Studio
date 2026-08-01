@@ -30,6 +30,19 @@ export default async function WindowPage({
   const project: any =
     (wanted && projects?.find((p: any) => p.id === wanted)) ?? projects?.[0] ?? null;
 
+  // Whether this Window has ever held work. A first visit after an invitation is a
+  // different moment from a quiet month, and the greeting should know which one it
+  // is standing in: "welcome back" to someone who has never been here reads as a
+  // room that was expecting somebody else.
+  let fresh = false;
+  if (project) {
+    const { count } = await supabase
+      .from('work_log_released')
+      .select('id', { count: 'exact', head: true })
+      .eq('project_id', project.id);
+    fresh = (count ?? 0) === 0;
+  }
+
   // The questions panel used to render here, saying work was awaiting approval above
   // buttons that did nothing. Removed: a client can now reply on any entry and raise a
   // request from the header, which are real. The questions and sessions tables remain
@@ -43,6 +56,7 @@ export default async function WindowPage({
       isAdmin={isAdmin}
       email={user?.email ?? null}
       name={(user?.user_metadata?.name as string) ?? null}
+      fresh={fresh}
     />
   );
 }

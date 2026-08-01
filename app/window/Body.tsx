@@ -22,12 +22,16 @@ export default function Body({
   isAdmin,
   email,
   name,
+  fresh,
 }: {
   project: Project | null;
   projects: Project[];
   isAdmin: boolean;
   email: string | null;
   name: string | null;
+  // True when this Window has never held released work: the first minute after an
+  // invitation, not a quiet month. The greeting changes register accordingly.
+  fresh?: boolean;
 }) {
   // Bumped rather than set, so pressing Contact twice reopens it after a close.
   const [openTo, setOpenTo] = useState<{ face: Face; n: number } | null>(null);
@@ -65,8 +69,33 @@ export default function Body({
       </StudioHeader>
 
       <div className="body">
-        <h2 className="hello">Welcome back.</h2>
-        <p className="sub">Here is where things stand on your build.</p>
+        {fresh ? (
+          <>
+            {/* The first minute. They followed an invitation into a room with bare
+                walls, and the room should say so before they wonder if something is
+                broken. Received, not confronted with an empty calendar. */}
+            <h2 className="hello">Welcome in.</h2>
+            <p className="sub">
+              This is your Window: the room where work on your project becomes
+              visible. The walls are bare because we have not begun. From the first
+              working session onward, everything I release lands below in plain
+              language, hour by hour.
+            </p>
+            <p className="sub">
+              <button
+                className="linklike"
+                onClick={() => setOpenTo((o) => ({ face: 'requests', n: (o?.n ?? 0) + 1 }))}
+              >
+                Start by telling me what brings you ↗
+              </button>
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="hello">Welcome back.</h2>
+            <p className="sub">Here is where things stand on your build.</p>
+          </>
+        )}
 
         <ProjectHead
           name={project?.name ?? 'Your project'}
