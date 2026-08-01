@@ -7,6 +7,7 @@
 //   node scripts/verify-console.mjs --part=1        schema, gate, who may write
 //   node scripts/verify-console.mjs --part=2        sync contract, storage, endpoint
 //   node scripts/verify-console.mjs --part=3        the day board: the Quarry, the move contract
+//   node scripts/verify-console.mjs --part=4        the door: access requests and approval
 //   node scripts/verify-console.mjs --sweep         remove debris from a killed run
 //
 // Schema files are not evidence. Row Level Security was once believed to be on when it
@@ -327,7 +328,7 @@ try {
   // -------------------------------------------------------- staff-only endpoints
   console.log('\nthe console endpoint');
   {
-    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pentinian-studio.vercel.app';
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://studio.pentinian.com';
     const res = await fetch(`${base}/api/console?project=${pr.id}`, { cache: 'no-store' });
     if (res.status === 404) {
       // Not a failure, and it must not be reported as a pass either. The route exists
@@ -354,7 +355,7 @@ try {
   // regression here is not a leak, it is a stranger editing somebody's Window.
   console.log('\nthe quarry endpoint');
   {
-    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pentinian-studio.vercel.app';
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://studio.pentinian.com';
     const calls = [
       ['GET', { method: 'GET' }],
       ['POST', { method: 'POST', headers: { 'content-type': 'application/json' },
@@ -514,6 +515,97 @@ try {
   await db.from('work_log_released').delete().eq('project_id', pr.id);
   await db.from('work_log_raw').delete().eq('project_id', pr.id);
   } // end part 3
+
+  if (wants(4)) {
+  // ============================================================ the door
+  //
+  // The access-request table is the only place strangers write, so the assertions are
+  // about containment: nobody reads it from a browser, asking twice leaves one row,
+  // and approval builds the entire chain a Window needs. Approval is exercised at the
+  // service level rather than through the endpoint, because the endpoint requires a
+  // real admin cookie; the endpoint's own gate is probed separately below.
+  console.log('\nthe door');
+  const knockEmail = `${TAG}-knock@example.invalid`;
+  {
+    const { error } = await client.from('access_requests').select('id').limit(1);
+    refused('a signed-in client may NOT read the requests', error);
+  }
+  {
+    const { error } = await stranger.from('access_requests')
+      .insert({ email: knockEmail });
+    refused('nor write one directly, even signed in', error);
+  }
+  {
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://studio.pentinian.com';
+    for (const [verb, init] of [
+      ['GET', { method: 'GET' }],
+      ['PATCH', { method: 'PATCH', headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ id: '00000000-0000-0000-0000-000000000000', action: 'approve' }) }],
+    ]) {
+      const res = await fetch(`${base}/api/access-request`, { ...init, cache: 'no-store' });
+      if (res.status === 404) { console.log(`  skip /api/access-request ${verb} not deployed yet`); continue; }
+      ok(`/api/access-request ${verb} refuses a caller with no session`,
+        res.status === 401 || res.status === 403, `got ${res.status}`);
+    }
+  }
+  {
+    // The public POST, twice. One row, same generic answer both times.
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://studio.pentinian.com';
+    const post = () => fetch(`${base}/api/access-request`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+      body: JSON.stringify({ email: knockEmail, name: 'vc probe', note: 'knock knock' }),
+    });
+    const r1 = await post();
+    if (r1.status === 404) {
+      console.log('  skip public POST not deployed yet');
+    } else {
+      ok('a stranger may knock', r1.ok, `got ${r1.status}`);
+      const r2 = await post();
+      ok('knocking twice answers the same', r2.ok, `got ${r2.status}`);
+      const { data: rows } = await db.from('access_requests')
+        .select('id').ilike('email', knockEmail);
+      ok('and leaves exactly one pending row', (rows ?? []).length === 1,
+        `found ${(rows ?? []).length}`);
+    }
+  }
+  {
+    // Approval, service level: the full chain a Window needs.
+    const { data: knock } = await db.from('access_requests')
+      .insert({ email: `${TAG}-approved@example.invalid`, name: `${TAG} tester` })
+      .select().single();
+
+    // Mirror the route's approve logic against the same database.
+    const email = knock.email.toLowerCase();
+    const { data: madeClient } = await db.from('clients')
+      .insert({ name: knock.name, email }).select('id').single();
+    const { data: newUser } = await db.auth.admin.createUser({ email, email_confirm: true });
+    if (newUser?.user) made.users.push(newUser.user.id);
+    await db.from('clients').update({ user_id: newUser.user.id }).eq('id', madeClient.id);
+    const { data: proj } = await db.from('projects')
+      .insert({ client_id: madeClient.id, name: knock.name, client_facing: true })
+      .select('id').single();
+    await db.from('access_requests')
+      .update({ status: 'approved', decided_at: new Date().toISOString() }).eq('id', knock.id);
+
+    // The person can now see their Window's world: released rows on their project.
+    const pw = `${TAG}-Aa1!longenough`;
+    await db.auth.admin.updateUserById(newUser.user.id, { password: pw });
+    const them = await asUser(email, pw);
+    await db.from('work_log_released').insert({
+      project_id: proj.id, title: `${TAG} first released piece`, eli5: 'hello', visible: true,
+    });
+    const { data: seen } = await them.from('work_log_released')
+      .select('id,title').eq('project_id', proj.id);
+    ok('an approved person sees their own Window', (seen ?? []).length === 1);
+    const { data: othersProjects } = await them.from('projects').select('id');
+    ok('and only their own project', (othersProjects ?? []).every((p) => p.id === proj.id));
+
+    await db.from('work_log_released').delete().eq('project_id', proj.id);
+    await db.from('projects').delete().eq('id', proj.id);
+    await db.from('clients').delete().eq('id', madeClient.id);
+  }
+  await db.from('access_requests').delete().ilike('email', `${TAG}%`);
+  } // end part 4
 } catch (e) {
   fail += 1;
   console.log(`\n  FAIL threw: ${e.message}`);

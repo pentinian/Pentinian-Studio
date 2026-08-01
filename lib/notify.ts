@@ -144,3 +144,47 @@ export async function notifyOfNote(note: Note): Promise<void> {
 
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
 }
+
+// ------------------------------------------------------------ the knock at the door
+//
+// Somebody at the login asked for access. This is the one notification that must not
+// wait for a glance at the Atelier, because the person on the other end is a prospect
+// standing at the door right now. Same no-op contract as everything above: if Resend
+// is not configured, the Wants In panel still carries the ask and nothing is lost but
+// speed.
+
+type Knock = {
+  email: string;
+  name?: string | null;
+  note?: string | null;
+};
+
+export async function notifyOfAccessRequest(knock: Knock): Promise<void> {
+  const key = process.env.RESEND_API_KEY;
+  const to = process.env.STUDIO_NOTIFY_EMAIL;
+  if (!key || !to) return;
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+  const who = knock.name ? `${knock.name} (${knock.email})` : knock.email;
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: process.env.STUDIO_NOTIFY_FROM ?? 'Pentinian <hello@pentinian.com>',
+      to: [to],
+      subject: `Someone wants in: ${who}`,
+      html: `
+        <p style="font:400 15px/1.6 system-ui,sans-serif;color:#23251E">
+          <b>${esc(who)}</b> asked for access to the studio.
+        </p>
+        ${knock.note ? `<blockquote style="font:400 15px/1.6 system-ui,sans-serif;color:#5B5C51;border-left:2px solid #7E9270;margin:0 0 18px;padding:2px 0 2px 14px">${esc(knock.note.slice(0, 600))}</blockquote>` : ''}
+        <p style="font:400 13px/1.6 system-ui,sans-serif;color:#8E8D7F">
+          Approve or decline under Access in the Atelier:
+          <a href="${site}/atelier">${site}/atelier</a>
+        </p>`,
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+}

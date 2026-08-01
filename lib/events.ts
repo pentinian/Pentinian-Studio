@@ -9,7 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 // It also tolerates the table not existing yet, so the app runs normally before
 // supabase/health.sql has been applied.
 
-export type EventKind = 'sync' | 'cron' | 'notify' | 'release';
+export type EventKind = 'sync' | 'cron' | 'notify' | 'release' | 'access';
 
 export async function record(
   kind: EventKind,

@@ -15,6 +15,13 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [pkBusy, setPkBusy] = useState(false);
+  // The other door: not a member yet, but would like to be. A small ask form that
+  // reaches Pen directly. Deliberately separate from the sign-in path so the refusal
+  // message can offer it without pretending the two are the same thing.
+  const [asking, setAsking] = useState(false);
+  const [askName, setAskName] = useState('');
+  const [askNote, setAskNote] = useState('');
+  const [asked, setAsked] = useState(false);
   // Only offer the passkey door where the browser can actually open it. An offer
   // that fails on click is worse than no offer.
   const [canPasskey, setCanPasskey] = useState(false);
@@ -100,17 +107,44 @@ function LoginForm() {
       const unknown = /signups not allowed|user not found|invalid/i.test(error.message);
       setError(
         unknown
-          ? 'That address is not on the list. If you should have access, reply to your last email from me.'
+          ? 'That address is not on the list yet. You can ask for access below and it reaches me directly.'
           : error.message
       );
+      if (unknown) setAsking(true);
     } else setSent(true);
+  }
+
+  async function ask(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    const res = await fetch('/api/access-request', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, name: askName, note: askNote }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error ?? 'That did not go through. Try once more.');
+      return;
+    }
+    setAsked(true);
   }
 
   return (
     <main className="auth-wrap">
       <div className="auth-card">
         <div className="eyebrow">Pentinian</div>
-        {sent ? (
+        {asked ? (
+          <>
+            <h1 className="auth-h">Asked.</h1>
+            <p className="auth-sub">
+              Your request reached me directly. If it's a fit, an invitation lands at{' '}
+              <b>{email}</b> and your own page opens the moment you follow it.
+            </p>
+          </>
+        ) : sent ? (
           <>
             <h1 className="auth-h">Check your email.</h1>
             <p className="auth-sub">
@@ -136,7 +170,7 @@ function LoginForm() {
               </>
             )}
 
-            <form onSubmit={submit} className="auth-form">
+            <form onSubmit={asking ? ask : submit} className="auth-form">
               <input
                 className="uline"
                 type="email"
@@ -145,11 +179,39 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
+              {asking && (
+                <>
+                  <input
+                    className="uline"
+                    placeholder="Your name"
+                    value={askName}
+                    maxLength={120}
+                    onChange={(e) => setAskName(e.target.value)}
+                  />
+                  <input
+                    className="uline"
+                    placeholder="One line on what brings you (optional)"
+                    value={askNote}
+                    maxLength={600}
+                    onChange={(e) => setAskNote(e.target.value)}
+                  />
+                </>
+              )}
               <button className="btn-line" type="submit" disabled={busy}>
-                {busy ? 'Sending…' : 'Send my link ↗'}
+                {busy ? 'Sending…' : asking ? 'Ask for access ↗' : 'Send my link ↗'}
               </button>
             </form>
             {error && <p className="auth-err">{error}</p>}
+            <button
+              className="auth-flip"
+              type="button"
+              onClick={() => {
+                setAsking((a) => !a);
+                setError('');
+              }}
+            >
+              {asking ? 'Have access already? Sign in instead' : 'New here? Ask for access'}
+            </button>
           </>
         )}
       </div>

@@ -7,6 +7,7 @@ import Curation from './Curation';
 import Health from './Health';
 import HomePage from './HomePage';
 import Passkeys from './Passkeys';
+import WantsIn from './WantsIn';
 import Replies from './Replies';
 import StudioHeader from '../StudioHeader';
 
@@ -36,6 +37,7 @@ export default function AtelierPage() {
   // that had nothing to do with any project.
   const [domain, setDomain] = useState<'studio' | 'project'>('project');
   const [waiting, setWaiting] = useState(0);
+  const [knocking, setKnocking] = useState(0);
   const [projects, setProjects] = useState<Proj[]>([]);
   const [orphaned, setOrphaned] = useState(0);
   const [selId, setSelId] = useState<string | null>(null);
@@ -271,6 +273,7 @@ export default function AtelierPage() {
                 </button>
                 <button className={tab === 'access' ? 'on' : ''} onClick={() => setTab('access')}>
                   Access
+                  {knocking > 0 && <span className="tab-n">{knocking}</span>}
                 </button>
               </>
             )}
@@ -290,7 +293,12 @@ export default function AtelierPage() {
 
           {tab === 'home' && <HomePage />}
 
-          {tab === 'access' && <Passkeys />}
+          {tab === 'access' && (
+            <>
+              <WantsIn onCount={setKnocking} />
+              <Passkeys />
+            </>
+          )}
 
           {tab === 'site' && (
             <div className="wp">
