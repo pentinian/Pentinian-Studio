@@ -184,6 +184,8 @@ export default function AtelierPage() {
             >
               <span className="st" style={{ background: 'transparent' }} />
               <span className="ri-name">{label}</span>
+              {/* The knock is audible from the rail, not only once the tab is open. */}
+              {k === 'access' && knocking > 0 && <span className="ri-n">{knocking}</span>}
             </button>
           ))}
 
