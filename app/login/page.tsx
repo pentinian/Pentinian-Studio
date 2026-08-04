@@ -133,16 +133,20 @@ function LoginForm() {
     setError('');
     setBusy(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: code.replace(/\D/g, ''),
-      type: 'email',
-    });
+    const token = code.replace(/\D/g, '');
+    // The same token is issued for both, but which name it answers to depends on
+    // how the link was requested. Trying the other one costs a round trip and
+    // saves a person being told a correct code is wrong.
+    let { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+    if (error) {
+      const second = await supabase.auth.verifyOtp({ email, token, type: 'magiclink' });
+      if (!second.error) error = null as any;
+    }
     setBusy(false);
     if (error) {
       setError(
-        /expired|invalid/i.test(error.message)
-          ? 'That code has expired or has already been used. Ask for another.'
+        /expired|invalid|token/i.test(error.message)
+          ? 'That code has expired or has already been used. Ask for another, or use the link in the same email.'
           : error.message
       );
       return;
