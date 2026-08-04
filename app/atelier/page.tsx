@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import ConsoleDesk from './ConsoleDesk';
 import Curation from './Curation';
+import Studies from './Studies';
 import Health from './Health';
 import HomePage from './HomePage';
 import Passkeys from './Passkeys';
@@ -31,7 +32,7 @@ type Proj = {
 };
 
 export default function AtelierPage() {
-  const [tab, setTab] = useState<'curation' | 'console' | 'replies' | 'site' | 'access' | 'home' | 'post'>('curation');
+  const [tab, setTab] = useState<'curation' | 'console' | 'replies' | 'site' | 'access' | 'home' | 'post' | 'studies'>('curation');
   // Two domains, not one list. Editing the public site is not managing a client's build,
   // and putting both in the same rail meant every project row sat next to two controls
   // that had nothing to do with any project.
@@ -202,7 +203,7 @@ export default function AtelierPage() {
               onClick={() => {
                 setSelId(p.id);
                 setDomain('project');
-                if (tab === 'site' || tab === 'access' || tab === 'home' || tab === 'post') setTab('curation');
+                if (tab === 'site' || tab === 'access' || tab === 'home' || tab === 'post' || tab === 'studies') setTab('curation');
               }}
               title={p.client_facing ? 'Client-facing' : 'Internal'}
             >
@@ -281,6 +282,9 @@ export default function AtelierPage() {
                 <button className={tab === 'home' ? 'on' : ''} onClick={() => setTab('home')}>
                   Home page
                 </button>
+                <button className={tab === 'studies' ? 'on' : ''} onClick={() => setTab('studies')}>
+                  Case studies
+                </button>
                 <button className={tab === 'site' ? 'on' : ''} onClick={() => setTab('site')}>
                   Site calibration
                 </button>
@@ -308,6 +312,8 @@ export default function AtelierPage() {
           {tab === 'replies' && <Replies />}
 
           {tab === 'home' && <HomePage />}
+
+          {tab === 'studies' && <Studies />}
 
           {tab === 'post' && domain === 'studio' && <Correspondence onKnock={setKnocking} />}
           {tab === 'access' && (
