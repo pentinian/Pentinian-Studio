@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { notifyOfLetter } from '@/lib/notify';
+import { record } from '@/lib/events';
 
 // Real letters arriving. Resend receives mail for pentinian.com and delivers
 // each one here as a signed webhook; verified, it becomes an inbound row in the
@@ -86,6 +88,21 @@ export async function POST(request: Request) {
     status: 'received',
     sent_at: new Date().toISOString(),
   });
+
+  // Told, not just filed. Resend needs its 200 whatever happens next, so the
+  // forward is awaited and swallowed rather than allowed to fail the delivery:
+  // a notification that did not send must never cost the studio the letter.
+  let name: string | null = null;
+  if (client?.id) {
+    const { data: c } = await db.from('clients').select('name').eq('id', client.id).maybeSingle();
+    name = c?.name ?? null;
+  }
+  try {
+    await notifyOfLetter({ from, subject, text, client: name });
+    record('notify', true, 'letter forwarded', { from });
+  } catch (e: any) {
+    record('notify', false, e?.message ?? 'letter forward failed', { from });
+  }
 
   return NextResponse.json({ ok: true });
 }

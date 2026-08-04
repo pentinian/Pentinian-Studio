@@ -64,6 +64,9 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
   // A drafted check-in remembers whose week it is, so the ledger can file it.
   const [draftIds, setDraftIds] = useState<{ client_id?: string | null; project_id?: string | null } | null>(null);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  // A ledger row that is open, and the answer being written under it.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [reply, setReply] = useState('');
 
   const load = useCallback(async () => {
     const [m, p] = await Promise.all([
@@ -147,10 +150,15 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
     load();
   }
 
-  async function personAction(p: Person, action: 'suspend' | 'restore') {
+  async function personAction(p: Person, action: 'suspend' | 'restore' | 'invite') {
     if (
       action === 'suspend' &&
       !window.confirm(`Suspend ${p.name}? They cannot sign in until restored. Their Window and history stay.`)
+    )
+      return;
+    if (
+      action === 'invite' &&
+      !window.confirm(`Invite ${p.name} at ${p.email}? They get an email that lets them into their own Window.`)
     )
       return;
     setBusy(true);
@@ -165,7 +173,39 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
       setMsg(j.error ?? 'That did not go through.');
       return;
     }
-    setMsg(action === 'suspend' ? `${p.name} is suspended. Restore any time.` : `${p.name} is back in.`);
+    setMsg(
+      action === 'suspend'
+        ? `${p.name} is suspended. Restore any time.`
+        : action === 'invite'
+          ? `Invited. ${p.name} has an email waiting, and their Window is ready the moment they follow it.`
+          : `${p.name} is back in.`
+    );
+    load();
+  }
+
+  // Answering where the letter is, rather than scrolling back up to the composer and
+  // retyping who it is to. It goes out as an ordinary letter, so it lands in the
+  // ledger under the same client and the thread stays whole.
+  async function answer(m: Mail) {
+    const to = (m.from_email ?? '').match(/<([^>]+)>/)?.[1] ?? m.from_email ?? '';
+    if (!to || !reply.trim()) return;
+    setBusy(true);
+    setMsg('');
+    const subj = /^re:/i.test(m.subject ?? '') ? m.subject! : `Re: ${m.subject ?? '(no subject)'}`;
+    const res = await fetch('/api/mail', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ to, subject: subj, body: reply, client_id: null, send_on: null }),
+    });
+    const j = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setMsg(j.error ?? 'That did not go through.');
+      return;
+    }
+    setMsg('Answered.');
+    setReply('');
+    setOpenId(null);
     load();
   }
 
@@ -303,12 +343,20 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
                   <button className="mini-btn" disabled={busy} onClick={() => personAction(p, 'restore')}>
                     Restore
                   </button>
+                ) : p.user_id ? (
+                  <button className="mini-btn warn" disabled={busy} onClick={() => personAction(p, 'suspend')}>
+                    Suspend
+                  </button>
                 ) : (
-                  p.user_id && (
-                    <button className="mini-btn warn" disabled={busy} onClick={() => personAction(p, 'suspend')}>
-                      Suspend
-                    </button>
-                  )
+                  /* Nobody should be stuck at "no sign-in yet" with nothing to press. */
+                  <button
+                    className="mini-btn pri"
+                    disabled={busy || !p.email}
+                    title={p.email ? undefined : 'No email address on file, so there is nowhere to send it'}
+                    onClick={() => personAction(p, 'invite')}
+                  >
+                    Let them in
+                  </button>
                 )}
               </span>
             </div>
@@ -324,19 +372,73 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
         </div>
         <div className="wpb">
           {flow.length === 0 && <p className="pk-none">Nothing yet. The first letter starts the record.</p>}
-          {flow.map((m) => (
-            <div key={m.id} className="led-row" title={m.error ?? undefined}>
-              <span className={'led-kind ' + m.status}>{KIND_LABEL[m.kind] ?? m.kind}</span>
-              <span className="led-what">
-                <b>{m.subject ?? '(no subject)'}</b>{' '}
-                <span className="led-to">{m.kind === 'inbound' ? `from ${m.from_email ?? '?'}` : `to ${m.to_email ?? '?'}`}</span>
-              </span>
-              <span className="led-when">
-                {m.status === 'failed' ? 'failed · ' : ''}
-                {when(m.sent_at ?? m.created_at)}
-              </span>
-            </div>
-          ))}
+          {flow.map((m) => {
+            const open = openId === m.id;
+            const from = (m.from_email ?? '').match(/<([^>]+)>/)?.[1] ?? m.from_email ?? '';
+            return (
+              <div key={m.id} className={'led-item' + (open ? ' open' : '')}>
+                {/* Every letter opens. What was said is the record, and a record you
+                    cannot read is a list of subject lines. */}
+                <button
+                  className="led-row"
+                  title={m.error ?? undefined}
+                  aria-expanded={open}
+                  onClick={() => { setOpenId(open ? null : m.id); setReply(''); }}
+                >
+                  <span className={'led-kind ' + m.status}>{KIND_LABEL[m.kind] ?? m.kind}</span>
+                  <span className="led-what">
+                    <b>{m.subject ?? '(no subject)'}</b>{' '}
+                    <span className="led-to">
+                      {m.kind === 'inbound' ? `from ${m.from_email ?? '?'}` : `to ${m.to_email ?? '?'}`}
+                    </span>
+                  </span>
+                  <span className="led-when">
+                    {m.status === 'failed' ? 'failed · ' : ''}
+                    {when(m.sent_at ?? m.created_at)}
+                  </span>
+                </button>
+
+                {open && (
+                  <div className="led-open">
+                    {m.body ? (
+                      <p className="led-body">{m.body}</p>
+                    ) : (
+                      <p className="led-body led-empty">Nothing was kept of this one beyond its subject.</p>
+                    )}
+                    {m.error && <p className="led-err">{m.error}</p>}
+
+                    {/* Only a letter from a person can be answered. The studio's own
+                        sends already have their reply sitting further up the list. */}
+                    {m.kind === 'inbound' && from && (
+                      <div className="led-reply">
+                        <span className="led-reply-to">Answering {from}</span>
+                        <textarea
+                          className="uline"
+                          rows={4}
+                          maxLength={8000}
+                          value={reply}
+                          placeholder="Blank lines make paragraphs. It goes out wrapped in the house look, like everything else."
+                          onChange={(e) => setReply(e.target.value)}
+                        />
+                        <div className="led-reply-do">
+                          <button
+                            className="mini-btn pri"
+                            disabled={busy || !reply.trim()}
+                            onClick={() => answer(m)}
+                          >
+                            {busy ? 'Sending…' : 'Send the answer'}
+                          </button>
+                          <button className="mini-btn" disabled={busy} onClick={() => setOpenId(null)}>
+                            Not now
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </>

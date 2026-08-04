@@ -12,6 +12,9 @@ function LoginForm() {
 
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  // The same email carries a code as well as a link. The code is the one that works
+  // when the link opens somewhere other than the browser you are actually using.
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [pkBusy, setPkBusy] = useState(false);
@@ -114,6 +117,41 @@ function LoginForm() {
     } else setSent(true);
   }
 
+  /* Signing in with the code instead of the link.
+   *
+   * A magic link is a session created in whichever browser opens it, and on a phone
+   * that is usually the mail app's own browser rather than the one the person came
+   * from. They follow the link, land signed in somewhere they will never return to,
+   * come back to their real browser and are still signed out. Then they ask for
+   * another link and it happens again.
+   *
+   * The code has no such problem: it is typed into the browser that is already open,
+   * so the session lands where the person actually is. Same token behind both, so
+   * whichever they use, the other simply stops working. */
+  async function verify(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code.replace(/\D/g, ''),
+      type: 'email',
+    });
+    setBusy(false);
+    if (error) {
+      setError(
+        /expired|invalid/i.test(error.message)
+          ? 'That code has expired or has already been used. Ask for another.'
+          : error.message
+      );
+      return;
+    }
+    // A full page load rather than a client transition, so the server sees the new
+    // cookie and the hallway can send us through the right door.
+    window.location.assign(next || '/');
+  }
+
   async function ask(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -148,8 +186,32 @@ function LoginForm() {
           <>
             <h1 className="auth-h">Check your email.</h1>
             <p className="auth-sub">
-              I sent a sign-in link to <b>{email}</b>. Open it on this device and you're in.
+              I sent it to <b>{email}</b>. Open the link on this device, or if it is easier,
+              type the code from the same email here.
             </p>
+            <form onSubmit={verify} className="auth-form">
+              <input
+                className="uline auth-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]*"
+                maxLength={6}
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                required
+              />
+              <button className="btn-line sage" disabled={busy || code.length < 6}>
+                {busy ? 'Checking…' : 'Sign in with the code'}
+              </button>
+            </form>
+            {error && <p className="auth-err">{error}</p>}
+            <button
+              className="auth-again"
+              onClick={() => { setSent(false); setCode(''); setError(''); }}
+            >
+              Send another
+            </button>
           </>
         ) : (
           <>

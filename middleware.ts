@@ -116,6 +116,18 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
+// The Atelier is one page that stays open. Once it has loaded it talks almost
+// entirely to /api, so excluding /api here meant a session was only ever renewed by
+// a full navigation, which can be hours apart or never. The token would quietly
+// expire under a page that looked fine, and the next thing you pressed threw you at
+// the login screen. Now every request refreshes it.
+//
+// Two routes stay out. /api/inbound is Resend delivering a letter and /api/cron is
+// the scheduler: both are machines carrying their own credentials, neither has a
+// session, and neither should be handed cookies. /auth stays out because the
+// callback is mid-exchange and must own its own cookie writes.
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|login|no-access|auth|api).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|login|no-access|auth|api/inbound|api/cron).*)',
+  ],
 };

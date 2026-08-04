@@ -157,6 +157,56 @@ export async function notifyOfNote(note: Note): Promise<void> {
 // is not configured, the Wants In panel still carries the ask and nothing is lost but
 // speed.
 
+// A real letter arriving. The ledger already has it either way, so this is only
+// about the delay before anyone looks: mail that lands in a room nobody is watching
+// is mail that goes unanswered for a day. Same posture as everything else here, it
+// fails quietly rather than costing the studio the letter.
+
+type Letter = {
+  from: string;
+  subject: string;
+  text: string;
+  client?: string | null;
+};
+
+export async function notifyOfLetter(letter: Letter): Promise<void> {
+  const key = process.env.RESEND_API_KEY;
+  const to = process.env.STUDIO_NOTIFY_EMAIL;
+  if (!key || !to) return;
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+  const bare = letter.from.match(/<([^>]+)>/)?.[1] ?? letter.from;
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: process.env.STUDIO_NOTIFY_FROM ?? 'Pentinian <hello@pentinian.com>',
+      to: recipients(to),
+      // Replying to the notification reaches the person who wrote, not the studio,
+      // which is the one thing a forwarded copy has to get right.
+      reply_to: bare,
+      subject: letter.client
+        ? `${letter.client} wrote: ${letter.subject}`
+        : `Letter from ${bare}: ${letter.subject}`,
+      html: `
+        <p style="font:400 13px/1.6 system-ui,sans-serif;color:#8E8D7F;margin:0 0 6px">
+          ${esc(letter.client ? `${letter.client} · ${bare}` : bare)}
+        </p>
+        <p style="font:400 16px/1.5 system-ui,sans-serif;color:#23251E;margin:0 0 16px">
+          <b>${esc(letter.subject)}</b>
+        </p>
+        <blockquote style="font:400 15px/1.65 system-ui,sans-serif;color:#5B5C51;border-left:2px solid #7E9270;margin:0 0 20px;padding:2px 0 2px 14px;white-space:pre-wrap">${esc(letter.text.slice(0, 1200))}${letter.text.length > 1200 ? '\n\n[...]' : ''}</blockquote>
+        <p style="font:400 13px/1.6 system-ui,sans-serif;color:#8E8D7F">
+          It is filed in the ledger, where you can read it whole and answer it:
+          <a href="${site}/atelier">${site}/atelier</a>
+        </p>`,
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+}
+
 type Knock = {
   email: string;
   name?: string | null;

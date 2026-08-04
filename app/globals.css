@@ -41,6 +41,13 @@ a{color:inherit}
 .auth-sub{font-size:14px; line-height:1.6; color:var(--ink-2); margin:0 0 22px}
 .auth-form{display:flex; flex-direction:column; gap:18px}
 .auth-err{margin:14px 0 0; font-size:13px; color:var(--clay-deep)}
+/* Six figures, spaced so they read as a code rather than as a number. */
+.auth-code{font:400 24px/1.2 var(--mono); letter-spacing:.34em; text-align:center; padding:12px 0}
+.auth-code::placeholder{color:var(--line-2); letter-spacing:.34em}
+.auth-again{margin:16px 0 0; padding:0; border:0; background:none; cursor:pointer; font-family:inherit;
+  font:400 12.5px/1 var(--sans); color:var(--ink-3); text-decoration:underline;
+  text-underline-offset:3px; text-decoration-color:var(--line-2)}
+.auth-again:hover{color:var(--ink-2)}
 
 /* top bar */
 .topbar{display:flex; align-items:center; gap:16px; padding:14px 26px; border-bottom:1px solid var(--line); background:var(--bone)}
@@ -1197,6 +1204,26 @@ body.dragging .db-un{cursor:grabbing}
 .led-to{color:var(--ink-3); font-size:11.5px}
 .led-when{flex:none; font:400 10.5px/1 var(--mono); color:var(--ink-3)}
 .led-do{flex:none; display:flex; gap:6px}
+/* A ledger row is a button now, because a record you cannot read is a list of
+   subject lines. The row keeps its shape; only the reach changes. */
+.led-item{border-bottom:1px solid var(--line)}
+.led-item:last-child{border-bottom:none}
+.led-item .led-row{width:100%; border-bottom:0; background:none; border:0; text-align:left;
+  cursor:pointer; font-family:inherit; padding-left:0; padding-right:0}
+.led-item .led-row:hover .led-what b{color:var(--sage-deep)}
+.led-item .led-row:focus-visible{outline:1px solid var(--sage); outline-offset:2px; border-radius:4px}
+.led-item.open .led-what{white-space:normal; overflow:visible; text-overflow:clip}
+.led-open{padding:2px 0 14px}
+/* The letter as it was written. Newlines are the author's, so they are kept. */
+.led-body{margin:0; padding:11px 13px; border-left:2px solid var(--line-2); border-radius:0 6px 6px 0;
+  background:var(--bone); font:400 13px/1.65 var(--sans); color:var(--ink-2); white-space:pre-wrap;
+  overflow-wrap:anywhere}
+.led-body.led-empty{color:var(--ink-3); font-style:italic; white-space:normal}
+.led-err{margin:8px 0 0; font:400 11.5px/1.5 var(--mono); color:var(--clay-deep)}
+.led-reply{display:flex; flex-direction:column; gap:7px; margin-top:13px; max-width:640px}
+.led-reply-to{font:500 10px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
+.led-reply textarea{resize:vertical}
+.led-reply-do{display:flex; gap:7px; margin-top:2px}
 .ppl-row{display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line)}
 .ppl-row:last-child{border-bottom:none}
 .ppl-who{flex:1; min-width:0; font:400 13px/1.4 var(--sans); color:var(--ink)}
