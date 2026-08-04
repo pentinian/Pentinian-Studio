@@ -82,8 +82,11 @@ export default function AtelierPage() {
     let alive = true;
     let last: number | null = null;
 
-    async function look() {
-      if (document.hidden) return;
+    async function look(force = false) {
+      // The first look always happens. Skipping it in a tab that opened in the
+      // background would mean no badge at all until something else woke it, and the
+      // number of letters waiting is true whether or not anyone is watching.
+      if (!force && document.hidden) return;
       try {
         const r = await fetch('/api/mail', { cache: 'no-store' });
         if (!r.ok || !alive) return;
@@ -96,13 +99,14 @@ export default function AtelierPage() {
       } catch {}
     }
 
-    look();
-    const id = setInterval(look, 60000);
-    document.addEventListener('visibilitychange', look);
+    look(true);
+    const id = setInterval(() => look(), 60000);
+    const onShow = () => look();
+    document.addEventListener('visibilitychange', onShow);
     return () => {
       alive = false;
       clearInterval(id);
-      document.removeEventListener('visibilitychange', look);
+      document.removeEventListener('visibilitychange', onShow);
     };
   }, []);
 
