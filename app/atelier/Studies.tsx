@@ -124,7 +124,26 @@ export default function Studies() {
   }, [slug, authored]);
 
   const fields = useMemo(() => fieldsFor(slug), [slug]);
-  const dirty = fields.some((f) => (content[f.key] ?? '') !== (saved[f.key] ?? ''));
+
+  /* Pending edits are counted across all five, not just the one on screen.
+   *
+   * Edits live in one map, so typing on Artinian and then opening Caveman leaves that
+   * sentence pending but out of sight. If Save only lit up for the study in front of
+   * you, that sentence would sit there looking saved and vanish on the next reload.
+   * So Save answers for everything pending, and any study holding an edit says so on
+   * its own chip. */
+  const pending = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const s of STUDIES) {
+      out[s.slug] = fieldsFor(s.slug)
+        .filter((f) => (content[f.key] ?? '') !== (saved[f.key] ?? '')).length;
+    }
+    return out;
+  }, [content, saved]);
+  const dirty = Object.values(pending).some((n) => n > 0);
+  const elsewhere = Object.entries(pending)
+    .filter(([s, n]) => n > 0 && s !== slug)
+    .reduce((a, [, n]) => a + n, 0);
   const groups = useMemo(
     () => Array.from(
       fields.reduce((m, f) => (m.set(f.group, [...(m.get(f.group) ?? []), f]), m), new Map<string, Field[]>())
@@ -148,15 +167,22 @@ export default function Studies() {
   }
 
   async function save() {
+    /* One press writes every pending edit, so the message answers for all of them
+       rather than only for the study on screen. */
+    const touchedSlugs = STUDIES.filter((s) => pending[s.slug] > 0);
+    const anyOut = touchedSlugs.some((s) => released[s.slug]);
     setBusy(true); setMsg('');
     const err = await writeConfig((cfg) => ({ ...cfg, content }));
     setBusy(false);
     if (err) return setMsg(`Could not save: ${err}`);
     setSaved(content);
+    const which = touchedSlugs.length > 1
+      ? `Saved across ${touchedSlugs.map((s) => s.name).join(', ')}.`
+      : 'Saved.';
     setMsg(
-      isOut
-        ? 'Saved. It is out, so the live study picks this up within a minute, since the config is cached at the edge.'
-        : 'Saved. Still in review, so only you can see it.'
+      anyOut
+        ? `${which} What is out picks this up within a minute, since the config is cached at the edge.`
+        : `${which} Still in review, so only you can see it.`
     );
   }
 
@@ -186,11 +212,12 @@ export default function Studies() {
           {STUDIES.map((s) => (
             <button
               key={s.slug}
-              className={'cd-face' + (s.slug === slug ? ' on' : '')}
+              className={'cd-face' + (s.slug === slug ? ' on' : '') + (pending[s.slug] ? ' pend' : '')}
               onClick={() => { setSlug(s.slug); setOpenGroup('The opening'); setMsg(''); }}
             >
               <i className={'cs-dot ' + (released[s.slug] ? 'out' : 'in')} />
               {s.name}
+              {pending[s.slug] > 0 && <em>{pending[s.slug]}</em>}
             </button>
           ))}
         </div>
@@ -200,7 +227,12 @@ export default function Studies() {
         </a>
 
         <div className="hp-save">
-          {dirty && <button className="mini-btn" onClick={() => setContent(saved)}>Discard</button>}
+          {elsewhere > 0 && (
+            <span className="cs-else">
+              {elsewhere} unsaved on {elsewhere === 1 ? 'another study' : 'other studies'}
+            </span>
+          )}
+          {dirty && <button className="mini-btn" onClick={() => setContent(saved)}>Discard all</button>}
           <button className="mini-btn pri" onClick={save} disabled={busy || !dirty}>
             {busy ? 'Saving…' : dirty ? 'Save' : 'Saved'}
           </button>

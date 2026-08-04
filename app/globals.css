@@ -426,6 +426,14 @@ body.dragging .db-block{cursor:grabbing}
 /* A long paragraph in a placeholder is a preview, so it should read as one. */
 .cs-fields textarea::placeholder{color:var(--ink-3); opacity:.62}
 .cs-fields input::placeholder{color:var(--ink-3); opacity:.62}
+/* A study holding an unsaved edit says so on its own chip, so nothing is pending
+   out of sight. */
+.cd-face.pend{border-color:var(--clay); border-style:dashed}
+.cd-face em{font-style:normal; font:500 9px/1 var(--mono); color:var(--clay-deep);
+  background:rgba(176,128,92,.16); border-radius:999px; padding:3px 5px}
+.cs-else{font:400 10.5px/1 var(--mono); color:var(--clay-deep); align-self:center}
+/* Nothing to save should not look like a button waiting to be pressed. */
+.hp-save .mini-btn:disabled{opacity:.45; cursor:default}
 .hp-frame{border:1px solid var(--line-2); border-radius:11px; overflow:hidden;
   background:var(--paper); aspect-ratio:16/13}
 .hp-frame iframe{width:100%; height:100%; border:0; display:block}
