@@ -161,8 +161,10 @@ const offsetOf = (iso: string) => {
   return (d.getHours() - START_HOUR) * 60 + d.getMinutes();
 };
 
+export type Edit = { started_at: string | null; minutes: number };
+
 export default function DayBoard({
-  blocks, onOpen, onSaved, selectedId, projectId, projectFacing,
+  blocks, onOpen, onSaved, selectedId, projectId, projectFacing, edits, setEdits,
 }: {
   blocks: Block[];
   onOpen: (id: string) => void;
@@ -170,14 +172,17 @@ export default function DayBoard({
   selectedId?: string | null;
   projectId: string | null;
   projectFacing?: boolean;
+  /* The pending edits are owned by Curation, not here. A block's time was
+     readable in three places and writable in two, and the two writers each kept
+     their own copy, so moving a block on the calendar and then placing the same
+     block from the curator left the two disagreeing with no way to tell which
+     was true. One owner, both surfaces reading it. */
+  edits: Record<string, Edit>;
+  setEdits: React.Dispatch<React.SetStateAction<Record<string, Edit>>>;
 }) {
   const [drafting, setDrafting] = useState(false);
   const [cursor, setCursor] = useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
   const [openDay, setOpenDay] = useState<string | null>(null);
-  // A null time is not missing data, it is a decision: the piece is real and where it
-  // sits has not been settled. That is the whole point of the holding area, so the edit
-  // shape has to be able to express it.
-  const [edits, setEdits] = useState<Record<string, { started_at: string | null; minutes: number }>>({});
   // Which zone the pointer is over mid-drag, and where inside the grid it would land.
   const [over, setOver] = useState<null | 'grid' | 'bench'>(null);
   const [ghost, setGhost] = useState<number | null>(null);

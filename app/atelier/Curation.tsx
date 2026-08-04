@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import DayBoard, { type Block } from './DayBoard';
+import DayBoard, { type Block, type Edit } from './DayBoard';
 
 // The gate. Left: everything the Quarry holds. Right: exactly what the client
 // would read if you released it, rendered with the same markup the Window uses,
@@ -56,6 +56,10 @@ export default function Curation({
   // composed. The list stays for searching and for anything with no time on it.
   const [view, setView] = useState<'days' | 'list'>('days');
   const [when, setWhen] = useState({ date: '', time: '', minutes: 60 });
+  /* A block's time is one value. The calendar edits it by dragging and this panel
+     edits it by typing, so both have to read and write the same pending state or
+     they will show two different answers for the same block. */
+  const [edits, setEdits] = useState<Record<string, Edit>>({});
 
   const load = useCallback(async () => {
     const res = await fetch('/api/quarry', { cache: 'no-store' });
@@ -113,12 +117,17 @@ export default function Curation({
     });
     // Prefilled from whatever the entry already carries, so the fields describe the
     // block rather than sitting empty next to one that plainly has a time.
-    const d = e.started_at ? new Date(e.started_at) : null;
+    // If the calendar has this block moved but not yet saved, that is what the eye
+    // is looking at, so these fields describe it rather than the stored value.
+    const pending = edits[e.id];
+    const iso = pending ? pending.started_at : e.started_at;
+    const mins = pending ? pending.minutes : (e.minutes ?? 60);
+    const d = iso ? new Date(iso) : null;
     const p2 = (n: number) => String(n).padStart(2, '0');
     setWhen({
       date: d ? `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` : '',
       time: d ? `${p2(d.getHours())}:${p2(d.getMinutes())}` : '',
-      minutes: e.minutes ?? 60,
+      minutes: mins,
     });
   }
 
@@ -136,7 +145,13 @@ export default function Curation({
     const j = await res.json().catch(() => ({}));
     setBusy(false); setOk(res.ok);
     setMsg(res.ok ? 'Placed. The calendar and their Window both moved.' : `Could not place it: ${j.error}`);
-    if (res.ok) load();
+    if (res.ok) {
+      // Stored now, so any pending calendar edit for this block is spent. Left in
+      // place it would keep overriding the value that was just written and the
+      // calendar would go on showing the old time.
+      setEdits((e) => { const n = { ...e }; delete n[sel.id]; return n; });
+      load();
+    }
   }
 
   const projectOf = (id: string | null) => projects.find((p) => p.id === id);
@@ -204,6 +219,8 @@ export default function Curation({
             selectedId={sel?.id ?? null}
             projectId={projectId}
             projectFacing={projectOf(projectId)?.client_facing ?? false}
+            edits={edits}
+            setEdits={setEdits}
           />
         )}
 
