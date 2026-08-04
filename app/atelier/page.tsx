@@ -175,6 +175,7 @@ export default function AtelierPage() {
           <div className="rl-label">Pentinian</div>
           {([
             ['home', 'Home page'],
+            ['studies', 'Case studies'],
             ['site', 'Site calibration'],
             ['post', 'Correspondence'],
             ['access', 'Access'],

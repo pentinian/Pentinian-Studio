@@ -417,6 +417,15 @@ body.dragging .db-block{cursor:grabbing}
 .cs-state.out b{color:var(--sage-deep)}
 .cs-state span{font:400 11.5px/1.5 var(--sans); color:var(--ink-3)}
 .cs-state .mini-btn{margin-left:auto}
+/* The page's own sentence sits in the placeholder; this lifts it into the field so
+   an edit starts from what is there rather than from nothing. */
+.cs-lift{font:400 10px/1 var(--mono); color:var(--sage-deep); background:none; border:0;
+  padding:0; cursor:pointer; font-family:inherit; text-decoration:underline;
+  text-underline-offset:2px; text-decoration-color:var(--line-2)}
+.cs-lift:hover{text-decoration-color:var(--sage)}
+/* A long paragraph in a placeholder is a preview, so it should read as one. */
+.cs-fields textarea::placeholder{color:var(--ink-3); opacity:.62}
+.cs-fields input::placeholder{color:var(--ink-3); opacity:.62}
 .hp-frame{border:1px solid var(--line-2); border-radius:11px; overflow:hidden;
   background:var(--paper); aspect-ratio:16/13}
 .hp-frame iframe{width:100%; height:100%; border:0; display:block}

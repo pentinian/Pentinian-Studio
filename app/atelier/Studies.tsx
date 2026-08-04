@@ -16,6 +16,12 @@ import { createClient } from '@/lib/supabase/client';
  *
  * Release is a separate press from save on purpose. Saving a sentence on a study that
  * is still in review must never be the thing that publishes it.
+ *
+ * A blank field means keep the page as authored, which is the right default but a
+ * poor desk: you cannot edit what you cannot see. So the desk reads the live study
+ * and shows its actual sentence as the placeholder, with one press to lift it into
+ * the field and start from it. Nothing is copied into this file, so the two can
+ * never drift; the page itself is the source.
  */
 
 type Study = { slug: string; file: string; name: string };
@@ -67,6 +73,8 @@ export default function Studies() {
   const [openGroup, setOpenGroup] = useState<string | null>('The opening');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  /* What the study page itself says, per slug, read once and kept. */
+  const [authored, setAuthored] = useState<Record<string, Record<string, string>>>({});
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -79,6 +87,41 @@ export default function Studies() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  /* Read the study as published and lift out every keyed sentence.
+   *
+   * DOMParser builds an inert document: no script in the fetched page runs, no image
+   * or stylesheet is requested, nothing is rendered. Only textContent is read out, so
+   * the worst a tampered page could do is put wrong grey text in a placeholder.
+   *
+   * A break inside a title is real content, so childNodes are walked rather than
+   * taking textContent wholesale, which would silently join the two lines. */
+  useEffect(() => {
+    if (authored[slug]) return;
+    const file = STUDIES.find((s) => s.slug === slug)?.file;
+    if (!file) return;
+    let live = true;
+    fetch(`${SITE}/${file}`, { mode: 'cors' })
+      .then((r) => (r.ok ? r.text() : null))
+      .then((html) => {
+        if (!live || !html) return;
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const map: Record<string, string> = {};
+        doc.querySelectorAll('[data-cms]').forEach((el) => {
+          const key = el.getAttribute('data-cms');
+          if (!key) return;
+          let out = '';
+          el.childNodes.forEach((n) => {
+            if (n.nodeName === 'BR') out += '\n';
+            else out += n.textContent ?? '';
+          });
+          map[key] = out.replace(/[ \t]+/g, ' ').split('\n').map((l) => l.trim()).join('\n').trim();
+        });
+        setAuthored((a) => ({ ...a, [slug]: map }));
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [slug, authored]);
 
   const fields = useMemo(() => fieldsFor(slug), [slug]);
   const dirty = fields.some((f) => (content[f.key] ?? '') !== (saved[f.key] ?? ''));
@@ -198,23 +241,36 @@ export default function Studies() {
 
               {on && gf.map((f) => {
                 const changed = (content[f.key] ?? '') !== (saved[f.key] ?? '');
+                const page = authored[slug]?.[f.key] ?? '';
+                const empty = !(content[f.key] ?? '');
                 return (
                   <label className={'hp-f' + (changed ? ' changed' : '')} key={f.key}>
                     <span className="hp-l">
                       {f.label}
+                      {/* Only offered while the field is empty, since it would otherwise
+                          read as a button that discards what you just typed. */}
+                      {empty && page && (
+                        <button
+                          type="button"
+                          className="cs-lift"
+                          onClick={() => setContent({ ...content, [f.key]: page })}
+                        >
+                          Edit this
+                        </button>
+                      )}
                       <i>{f.key}</i>
                     </span>
                     {f.lines && f.lines > 1 ? (
                       <textarea
                         rows={f.lines}
                         value={content[f.key] ?? ''}
-                        placeholder="As written on the page"
+                        placeholder={page || 'As written on the page'}
                         onChange={(e) => setContent({ ...content, [f.key]: e.target.value })}
                       />
                     ) : (
                       <input
                         value={content[f.key] ?? ''}
-                        placeholder="As written on the page"
+                        placeholder={page || 'As written on the page'}
                         onChange={(e) => setContent({ ...content, [f.key]: e.target.value })}
                       />
                     )}
