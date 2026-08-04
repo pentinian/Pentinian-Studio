@@ -9,6 +9,8 @@ import Health from './Health';
 import HomePage from './HomePage';
 import Passkeys from './Passkeys';
 import Correspondence from './Correspondence';
+import People from './People';
+import WantsIn from './WantsIn';
 import Replies from './Replies';
 import StudioHeader from '../StudioHeader';
 
@@ -39,6 +41,9 @@ export default function AtelierPage() {
   const [domain, setDomain] = useState<'studio' | 'project'>('project');
   const [waiting, setWaiting] = useState(0);
   const [knocking, setKnocking] = useState(0);
+  // Letters that have arrived and nobody has opened. Distinct from `waiting`, which
+  // counts clients waiting on an answer inside their own Window.
+  const [letters, setLetters] = useState(0);
   const [projects, setProjects] = useState<Proj[]>([]);
   const [orphaned, setOrphaned] = useState(0);
   const [selId, setSelId] = useState<string | null>(null);
@@ -65,6 +70,48 @@ export default function AtelierPage() {
       .then((j) => j && setKnocking(j.waiting ?? 0))
       .catch(() => {});
   }, []);
+
+  /* Letters arrive while you are looking at something else, and a letter nobody knows
+     about is the same as a letter that did not arrive. So the count is fetched on
+     arrival and kept current, and the moment it goes up the studio says so out loud
+     rather than waiting to be asked.
+     Only while the tab is actually in front of someone: polling a hidden tab spends
+     someone's battery to tell nobody anything. */
+  const [landed, setLanded] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    let last: number | null = null;
+
+    async function look() {
+      if (document.hidden) return;
+      try {
+        const r = await fetch('/api/mail', { cache: 'no-store' });
+        if (!r.ok || !alive) return;
+        const n = (await r.json()).waiting ?? 0;
+        // First look only learns the number. Announcing on arrival would announce
+        // every letter already sitting there as though it had just come in.
+        if (last !== null && n > last) setLanded(n - last);
+        last = n;
+        setLetters(n);
+      } catch {}
+    }
+
+    look();
+    const id = setInterval(look, 60000);
+    document.addEventListener('visibilitychange', look);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', look);
+    };
+  }, []);
+
+  // Said once, then gone. A notice that has to be dismissed is a chore.
+  useEffect(() => {
+    if (!landed) return;
+    const t = setTimeout(() => setLanded(0), 9000);
+    return () => clearTimeout(t);
+  }, [landed]);
 
   // Note: the client is created inside functions (never at render), so nothing
   // touches Supabase during the static build, only at runtime in the browser.
@@ -170,6 +217,18 @@ export default function AtelierPage() {
         </button>
       </StudioHeader>
 
+      {/* A letter has arrived. Says so where you are, and takes you to it. */}
+      {landed > 0 && (
+        <button
+          className="post-toast"
+          onClick={() => { setDomain('studio'); setTab('post'); setLanded(0); }}
+        >
+          <i />
+          {landed === 1 ? 'A letter just arrived' : `${landed} letters just arrived`}
+          <span>Read it</span>
+        </button>
+      )}
+
       <div className="wr-shell">
         <div className="rail">
           <div className="rl-label">Pentinian</div>
@@ -188,7 +247,8 @@ export default function AtelierPage() {
               <span className="st" style={{ background: 'transparent' }} />
               <span className="ri-name">{label}</span>
               {/* The knock is audible from the rail, not only once the tab is open. */}
-              {k === 'post' && knocking > 0 && <span className="ri-n">{knocking}</span>}
+              {k === 'post' && letters > 0 && <span className="ri-n">{letters}</span>}
+              {k === 'access' && knocking > 0 && <span className="ri-n">{knocking}</span>}
             </button>
           ))}
 
@@ -291,10 +351,11 @@ export default function AtelierPage() {
                 </button>
                 <button className={tab === 'post' ? 'on' : ''} onClick={() => setTab('post')}>
                   Correspondence
-                  {knocking > 0 && <span className="tab-n">{knocking}</span>}
+                  {letters > 0 && <span className="tab-n">{letters}</span>}
                 </button>
                 <button className={tab === 'access' ? 'on' : ''} onClick={() => setTab('access')}>
                   Access
+                  {knocking > 0 && <span className="tab-n">{knocking}</span>}
                 </button>
               </>
             )}
@@ -316,9 +377,15 @@ export default function AtelierPage() {
 
           {tab === 'studies' && <Studies />}
 
-          {tab === 'post' && domain === 'studio' && <Correspondence onKnock={setKnocking} />}
+          {tab === 'post' && domain === 'studio' && <Correspondence onWaiting={setLetters} />}
           {tab === 'access' && (
-            <Passkeys />
+            <>
+              {/* The door, in one place: who is asking, who is already through, and
+                  the studio's own way in. */}
+              <WantsIn onCount={setKnocking} />
+              <People />
+              <Passkeys />
+            </>
           )}
 
           {tab === 'site' && (

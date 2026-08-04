@@ -101,7 +101,14 @@ export async function GET(request: Request) {
     .limit(80);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const scheduled = (ledger ?? []).filter((m) => m.status === 'scheduled');
-  return NextResponse.json({ ledger: ledger ?? [], scheduled });
+  // Counted against the whole table rather than the page of it that was fetched, or a
+  // letter that fell past the eightieth row would stop being waiting without being read.
+  const { count } = await db
+    .from('mail_ledger')
+    .select('id', { count: 'exact', head: true })
+    .eq('kind', 'inbound')
+    .eq('status', 'received');
+  return NextResponse.json({ ledger: ledger ?? [], scheduled, waiting: count ?? 0 });
 }
 
 export async function POST(request: Request) {
@@ -138,11 +145,29 @@ export async function PATCH(request: Request) {
   if (!(await staffOnly())) return NextResponse.json({ error: 'Not permitted' }, { status: 403 });
 
   const b = await request.json().catch(() => ({}));
-  if (!b?.id || !['cancel', 'send-now'].includes(b.action)) {
+  if (!b?.id || !['cancel', 'send-now', 'read'].includes(b.action)) {
     return NextResponse.json({ error: 'Need an id and an action' }, { status: 400 });
   }
 
   const db = admin();
+
+  // Marking a letter read.
+  //
+  // Kept in the status the row already carries rather than in a new column, because
+  // read is a state a letter is in and the column for that exists. Received means
+  // waiting; read means someone opened it. Only inbound has the distinction: the
+  // studio's own sends were read as they were written.
+  if (b.action === 'read') {
+    const { error } = await db
+      .from('mail_ledger')
+      .update({ status: 'read' })
+      .eq('id', b.id)
+      .eq('kind', 'inbound')
+      .eq('status', 'received');
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   const { data: m } = await db.from('mail_ledger').select('*').eq('id', b.id).single();
   if (!m || m.status !== 'scheduled') return NextResponse.json({ error: 'Not on the pile' }, { status: 404 });
 

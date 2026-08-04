@@ -1220,6 +1220,59 @@ body.dragging .db-un{cursor:grabbing}
   overflow-wrap:anywhere}
 .led-body.led-empty{color:var(--ink-3); font-style:italic; white-space:normal}
 .led-err{margin:8px 0 0; font:400 11.5px/1.5 var(--mono); color:var(--clay-deep)}
+/* A letter landing while you are elsewhere. Bottom corner rather than the top, so it
+   never sits over the thing you were reading, and it is the whole button: nothing to
+   aim at, and no separate dismiss, because it leaves on its own. */
+.post-toast{position:fixed; right:22px; bottom:22px; z-index:60;
+  display:flex; align-items:center; gap:10px; padding:12px 15px;
+  border:1px solid var(--line-2); border-radius:11px; background:var(--paper);
+  box-shadow:0 18px 34px -20px rgba(60,52,30,.55), 0 2px 6px -3px rgba(60,52,30,.2);
+  font:400 13px/1 var(--sans); color:var(--ink); cursor:pointer; font-family:inherit;
+  animation:postIn .45s cubic-bezier(.22,1,.36,1) both}
+.post-toast i{width:7px; height:7px; border-radius:50%; background:var(--clay); flex:none;
+  box-shadow:0 0 0 3px rgba(176,128,92,.18)}
+.post-toast span{font:500 10px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--sage-deep); border-left:1px solid var(--line); padding-left:10px; margin-left:2px}
+.post-toast:hover{border-color:var(--line-3)}
+.post-toast:focus-visible{outline:1px solid var(--sage); outline-offset:2px}
+@keyframes postIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion: reduce){ .post-toast{animation:none} }
+
+/* The lens. Counts on the chips because a filter that does not say how much it holds
+   makes you press it to find out. */
+.led-lens{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px}
+.led-l{display:inline-flex; align-items:center; gap:6px; font:500 10px/1 var(--sans);
+  color:var(--ink-3); background:none; border:1px solid var(--line); border-radius:999px;
+  padding:6px 10px; cursor:pointer; font-family:inherit;
+  transition:color .25s ease, border-color .25s ease, background .25s ease}
+.led-l i{font-style:normal; font:500 9px/1 var(--mono); color:var(--line-3)}
+.led-l:hover{border-color:var(--line-2)}
+.led-l:focus-visible{outline:1px solid var(--sage); outline-offset:1px}
+.led-l.on{background:var(--paper); border-color:var(--line-3); color:var(--ink)}
+.led-l.on i{color:var(--ink-3)}
+/* something is actually waiting */
+.led-l.hot i{color:var(--clay-deep); background:rgba(176,128,92,.14); border-radius:999px; padding:3px 5px}
+
+/* Folded by month. The current one is open, the rest are put away until wanted. */
+.led-mo + .led-mo{margin-top:10px}
+.led-mo-h{display:flex; align-items:center; gap:10px; width:100%; padding:8px 0;
+  background:none; border:0; border-bottom:1px solid var(--line-2); cursor:pointer;
+  font-family:inherit; text-align:left}
+.led-mo-h:focus-visible{outline:1px solid var(--sage); outline-offset:2px}
+.led-mo-n{font:400 12.5px/1.2 var(--serif); color:var(--ink)}
+.led-mo-w{font-style:normal; font:500 9px/1 var(--mono); color:var(--clay-deep);
+  background:rgba(176,128,92,.14); border-radius:999px; padding:3.5px 7px}
+.led-mo-c{margin-left:auto; font:400 10px/1 var(--mono); color:var(--ink-3)}
+.led-mo-x{font:400 12px/1 var(--sans); color:var(--ink-3); width:10px; text-align:center}
+.led-mo.shut .led-mo-n{color:var(--ink-2)}
+
+/* An unread letter says so, and stops saying it the moment it is opened. */
+.led-item.unread .led-what b{color:var(--ink); font-weight:500}
+.led-item.unread .led-row{position:relative; padding-left:14px}
+.led-item.unread .led-row::before{content:""; position:absolute; left:2px; top:calc(50% - 3px);
+  width:6px; height:6px; border-radius:50%; background:var(--clay)}
+.led-kind.read{color:var(--ink-3)}
+
 .led-reply{display:flex; flex-direction:column; gap:7px; margin-top:13px; max-width:640px}
 .led-reply-to{font:500 10px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
 .led-reply textarea{resize:vertical}

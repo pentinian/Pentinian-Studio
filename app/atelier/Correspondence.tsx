@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import WantsIn from './WantsIn';
 
 // The post room: everything the studio says and everyone asking to be spoken to.
 //
@@ -10,6 +9,9 @@ import WantsIn from './WantsIn';
 // people at the door, moved here from Access. And the ledger: every email the
 // app has ever sent or received, newest first, because a studio should be able
 // to answer "what did we tell them and when" without opening a different tool.
+
+/** Only what the composer needs: somewhere to send a letter. */
+type Recipient = { id: string; name: string; email?: string | null };
 
 type Mail = {
   id: string;
@@ -25,13 +27,6 @@ type Mail = {
   error?: string | null;
 };
 
-type Person = {
-  id: string;
-  name: string;
-  email?: string | null;
-  user_id?: string | null;
-  suspended: boolean;
-};
 
 const KIND_LABEL: Record<Mail['kind'], string> = {
   notify: 'to the studio',
@@ -49,9 +44,9 @@ const when = (s?: string | null) =>
       new Date(s).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
     : '';
 
-export default function Correspondence({ onKnock }: { onKnock?: (n: number) => void }) {
+export default function Correspondence({ onWaiting }: { onWaiting?: (n: number) => void }) {
   const [ledger, setLedger] = useState<Mail[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
+  const [people, setPeople] = useState<Recipient[]>([]);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -67,13 +62,20 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
   // A ledger row that is open, and the answer being written under it.
   const [openId, setOpenId] = useState<string | null>(null);
   const [reply, setReply] = useState('');
+  // Which slice of the record is being looked at, and which months are folded shut.
+  const [lens, setLens] = useState<'all' | 'waiting' | 'inbound' | 'sent'>('all');
+  const [shut, setShut] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     const [m, p] = await Promise.all([
       fetch('/api/mail', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)),
       fetch('/api/people', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)),
     ]);
-    if (m) setLedger(m.ledger ?? []);
+    if (m) {
+      setLedger(m.ledger ?? []);
+      onWaiting?.(m.waiting ?? 0);
+    }
+    // Still needed here, but only as a list of addresses to write to.
     if (p) setPeople(p.people ?? []);
     const pr = await fetch('/api/projects', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null));
     if (pr) setProjects((pr.projects ?? []).filter((x: any) => x.client_facing).map((x: any) => ({ id: x.id, name: x.name })));
@@ -150,37 +152,18 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
     load();
   }
 
-  async function personAction(p: Person, action: 'suspend' | 'restore' | 'invite') {
-    if (
-      action === 'suspend' &&
-      !window.confirm(`Suspend ${p.name}? They cannot sign in until restored. Their Window and history stay.`)
-    )
-      return;
-    if (
-      action === 'invite' &&
-      !window.confirm(`Invite ${p.name} at ${p.email}? They get an email that lets them into their own Window.`)
-    )
-      return;
-    setBusy(true);
-    const res = await fetch('/api/people', {
+  /* Opening a letter is reading it, so nothing else has to be pressed. Optimistic on
+     purpose: the row should stop shouting the moment it is looked at, and a write that
+     fails only means it is still waiting, which is the safe way for this to be wrong. */
+  async function markRead(m: Mail) {
+    if (m.kind !== 'inbound' || m.status !== 'received') return;
+    setLedger((rows) => rows.map((r) => (r.id === m.id ? { ...r, status: 'read' } : r)));
+    onWaiting?.(Math.max(0, ledger.filter((r) => r.kind === 'inbound' && r.status === 'received').length - 1));
+    await fetch('/api/mail', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ client_id: p.id, action }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setMsg(j.error ?? 'That did not go through.');
-      return;
-    }
-    setMsg(
-      action === 'suspend'
-        ? `${p.name} is suspended. Restore any time.`
-        : action === 'invite'
-          ? `Invited. ${p.name} has an email waiting, and their Window is ready the moment they follow it.`
-          : `${p.name} is back in.`
-    );
-    load();
+      body: JSON.stringify({ id: m.id, action: 'read' }),
+    }).catch(() => {});
   }
 
   // Answering where the letter is, rather than scrolling back up to the composer and
@@ -210,7 +193,41 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
   }
 
   const pile = ledger.filter((m) => m.status === 'scheduled');
-  const flow = ledger.filter((m) => m.status !== 'scheduled').slice(0, 30);
+
+  /* The ledger is meant to be permanent, which means it is meant to get long. A flat
+     list of everything ever said stops being a record and becomes a scroll, so it is
+     read through a lens and folded by month, with the current month always open.
+     Nothing is hidden that a lens would not show; folding is only folding. */
+  const LENSES = [
+    ['all', 'Everything'],
+    ['waiting', 'Waiting on you'],
+    ['inbound', 'Received'],
+    ['sent', 'Sent'],
+  ] as const;
+
+  const matches = (m: Mail) =>
+    lens === 'all' ? true
+    : lens === 'waiting' ? m.kind === 'inbound' && m.status === 'received'
+    : lens === 'inbound' ? m.kind === 'inbound'
+    : m.kind !== 'inbound';
+
+  const flow = ledger.filter((m) => m.status !== 'scheduled' && matches(m));
+
+  const monthOf = (m: Mail) => {
+    const d = new Date(m.sent_at ?? m.created_at);
+    return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) };
+  };
+  const months: { key: string; label: string; items: Mail[] }[] = [];
+  for (const m of flow) {
+    const { key, label } = monthOf(m);
+    const last = months[months.length - 1];
+    if (last && last.key === key) last.items.push(m);
+    else months.push({ key, label, items: [m] });
+  }
+  const thisMonth = months[0]?.key;
+  const isShut = (k: string) => (k in shut ? shut[k] : k !== thisMonth);
+  const unreadIn = (items: Mail[]) =>
+    items.filter((m) => m.kind === 'inbound' && m.status === 'received').length;
   const today = new Date().toISOString().slice(0, 10);
 
   return (
@@ -319,51 +336,6 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
       </div>
 
       {/* -------------------------------------------------- the people at the door */}
-      <WantsIn onCount={onKnock} />
-
-      {/* ----------------------------------------------------------- who is inside */}
-      <div className="wp">
-        <div className="wph">
-          <h4>People</h4>
-          <span className="tag">Who can walk in</span>
-        </div>
-        <div className="wpb">
-          {people.length === 0 && <p className="pk-none">Nobody yet.</p>}
-          {people.map((p) => (
-            <div key={p.id} className="ppl-row">
-              <span className="ppl-who">
-                <b>{p.name}</b>
-                {p.email && <span className="wi-mail">{p.email}</span>}
-              </span>
-              <span className={'wi-st ' + (p.suspended ? 'declined' : p.user_id ? 'approved' : '')}>
-                {p.suspended ? 'suspended' : p.user_id ? 'can sign in' : 'no sign-in yet'}
-              </span>
-              <span className="led-do">
-                {p.suspended ? (
-                  <button className="mini-btn" disabled={busy} onClick={() => personAction(p, 'restore')}>
-                    Restore
-                  </button>
-                ) : p.user_id ? (
-                  <button className="mini-btn warn" disabled={busy} onClick={() => personAction(p, 'suspend')}>
-                    Suspend
-                  </button>
-                ) : (
-                  /* Nobody should be stuck at "no sign-in yet" with nothing to press. */
-                  <button
-                    className="mini-btn pri"
-                    disabled={busy || !p.email}
-                    title={p.email ? undefined : 'No email address on file, so there is nowhere to send it'}
-                    onClick={() => personAction(p, 'invite')}
-                  >
-                    Let them in
-                  </button>
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* ------------------------------------------------------------- the ledger */}
       <div className="wp">
         <div className="wph">
@@ -371,19 +343,65 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
           <span className="tag">Everything said by email, newest first</span>
         </div>
         <div className="wpb">
-          {flow.length === 0 && <p className="pk-none">Nothing yet. The first letter starts the record.</p>}
-          {flow.map((m) => {
+          <div className="led-lens" role="group" aria-label="What to show">
+            {LENSES.map(([k, label]) => {
+              const n = ledger.filter((m) => m.status !== 'scheduled' && (
+                k === 'all' ? true
+                : k === 'waiting' ? m.kind === 'inbound' && m.status === 'received'
+                : k === 'inbound' ? m.kind === 'inbound'
+                : m.kind !== 'inbound'
+              )).length;
+              return (
+                <button
+                  key={k}
+                  className={'led-l' + (lens === k ? ' on' : '') + (k === 'waiting' && n > 0 ? ' hot' : '')}
+                  aria-pressed={lens === k}
+                  onClick={() => setLens(k)}
+                >
+                  {label}<i>{n}</i>
+                </button>
+              );
+            })}
+          </div>
+
+          {flow.length === 0 && (
+            <p className="pk-none">
+              {lens === 'all'
+                ? 'Nothing yet. The first letter starts the record.'
+                : lens === 'waiting'
+                  ? 'Nothing waiting. Every letter that arrived has been read.'
+                  : 'Nothing under this one.'}
+            </p>
+          )}
+
+          {months.map((g) => (
+            <section className={'led-mo' + (isShut(g.key) ? ' shut' : '')} key={g.key}>
+              <button
+                className="led-mo-h"
+                aria-expanded={!isShut(g.key)}
+                onClick={() => setShut((s) => ({ ...s, [g.key]: !isShut(g.key) }))}
+              >
+                <span className="led-mo-n">{g.label}</span>
+                {unreadIn(g.items) > 0 && <i className="led-mo-w">{unreadIn(g.items)} waiting</i>}
+                <span className="led-mo-c">{g.items.length}</span>
+                <span className="led-mo-x" aria-hidden="true">{isShut(g.key) ? '+' : '−'}</span>
+              </button>
+              {!isShut(g.key) && g.items.map((m) => {
             const open = openId === m.id;
             const from = (m.from_email ?? '').match(/<([^>]+)>/)?.[1] ?? m.from_email ?? '';
             return (
-              <div key={m.id} className={'led-item' + (open ? ' open' : '')}>
+              <div
+                key={m.id}
+                className={'led-item' + (open ? ' open' : '') +
+                  (m.kind === 'inbound' && m.status === 'received' ? ' unread' : '')}
+              >
                 {/* Every letter opens. What was said is the record, and a record you
                     cannot read is a list of subject lines. */}
                 <button
                   className="led-row"
                   title={m.error ?? undefined}
                   aria-expanded={open}
-                  onClick={() => { setOpenId(open ? null : m.id); setReply(''); }}
+                  onClick={() => { setOpenId(open ? null : m.id); setReply(''); if (!open) markRead(m); }}
                 >
                   <span className={'led-kind ' + m.status}>{KIND_LABEL[m.kind] ?? m.kind}</span>
                   <span className="led-what">
@@ -445,6 +463,8 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
               </div>
             );
           })}
+            </section>
+          ))}
         </div>
       </div>
     </>
