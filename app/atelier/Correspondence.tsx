@@ -405,7 +405,13 @@ export default function Correspondence({ onKnock }: { onKnock?: (n: number) => v
                     ) : (
                       <p className="led-body led-empty">Nothing was kept of this one beyond its subject.</p>
                     )}
-                    {m.error && <p className="led-err">{m.error}</p>}
+                    {m.error && (
+                      <p className="led-err">
+                        {m.kind === 'inbound'
+                          ? `The body did not come back from Resend: ${m.error}`
+                          : m.error}
+                      </p>
+                    )}
 
                     {/* Only a letter from a person can be answered. The studio's own
                         sends already have their reply sitting further up the list. */}

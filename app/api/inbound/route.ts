@@ -32,6 +32,62 @@ function verify(secret: string, id: string, timestamp: string, payload: string, 
   });
 }
 
+/* Turn a letter that only exists as HTML into something a ledger can hold.
+   Not a parser, and does not need to be: breaks and paragraph ends become newlines,
+   everything else in angle brackets goes, and the handful of entities that actually
+   show up in mail are put back. */
+function textFromHtml(html: string): string {
+  return html
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|tr|li|h[1-6])>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .split('\n').map((l) => l.trimEnd()).join('\n')
+    .trim();
+}
+
+/* The letter itself.
+ *
+ * Resend's webhook carries metadata and nothing else, deliberately: a body with
+ * attachments can be larger than a serverless request is allowed to be, so the
+ * message is left on their side and fetched by id. Skipping this step is why a
+ * letter can arrive looking like a subject line with nothing under it.
+ *
+ * Everything here is best effort. If the fetch fails the letter is still filed,
+ * because a body we could not retrieve is worth less than a letter we dropped. */
+async function fetchLetter(emailId: string): Promise<{
+  text: string;
+  from?: string;
+  replyTo?: string;
+}> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key || !emailId) return { text: '' };
+
+  const r = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
+    headers: { Authorization: `Bearer ${key}` },
+    cache: 'no-store',
+  });
+  if (!r.ok) throw new Error(`Resend ${r.status}: ${(await r.text()).slice(0, 200)}`);
+
+  const full: any = await r.json();
+  const plain = typeof full?.text === 'string' ? full.text.trim() : '';
+  const text = plain || textFromHtml(String(full?.html ?? ''));
+  const replyTo = Array.isArray(full?.reply_to) ? full.reply_to[0] : undefined;
+  return {
+    // headers.from keeps the display name the sender wrote, which the webhook strips.
+    text,
+    from: typeof full?.headers?.from === 'string' ? full.headers.from : undefined,
+    replyTo: typeof replyTo === 'string' ? replyTo : undefined,
+  };
+}
+
 export async function POST(request: Request) {
   const secret = process.env.RESEND_WEBHOOK_SECRET;
   if (!secret) return NextResponse.json({ error: 'Not configured' }, { status: 503 });
@@ -58,10 +114,21 @@ export async function POST(request: Request) {
   if (event?.type !== 'email.received') return NextResponse.json({ ok: true, ignored: true });
 
   const d = event.data ?? {};
-  const from = String(d.from ?? '').slice(0, 300);
+  let from = String(d.from ?? '').slice(0, 300);
   const to = Array.isArray(d.to) ? d.to.join(', ').slice(0, 300) : String(d.to ?? '').slice(0, 300);
   const subject = String(d.subject ?? '(no subject)').slice(0, 300);
-  const text = String(d.text ?? d.html ?? '').slice(0, 8000);
+
+  let text = '';
+  let fetchFailed: string | null = null;
+  try {
+    const letter = await fetchLetter(String(d.email_id ?? ''));
+    text = letter.text.slice(0, 8000);
+    // Prefer the address they asked to be answered at, then the one they wrote from
+    // with their name still on it, then the bare address the webhook carried.
+    from = (letter.replyTo || letter.from || from).slice(0, 300);
+  } catch (e: any) {
+    fetchFailed = e?.message ?? 'could not retrieve the body';
+  }
 
   const db = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,7 +154,11 @@ export async function POST(request: Request) {
     body: text,
     status: 'received',
     sent_at: new Date().toISOString(),
+    // Says which of the two it was: a letter with nothing in it, or a body that
+    // did not come back. Otherwise both read as an empty message.
+    error: fetchFailed,
   });
+  if (fetchFailed) record('notify', false, 'letter body not retrieved', { detail: fetchFailed });
 
   // Told, not just filed. Resend needs its 200 whatever happens next, so the
   // forward is awaited and swallowed rather than allowed to fail the delivery:
