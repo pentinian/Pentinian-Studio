@@ -164,7 +164,21 @@ export async function PATCH(request: Request) {
       .eq('id', b.id)
       .eq('kind', 'inbound')
       .eq('status', 'received');
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      // The status column is constrained to the states a letter can be in, and read
+      // is newer than the table. Say which it is rather than "500", so the fix is
+      // obvious instead of being something to go and find.
+      const needsMigration = /status_check/.test(error.message);
+      return NextResponse.json(
+        {
+          error: needsMigration
+            ? 'The ledger does not know the read state yet. Run supabase/mail-read.sql once and this works.'
+            : error.message,
+          migration: needsMigration || undefined,
+        },
+        { status: needsMigration ? 409 : 500 }
+      );
+    }
     return NextResponse.json({ ok: true });
   }
 

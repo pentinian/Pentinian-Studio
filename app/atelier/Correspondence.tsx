@@ -159,11 +159,22 @@ export default function Correspondence({ onWaiting }: { onWaiting?: (n: number) 
     if (m.kind !== 'inbound' || m.status !== 'received') return;
     setLedger((rows) => rows.map((r) => (r.id === m.id ? { ...r, status: 'read' } : r)));
     onWaiting?.(Math.max(0, ledger.filter((r) => r.kind === 'inbound' && r.status === 'received').length - 1));
-    await fetch('/api/mail', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: m.id, action: 'read' }),
-    }).catch(() => {});
+    try {
+      const res = await fetch('/api/mail', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: m.id, action: 'read' }),
+      });
+      if (res.ok) return;
+      // It did not stick, so put it back rather than let the count quietly lie. A
+      // letter still waiting is the safe way for this to be wrong.
+      const j = await res.json().catch(() => ({}));
+      setLedger((rows) => rows.map((r) => (r.id === m.id ? { ...r, status: 'received' } : r)));
+      onWaiting?.(ledger.filter((r) => r.kind === 'inbound' && r.status === 'received').length);
+      setMsg(j.error ?? 'That letter could not be marked read.');
+    } catch {
+      setLedger((rows) => rows.map((r) => (r.id === m.id ? { ...r, status: 'received' } : r)));
+    }
   }
 
   // Answering where the letter is, rather than scrolling back up to the composer and

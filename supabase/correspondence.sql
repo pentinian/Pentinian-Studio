@@ -19,8 +19,9 @@ create table if not exists mail_ledger (
   project_id uuid references projects(id) on delete set null,
   subject text,
   body text,                      -- the human-written or received text, not the wrapper
+  -- received: it arrived and nobody has opened it    read: someone has
   status text not null default 'sent'
-    check (status in ('sent', 'scheduled', 'canceled', 'failed', 'received')),
+    check (status in ('sent', 'scheduled', 'canceled', 'failed', 'received', 'read')),
   scheduled_for timestamptz,      -- only for status = scheduled
   sent_at timestamptz,
   error text,
