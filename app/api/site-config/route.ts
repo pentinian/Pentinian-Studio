@@ -76,6 +76,24 @@ export async function GET() {
         }
         return Object.keys(out).length ? out : null;
       })(),
+      // Which case studies have been let out. Only the released slugs are sent, and
+      // only as a list of names: nothing about an unreleased study leaves the server,
+      // not its title and not the fact that it is nearly ready.
+      //
+      // Note this one field does NOT fail open. Everything else here is written so a
+      // missing record leaves the site showing more; a missing record here leaves the
+      // studies shut, because "in review" wrongly shown as public is a real disclosure
+      // and a public study wrongly shown as private is only a missing link.
+      released_studies: (() => {
+        const raw = c.case_studies;
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [];
+        const out: string[] = [];
+        for (const [slug, v] of Object.entries(raw as Record<string, unknown>)) {
+          if (!/^[a-z][a-z0-9-]{0,40}$/.test(slug)) continue;
+          if (v && typeof v === 'object' && (v as Record<string, unknown>).released === true) out.push(slug);
+        }
+        return out;
+      })(),
     },
     { headers: CORS }
   );
