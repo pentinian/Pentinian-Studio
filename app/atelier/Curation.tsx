@@ -42,7 +42,10 @@ export default function Curation({
   const [raw, setRaw] = useState<Raw[]>([]);
   const [released, setReleased] = useState<Released[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [sel, setSel] = useState<Raw | null>(null);
+  /* The selection is an id, and the row is looked up from what was last loaded.
+     Held as a snapshot it went stale the moment anything was saved, so the panel
+     kept describing the row as it had been rather than as it now is. */
+  const [selId, setSelId] = useState<string | null>(null);
   const [draft, setDraft] = useState({ title: '', eli5: '', why: '', area: '', gap_label: '' });
   const [msg, setMsg] = useState('');
   const [ok, setOk] = useState(true);
@@ -55,7 +58,7 @@ export default function Curation({
   // thing it hides is the arrangement of a day, which is the thing actually being
   // composed. The list stays for searching and for anything with no time on it.
   const [view, setView] = useState<'days' | 'list'>('days');
-  const [when, setWhen] = useState({ date: '', time: '', minutes: 60 });
+
   /* A block's time is one value. The calendar edits it by dragging and this panel
      edits it by typing, so both have to read and write the same pending state or
      they will show two different answers for the same block. */
@@ -70,9 +73,43 @@ export default function Curation({
 
   useEffect(() => { load(); }, [load, refreshKey]);
 
+  const sel = useMemo(() => raw.find((r) => r.id === selId) ?? null, [raw, selId]);
+
+  /* One value, two ways in. The board writes it by dragging and the fields below
+     write it by typing, and both read it from the same pending state. Deriving
+     the fields instead of mirroring them into their own copy is what stops the
+     two drifting: there is nothing left to keep in sync. */
+  const p2 = (n: number) => String(n).padStart(2, '0');
+  const place = useMemo(() => {
+    if (!sel) return { date: '', time: '', minutes: 60 };
+    const e = edits[sel.id];
+    const iso = e ? e.started_at : sel.started_at;
+    const mins = e ? e.minutes : (sel.minutes ?? 60);
+    const d = iso ? new Date(iso) : null;
+    return {
+      date: d ? `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` : '',
+      time: d ? `${p2(d.getHours())}:${p2(d.getMinutes())}` : '',
+      minutes: mins,
+    };
+  }, [sel, edits]);
+
+  function setPlace(next: { date?: string; time?: string; minutes?: number }) {
+    if (!sel) return;
+    const date = next.date ?? place.date;
+    const time = next.time ?? place.time;
+    const minutes = next.minutes ?? place.minutes;
+    let started: string | null = null;
+    if (date && time) {
+      const [y, m, dd] = date.split('-').map(Number);
+      const [hh, mm] = time.split(':').map(Number);
+      started = new Date(y, m - 1, dd, hh, mm).toISOString();
+    }
+    setEdits((e) => ({ ...e, [sel.id]: { started_at: started, minutes } }));
+  }
+
   // Moving along the rail should not leave a stale entry sitting in the gate, or you
   // could edit one project's work while reading another project's name in the header.
-  useEffect(() => { setSel(null); setMsg(''); }, [projectId]);
+  useEffect(() => { setSelId(null); setMsg(''); }, [projectId]);
 
   const unplaced = raw.filter((e) => !e.project_id);
   const shown =
@@ -104,7 +141,7 @@ export default function Curation({
   }
 
   function pick(e: Raw) {
-    setSel(e);
+    setSelId(e.id);
     setMsg('');
     setDraft({
       // The title falls back to the raw body only as a starting point. It is meant
@@ -117,30 +154,18 @@ export default function Curation({
     });
     // Prefilled from whatever the entry already carries, so the fields describe the
     // block rather than sitting empty next to one that plainly has a time.
-    // If the calendar has this block moved but not yet saved, that is what the eye
-    // is looking at, so these fields describe it rather than the stored value.
-    const pending = edits[e.id];
-    const iso = pending ? pending.started_at : e.started_at;
-    const mins = pending ? pending.minutes : (e.minutes ?? 60);
-    const d = iso ? new Date(iso) : null;
-    const p2 = (n: number) => String(n).padStart(2, '0');
-    setWhen({
-      date: d ? `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` : '',
-      time: d ? `${p2(d.getHours())}:${p2(d.getMinutes())}` : '',
-      minutes: mins,
-    });
   }
 
   async function saveWhen() {
-    if (!sel || !when.date || !when.time) return;
-    const [y, m, dd] = when.date.split('-').map(Number);
-    const [hh, mm] = when.time.split(':').map(Number);
+    if (!sel || !place.date || !place.time) return;
+    const [y, m, dd] = place.date.split('-').map(Number);
+    const [hh, mm] = place.time.split(':').map(Number);
     const started = new Date(y, m - 1, dd, hh, mm);
     setBusy(true); setMsg('');
     const res = await fetch('/api/quarry', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ moves: [{ id: sel.id, started_at: started.toISOString(), minutes: when.minutes }] }),
+      body: JSON.stringify({ moves: [{ id: sel.id, started_at: started.toISOString(), minutes: place.minutes }] }),
     });
     const j = await res.json().catch(() => ({}));
     setBusy(false); setOk(res.ok);
@@ -357,13 +382,13 @@ export default function Curation({
               <div className="cur-time">
                 <span className="cur-time-l">Where it sits</span>
                 <div className="cur-time-row">
-                  <input type="date" value={when.date}
-                         onChange={(e) => setWhen({ ...when, date: e.target.value })} />
-                  <input type="time" value={when.time}
-                         onChange={(e) => setWhen({ ...when, time: e.target.value })} />
-                  <input type="number" min={5} step={5} value={when.minutes} title="minutes"
-                         onChange={(e) => setWhen({ ...when, minutes: Number(e.target.value) })} />
-                  <button className="mini-btn" disabled={busy || !when.date || !when.time}
+                  <input type="date" value={place.date}
+                         onChange={(e) => setPlace({ date: e.target.value })} />
+                  <input type="time" value={place.time}
+                         onChange={(e) => setPlace({ time: e.target.value })} />
+                  <input type="number" min={5} step={5} value={place.minutes} title="minutes"
+                         onChange={(e) => setPlace({ minutes: Number(e.target.value) })} />
+                  <button className="mini-btn" disabled={busy || !place.date || !place.time}
                           onClick={saveWhen}>
                     Place it
                   </button>
