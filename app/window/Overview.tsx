@@ -142,7 +142,14 @@ export default function Overview({
                   <span className="ov-bar" aria-hidden="true">
                     <i style={{ width: `${Math.max(4, (a.minutes / total) * 100)}%` }} />
                   </span>
-                  <span className="ov-mins">{dur(a.minutes)}</span>
+                  {/* A part with pieces in it but no minutes against them read as 0m
+                      beside an empty bar, which says the row is empty when it is not.
+                      It says what it holds instead, and the row stays worth opening. */}
+                  <span className="ov-mins">
+                    {a.minutes > 0
+                      ? dur(a.minutes)
+                      : `${a.es.length} piece${a.es.length === 1 ? '' : 's'}`}
+                  </span>
                   <span className="ov-caret" aria-hidden="true">{on ? '−' : '+'}</span>
                 </button>
 
