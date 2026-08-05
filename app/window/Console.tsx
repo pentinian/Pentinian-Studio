@@ -135,8 +135,29 @@ export default function Console({
       }
     }
 
-    const { data: objects } = await supabase.storage.from('shots').list(projectId, { limit: 500 });
-    setFileCount((objects ?? []).filter((o: any) => o.name && !o.name.startsWith('.')).length);
+    /* The number on the Files tab has to be the number of things behind it.
+     *
+     * It used to count the project's storage folder, which is neither: that listing
+     * includes the files subfolder as an entry of its own, and every screenshot ever
+     * taken whether or not it has been released. So the tab said two, the face showed
+     * one, and the difference was a count of work the client is not supposed to know
+     * exists yet. A badge that quietly walks around the release gate is worse than no
+     * badge.
+     *
+     * Counted the way the face builds itself: screenshots claimed by released entries,
+     * plus whatever has been uploaded to files. */
+    const [{ data: attached }, { data: released }] = await Promise.all([
+      supabase.storage.from('shots').list(`${projectId}/files`, { limit: 500 }),
+      supabase.from('work_log_released').select('shots').eq('project_id', projectId),
+    ]);
+    const uploaded = (attached ?? []).filter(
+      (o: any) => o.name && !o.name.startsWith('.') && o.id
+    ).length;
+    const claimed = (released ?? []).reduce(
+      (n: number, e: any) => n + (Array.isArray(e.shots) ? e.shots.length : 0),
+      0
+    );
+    setFileCount(uploaded + claimed);
     setReady(true);
   }, [projectId]);
 
