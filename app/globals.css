@@ -726,6 +726,15 @@ body.dragging .db-block{cursor:grabbing}
 .ring{position:relative; width:104px; height:104px; border-radius:50%; background:conic-gradient(var(--sage) calc(var(--p,0)*1%), rgba(35,37,30,.1) 0)}
 .ring::after{content:""; position:absolute; inset:11px; border-radius:50%; background:var(--bone)}
 .ring b{position:absolute; inset:0; display:grid; place-items:center; z-index:1; font:400 23px/1 var(--serif); color:var(--ink)}
+/* No percentage set, so the ring carries the hours instead. Quieter than a filled
+   ring on purpose: it is a record of what has happened, not a claim about what is
+   left, and it should not read as a progress bar sitting at zero. */
+.ring-effort{background:rgba(35,37,30,.09)}
+.ring-effort b{inset:auto 0 auto 0; top:34px; font-size:20px}
+.ring-effort i{position:absolute; inset:auto 0 34px; z-index:1; text-align:center; font-style:normal;
+  font:500 8.5px/1 var(--mono); letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3)}
+/* Nothing released yet, so the ring says only that, centred and quiet. */
+.ring-none i{inset:0; display:grid; place-items:center}
 .pj-info h3{font:400 20px/1.2 var(--serif); margin:0 0 6px; color:var(--ink); display:flex; align-items:center; gap:12px}
 .pj-info .phase{font-size:13px; color:var(--ink-2); margin:0 0 16px}
 .pj-stats{display:flex; gap:28px}
@@ -1220,6 +1229,19 @@ body.dragging .db-un{cursor:grabbing}
   overflow-wrap:anywhere}
 .led-body.led-empty{color:var(--ink-3); font-style:italic; white-space:normal}
 .led-err{margin:8px 0 0; font:400 11.5px/1.5 var(--mono); color:var(--clay-deep)}
+/* The two lines a client reads above everything else, set from where the project is
+   already being looked at rather than from a settings page nobody visits. */
+.hd-strip{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:0 0 16px;
+  padding:10px 13px; border:1px solid var(--line); border-left:2px solid var(--line-2);
+  border-radius:0 9px 9px 0; background:var(--bone)}
+.hd-l{font:500 8px/1 var(--mono); letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3)}
+.hd-phase, .hd-pct{border:1px solid var(--line); border-radius:7px; padding:7px 9px;
+  font:400 12px/1 var(--sans); color:var(--ink); background:var(--paper); font-family:inherit}
+.hd-phase{flex:1 1 220px; min-width:0}
+.hd-pct{width:66px; font-family:var(--mono); text-align:center}
+.hd-phase:focus, .hd-pct:focus{outline:none; border-color:var(--sage)}
+.hd-h{font:400 10.5px/1.4 var(--sans); color:var(--ink-3)}
+
 /* A letter landing while you are elsewhere. Bottom corner rather than the top, so it
    never sits over the thing you were reading, and it is the whole button: nothing to
    aim at, and no separate dismiss, because it leaves on its own. */

@@ -10,10 +10,19 @@ import Console, { type Face } from './Console';
 // actual navigation. The tabs sit on the header now and each one toggles, so a second
 // press closes what the first opened.
 
+/** Effort as a client should read it: approximate, never to the minute. */
+function hours(min: number) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (!h) return `${m}m`;
+  return m >= 30 ? `${h + 0.5}h` : `${h}h`;
+}
+
 export default function ProjectHead({
   name,
   phase,
   progress,
+  effort,
   status,
   projectId,
   staff = false,
@@ -21,8 +30,12 @@ export default function ProjectHead({
   openToken = 0,
 }: {
   name: string;
-  phase: string;
-  progress: number;
+  /** Null until someone says what stage this is at. */
+  phase: string | null;
+  /** Null until someone sets one. Not the same as zero. */
+  progress: number | null;
+  /** Minutes released, all time. The honest figure when there is no percentage. */
+  effort: number;
   status: string | null;
   projectId: string | null;
   staff?: boolean;
@@ -42,9 +55,26 @@ export default function ProjectHead({
   return (
     <div className={'pj-wrap' + (face ? ' open' : '')}>
       <div className="pj-head">
-        <div className="ring" style={{ ['--p' as any]: progress }}>
-          <b>{progress}%</b>
-        </div>
+        {/* A percentage is a claim about how much is left, and nobody has made that
+            claim on most projects. Rather than invent one, the ring shows the hours
+            actually released, which is a fact. If a percentage does get set, it wins:
+            it is the more useful of the two, and it was said on purpose. */}
+        {typeof progress === 'number' ? (
+          <div className="ring" style={{ ['--p' as any]: progress }}>
+            <b>{progress}%</b>
+          </div>
+        ) : (
+          <div className={'ring ring-effort' + (effort > 0 ? '' : ' ring-none')} style={{ ['--p' as any]: 0 }}>
+            {effort > 0 ? (
+              <>
+                <b>{hours(effort)}</b>
+                <i>released</i>
+              </>
+            ) : (
+              <i>not started</i>
+            )}
+          </div>
+        )}
         <div className="pj-info">
           <h3>
             {name}
@@ -52,7 +82,7 @@ export default function ProjectHead({
               <span className="sdot" /> {status === 'on_track' ? 'On track' : 'In progress'}
             </span>
           </h3>
-          <p className="phase">{phase}</p>
+          <p className="phase">{phase ?? (effort > 0 ? 'Underway' : 'Getting started')}</p>
         </div>
       </div>
 

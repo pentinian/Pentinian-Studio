@@ -117,6 +117,9 @@ const keyToDate = (k: string) => {
 export default function Log({ projectId }: { projectId: string | null }) {
   const today = new Date();
   const [cursor, setCursor] = useState({ y: today.getFullYear(), m: today.getMonth() });
+  // The newest day this project holds, whatever month it is in.
+  const [newest, setNewest] = useState<string | null>(null);
+  const [anchored, setAnchored] = useState(false);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [openEntry, setOpenEntry] = useState<string | null>(null);
@@ -126,8 +129,45 @@ export default function Log({ projectId }: { projectId: string | null }) {
   const [busy, setBusy] = useState('');
   const [loading, setLoading] = useState(true);
 
+  /* Where to open.
+   *
+   * The calendar used to start on whatever month it happens to be, which is only the
+   * right answer during a month that has work in it. Release something in July, let a
+   * client visit on the second of August, and they are shown an empty grid under a
+   * heading that says work lands here. Nothing is broken and everything looks like it
+   * is. So the newest released day is found first and the calendar opens there.
+   *
+   * One extra read, once per project, and the month load waits for it rather than
+   * fetching the wrong month and then the right one. */
+  useEffect(() => {
+    if (!projectId) { setAnchored(true); return; }
+    let alive = true;
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('work_log_released')
+        .select('started_at')
+        .eq('project_id', projectId)
+        .not('started_at', 'is', null)
+        .order('started_at', { ascending: false })
+        .limit(1);
+      if (!alive) return;
+      const at = (data?.[0] as any)?.started_at as string | undefined;
+      if (at) {
+        setNewest(at);
+        const d = new Date(at);
+        setCursor((c) =>
+          c.y === d.getFullYear() && c.m === d.getMonth() ? c : { y: d.getFullYear(), m: d.getMonth() }
+        );
+      }
+      setAnchored(true);
+    })();
+    return () => { alive = false; };
+  }, [projectId]);
+
   // One read per month, used for both the calendar and whichever day is opened.
   const load = useCallback(async () => {
+    if (!anchored) return;
     if (!projectId) { setLoading(false); return; }
     setLoading(true);
     const supabase = createClient();
@@ -159,7 +199,7 @@ export default function Log({ projectId }: { projectId: string | null }) {
     if (error) ({ data } = await ask(base.replace(',gap_label', '')));
     setEntries((data as unknown as Entry[]) ?? []);
     setLoading(false);
-  }, [projectId, cursor.y, cursor.m]);
+  }, [projectId, cursor.y, cursor.m, anchored]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { setOpenDay(null); }, [cursor.y, cursor.m]);
@@ -324,7 +364,9 @@ export default function Log({ projectId }: { projectId: string | null }) {
             ? 'Reading the log…'
             : entries.length
               ? `${Object.keys(byDay).length} day${Object.keys(byDay).length === 1 ? '' : 's'} worked · ${dur(monthTotal)}`
-              : 'No work released in this month yet.'}
+              : newest
+                ? `Nothing this month. The most recent work was ${new Date(newest).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}.`
+                : 'No work released yet. It appears here the day the first piece lands.'}
         </div>
       </div>
 

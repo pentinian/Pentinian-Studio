@@ -27,7 +27,7 @@ const SITE_CARDS = [
 ];
 
 type Proj = {
-  id: string; name: string; phase: string | null;
+  id: string; name: string; phase: string | null; progress: number | null;
   client_facing: boolean; linked: boolean;
   client: { name: string; has_login: boolean } | null;
   quarry: number; released: number; held: number;
@@ -58,6 +58,9 @@ export default function AtelierPage() {
   // Bumped after a sync so the queue below reloads with it, rather than reporting a
   // pull that the list it sits above never reflects.
   const [refreshKey, setRefreshKey] = useState(0);
+  // The two lines a client reads above everything else. Held as a draft so a half
+  // typed phase is not saved on every keystroke.
+  const [head, setHead] = useState<{ phase: string; progress: string } | null>(null);
 
   const project = projects.find((p) => p.id === selId) ?? null;
 
@@ -154,6 +157,27 @@ export default function AtelierPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  /* What the client sees at the top of their own Window.
+   *
+   * Both stay empty until said, because empty and zero are different claims: empty is
+   * nobody has put a number on it, zero is none of it is done. The Window shows the
+   * hours actually released when there is no percentage, which is a fact rather than
+   * an estimate, so leaving this alone is a reasonable thing to do rather than a gap. */
+  async function saveHead() {
+    if (!project || !head) return;
+    setMsg('');
+    const res = await fetch('/api/projects', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: project.id, phase: head.phase, progress: head.progress === '' ? null : head.progress }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) return setMsg(j.error ?? 'That did not save.');
+    setMsg('Saved. That is what they read at the top of their Window.');
+    setHead(null);
+    load();
+  }
 
   async function toggleFacing(p: Proj) {
     setMsg('');
@@ -364,6 +388,45 @@ export default function AtelierPage() {
               </>
             )}
           </div>
+
+          {/* Only where it applies: an internal project has no Window to write a
+              heading for. */}
+          {domain === 'project' && project?.client_facing && (
+            <div className="hd-strip">
+              <span className="hd-l">What they read at the top</span>
+              <input
+                className="hd-phase"
+                placeholder="Where it is up to, in their words"
+                maxLength={80}
+                value={head?.phase ?? project.phase ?? ''}
+                onChange={(e) =>
+                  setHead((h) => ({ progress: h?.progress ?? (project.progress ?? '').toString(), phase: e.target.value }))
+                }
+              />
+              <input
+                className="hd-pct"
+                type="number"
+                min={0}
+                max={100}
+                placeholder="%"
+                value={head?.progress ?? (project.progress ?? '').toString()}
+                onChange={(e) =>
+                  setHead((h) => ({ phase: h?.phase ?? project.phase ?? '', progress: e.target.value }))
+                }
+              />
+              <span className="hd-h">
+                {head?.progress || project.progress != null
+                  ? 'A ring at that percentage'
+                  : 'Left empty, they see the hours released instead'}
+              </span>
+              {head && (
+                <button className="mini-btn pri" onClick={saveHead}>Save</button>
+              )}
+              {head && (
+                <button className="mini-btn" onClick={() => setHead(null)}>Discard</button>
+              )}
+            </div>
+          )}
 
           {msg && <p style={{ fontSize: 12.5, color: 'var(--sage-deep)', margin: '0 0 14px' }}>{msg}</p>}
 

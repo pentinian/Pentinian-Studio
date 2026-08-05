@@ -23,6 +23,7 @@ export default function Body({
   email,
   name,
   fresh,
+  effort,
 }: {
   project: Project | null;
   projects: Project[];
@@ -32,6 +33,8 @@ export default function Body({
   // True when this Window has never held released work: the first minute after an
   // invitation, not a quiet month. The greeting changes register accordingly.
   fresh?: boolean;
+  /** Minutes released on this project, all time. */
+  effort?: number;
 }) {
   // Bumped rather than set, so pressing Contact twice reopens it after a close.
   const [openTo, setOpenTo] = useState<{ face: Face; n: number } | null>(null);
@@ -99,8 +102,9 @@ export default function Body({
 
         <ProjectHead
           name={project?.name ?? 'Your project'}
-          phase={project?.phase ?? 'Getting started'}
-          progress={project?.progress ?? 0}
+          phase={project?.phase ?? null}
+          progress={project?.progress ?? null}
+          effort={effort ?? 0}
           status={project?.status ?? null}
           projectId={project?.id ?? null}
           staff={isAdmin}

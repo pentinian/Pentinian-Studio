@@ -31,7 +31,7 @@ export async function GET() {
   const db = admin();
   const [{ data: projects, error }, { data: clients }, { data: raw }, { data: rel }] =
     await Promise.all([
-      db.from('projects').select('id,name,phase,client_facing,client_id,notion_page_id').order('name'),
+      db.from('projects').select('id,name,phase,progress,client_facing,client_id,notion_page_id').order('name'),
       db.from('clients').select('id,name,email,user_id'),
       db.from('work_log_raw').select('project_id'),
       db.from('work_log_released').select('project_id,visible'),
@@ -48,6 +48,7 @@ export async function GET() {
       id: p.id,
       name: p.name,
       phase: p.phase ?? null,
+      progress: typeof p.progress === 'number' ? p.progress : null,
       client_facing: !!p.client_facing,
       linked: !!p.notion_page_id,
       client: c ? { name: c.name, has_login: !!c.user_id } : null,
@@ -78,11 +79,44 @@ export async function PATCH(request: Request) {
   if (!(await staffOnly())) return NextResponse.json({ error: 'Not permitted' }, { status: 403 });
 
   const body = await request.json().catch(() => null);
-  if (!body?.id || typeof body.client_facing !== 'boolean') {
-    return NextResponse.json({ error: 'id and client_facing required' }, { status: 400 });
-  }
+  if (!body?.id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
   const db = admin();
+
+  /* What the client reads at the top of their Window.
+   *
+   * Both are optional and both stay null until someone says otherwise, because null
+   * and zero are different claims: null is "nobody has said", zero is "none of it is
+   * done". The Window renders them differently for that reason.
+   *
+   * Phase is free text so it can say what is actually happening rather than pick from
+   * a list of stages that were guessed at in advance. */
+  if ('phase' in body || 'progress' in body) {
+    const patch: Record<string, unknown> = {};
+    if ('phase' in body) {
+      const p = typeof body.phase === 'string' ? body.phase.trim().slice(0, 80) : '';
+      patch.phase = p || null;
+    }
+    if ('progress' in body) {
+      const n = Number(body.progress);
+      patch.progress =
+        body.progress === null || body.progress === '' || Number.isNaN(n)
+          ? null
+          : Math.max(0, Math.min(100, Math.round(n)));
+    }
+    const { data, error } = await db
+      .from('projects')
+      .update(patch)
+      .eq('id', body.id)
+      .select('id,name,phase,progress')
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, project: data });
+  }
+
+  if (typeof body.client_facing !== 'boolean') {
+    return NextResponse.json({ error: 'Nothing to change' }, { status: 400 });
+  }
   const { data, error } = await db
     .from('projects')
     .update({ client_facing: body.client_facing })

@@ -35,12 +35,18 @@ export default async function WindowPage({
   // is standing in: "welcome back" to someone who has never been here reads as a
   // room that was expecting somebody else.
   let fresh = false;
+  // What has actually been released, which is the one figure about this project that
+  // is a fact rather than an estimate. Stands in for the progress ring when nobody
+  // has set a percentage, because a 0% ring over ten hours of work is a lie the
+  // client has no way to check.
+  let effort = 0;
   if (project) {
-    const { count } = await supabase
+    const { data: done, count } = await supabase
       .from('work_log_released')
-      .select('id', { count: 'exact', head: true })
+      .select('minutes', { count: 'exact' })
       .eq('project_id', project.id);
     fresh = (count ?? 0) === 0;
+    effort = (done ?? []).reduce((n: number, r: any) => n + (r.minutes ?? 0), 0);
   }
 
   // The questions panel used to render here, saying work was awaiting approval above
@@ -57,6 +63,7 @@ export default async function WindowPage({
       email={user?.email ?? null}
       name={(user?.user_metadata?.name as string) ?? null}
       fresh={fresh}
+      effort={effort}
     />
   );
 }
