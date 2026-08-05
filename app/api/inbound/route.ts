@@ -158,7 +158,7 @@ export async function POST(request: Request) {
     // did not come back. Otherwise both read as an empty message.
     error: fetchFailed,
   });
-  if (fetchFailed) record('notify', false, 'letter body not retrieved', { detail: fetchFailed });
+  if (fetchFailed) await record('notify', false, 'letter body not retrieved', { detail: fetchFailed });
 
   // Told, not just filed. Resend needs its 200 whatever happens next, so the
   // forward is awaited and swallowed rather than allowed to fail the delivery:
@@ -170,9 +170,9 @@ export async function POST(request: Request) {
   }
   try {
     await notifyOfLetter({ from, subject, text, client: name });
-    record('notify', true, 'letter forwarded', { from });
+    await record('notify', true, 'letter forwarded', { from });
   } catch (e: any) {
-    record('notify', false, e?.message ?? 'letter forward failed', { from });
+    await record('notify', false, e?.message ?? 'letter forward failed', { from });
   }
 
   return NextResponse.json({ ok: true });

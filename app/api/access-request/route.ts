@@ -79,11 +79,11 @@ export async function POST(request: Request) {
   if (error) {
     // The one failure worth surfacing in health, because a broken door is silent by
     // nature: the person outside assumes it worked and nobody inside hears a thing.
-    record('access', false, error.message, { email });
+    await record('access', false, error.message, { email });
     return ok;
   }
 
-  record('access', true, 'request received', { email });
+  await record('access', true, 'request received', { email });
 
   /* Awaited, not fired and forgotten.
    *
@@ -149,7 +149,7 @@ export async function PATCH(request: Request) {
       noted = await notifyOfDecline({ email: req.email, name: req.name });
     } catch (e: any) {
       console.error('notifyOfDecline failed', e);
-      record('notify', false, e?.message ?? 'send failed', { kind: 'decline' });
+      await record('notify', false, e?.message ?? 'send failed', { kind: 'decline' });
     }
     return NextResponse.json({ ok: true, noted });
   }
@@ -218,6 +218,6 @@ export async function PATCH(request: Request) {
     .update({ status: 'approved', decided_at: new Date().toISOString() })
     .eq('id', req.id);
 
-  record('access', true, 'approved', { email });
+  await record('access', true, 'approved', { email });
   return NextResponse.json({ ok: true });
 }

@@ -97,7 +97,7 @@ export async function PATCH(request: Request) {
       subject: 'You have been invited', body: 'Supabase invitation email',
       status: 'sent', sent_at: new Date().toISOString(),
     });
-    record('access', true, 'invited', { client: client.name });
+    await record('access', true, 'invited', { client: client.name });
     return NextResponse.json({ ok: true, invited: !!invited?.user });
   }
 
@@ -110,6 +110,6 @@ export async function PATCH(request: Request) {
   }
 
   await db.from('clients').update({ suspended: b.action === 'suspend' }).eq('id', client.id);
-  record('access', true, b.action, { client: client.name });
+  await record('access', true, b.action, { client: client.name });
   return NextResponse.json({ ok: true });
 }
