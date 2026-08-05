@@ -84,7 +84,16 @@ export default function People() {
               {p.email && <span className="wi-mail">{p.email}</span>}
             </span>
             <span className={'wi-st ' + (p.suspended ? 'declined' : p.user_id ? 'approved' : '')}>
-              {p.suspended ? 'suspended' : p.user_id ? 'can sign in' : 'no sign-in yet'}
+              {p.suspended
+                ? 'suspended'
+                : p.user_id
+                  ? 'can sign in'
+                  : p.email
+                    ? 'no sign-in yet'
+                    : /* Says why the button beside it cannot be pressed. A title
+                         attribute is invisible on a phone and to anyone who does not
+                         happen to hover the one dead control on the row. */
+                      'no email on file'}
             </span>
             <span className="led-do">
               {p.suspended ? (

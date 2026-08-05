@@ -444,7 +444,12 @@ body.dragging .db-block{cursor:grabbing}
   background:rgba(176,128,92,.16); border-radius:999px; padding:3px 5px}
 .cs-else{font:400 10.5px/1 var(--mono); color:var(--clay-deep); align-self:center}
 /* Nothing to save should not look like a button waiting to be pressed. */
-.hp-save .mini-btn:disabled{opacity:.45; cursor:default}
+/* Scoped to one panel, which meant a disabled button everywhere else still looked
+   entirely pressable. Worst on Let them in, where a client with no email on file got
+   a full strength green button that could not do anything: the exact "nothing to
+   press" problem, inverted into a button that lies about being one. */
+.mini-btn:disabled{opacity:.45; cursor:default}
+.mini-btn:disabled:hover{border-color:var(--line-2)}
 .hp-frame{border:1px solid var(--line-2); border-radius:11px; overflow:hidden;
   background:var(--paper); aspect-ratio:16/13}
 .hp-frame iframe{width:100%; height:100%; border:0; display:block}
