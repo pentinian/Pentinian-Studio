@@ -415,9 +415,9 @@ export default function AtelierPage() {
                 }
               />
               <span className="hd-h">
-                {head?.progress || project.progress != null
+                {Number(head?.progress ?? project.progress ?? 0) > 0
                   ? 'A ring at that percentage'
-                  : 'Left empty, they see the hours released instead'}
+                  : 'Blank or zero, and they see the hours released instead'}
               </span>
               {head && (
                 <button className="mini-btn pri" onClick={saveHead}>Save</button>

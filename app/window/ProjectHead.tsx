@@ -57,9 +57,13 @@ export default function ProjectHead({
       <div className="pj-head">
         {/* A percentage is a claim about how much is left, and nobody has made that
             claim on most projects. Rather than invent one, the ring shows the hours
-            actually released, which is a fact. If a percentage does get set, it wins:
-            it is the more useful of the two, and it was said on purpose. */}
-        {typeof progress === 'number' ? (
+            actually released, which is a fact. A percentage that has been set wins:
+            it is the more useful of the two, and it was said on purpose.
+
+            Zero counts as unset. The column defaults to zero, so there is no null to
+            distinguish, and a project sitting at zero percent with ten hours released
+            is not a state anyone means to publish: it is a number nobody has touched. */}
+        {typeof progress === 'number' && progress > 0 ? (
           <div className="ring" style={{ ['--p' as any]: progress }}>
             <b>{progress}%</b>
           </div>
