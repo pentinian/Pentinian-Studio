@@ -54,12 +54,26 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 
-  // Fire and forget. A notification that fails must never fail the comment: the
-  // reply is already saved and visible, and losing the email is a smaller harm than
-  // telling someone their message did not send when it did.
+  /* Awaited, not fired and forgotten.
+   *
+   * The intent was right: a saved thing must never report failure because an email
+   * did not send. The shape was wrong for where this runs. A serverless function can
+   * be frozen the moment it returns a response, so a promise nobody is waiting on may
+   * simply never finish, and the send that was meant to be best effort becomes a send
+   * that happens by luck. Which is worse than never working, because it works while
+   * you are testing it and stops under a cold start.
+   *
+   * So it is awaited and the failure is swallowed here instead. Same contract, a few
+   * hundred milliseconds on a request that is already writing to a database. */
   if (!isStaff) {
-    notifyOfReply({ commentId: data.id, projectId: body.project_id, from: user.email ?? 'a client', text })
-      .catch((e) => console.error('reply notification failed:', e?.message));
+    try {
+      await notifyOfReply({
+        commentId: data.id, projectId: body.project_id,
+        from: user.email ?? 'a client', text,
+      });
+    } catch (e: any) {
+      console.error('reply notification failed:', e?.message);
+    }
   }
 
   return NextResponse.json({ ok: true, comment: data });

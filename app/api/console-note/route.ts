@@ -88,23 +88,33 @@ export async function POST(request: Request) {
     about = p?.title ?? null;
   }
 
-  // Fire and forget, and swallowed on purpose. A saved note must never report failure
-  // because an email did not send: the note is the thing that mattered and it is saved.
-  notifyOfNote({
-    projectId: b.project_id,
-    kind: b.kind,
-    from: user.email ?? 'a client',
-    title: data?.title ?? '',
-    body: data?.body ?? '',
-    about,
-  })
-    .then(() => record('notify', true, 'console note', { kind: b.kind }))
-    .catch((e) => {
-      console.error('notifyOfNote failed', e);
-      // The note is saved either way. This only records that the studio was not told,
-      // which is exactly the failure that is otherwise invisible.
-      record('notify', false, e?.message ?? 'send failed', { kind: b.kind });
+  /* Awaited, not fired and forgotten.
+   *
+   * The intent was right: a saved thing must never report failure because an email
+   * did not send. The shape was wrong for where this runs. A serverless function can
+   * be frozen the moment it returns a response, so a promise nobody is waiting on may
+   * simply never finish, and the send that was meant to be best effort becomes a send
+   * that happens by luck. Which is worse than never working, because it works while
+   * you are testing it and stops under a cold start.
+   *
+   * So it is awaited and the failure is swallowed here instead. Same contract, a few
+   * hundred milliseconds on a request that is already writing to a database. */
+  try {
+    await notifyOfNote({
+      projectId: b.project_id,
+      kind: b.kind,
+      from: user.email ?? 'a client',
+      title: data?.title ?? '',
+      body: data?.body ?? '',
+      about,
     });
+    await record('notify', true, 'console note', { kind: b.kind });
+  } catch (e: any) {
+    console.error('notifyOfNote failed', e);
+    // The note is saved either way. This only records that the studio was not told,
+    // which is exactly the failure that is otherwise invisible.
+    await record('notify', false, e?.message ?? 'send failed', { kind: b.kind });
+  }
 
   return NextResponse.json({ ok: true, id: data?.id });
 }

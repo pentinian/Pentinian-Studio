@@ -92,7 +92,7 @@ export async function PATCH(request: Request) {
     }
 
     await db.from('clients').update({ user_id: userId, suspended: false }).eq('id', client.id);
-    logMail({
+    await logMail({
       kind: 'invite', to_email: email, client_id: client.id,
       subject: 'You have been invited', body: 'Supabase invitation email',
       status: 'sent', sent_at: new Date().toISOString(),
