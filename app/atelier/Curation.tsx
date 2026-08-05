@@ -211,7 +211,18 @@ export default function Curation({
   }
 
   const proj = projectOf(sel?.project_id ?? null);
-  const blocked = sel && (!sel.project_id || !proj?.client_facing);
+  /* An entry with no time cannot be released.
+   *
+   * The Window is organised by day: the log loads a month of entries by started_at and
+   * skips any that have none. So a release without a time landed in the table, reported
+   * "it is in their Window now", and was never once visible there. Half visible in fact,
+   * because the overview lists it, which is worse than either.
+   *
+   * The fix belongs here rather than in the Window. A piece of work that never happened
+   * at a time is not ready to be read as a day's work, and the panel to give it one is
+   * already open beside this. A pending calendar edit counts: it is about to be saved. */
+  const placed = Boolean(sel && (sel.started_at || edits[sel.id]?.started_at));
+  const blocked = sel && (!sel.project_id || !proj?.client_facing || !placed);
 
   return (
     <div className="cur-wrap">
@@ -320,7 +331,9 @@ export default function Curation({
               <p className="cur-warn">
                 {!sel.project_id
                   ? 'No project on this entry, so it has nowhere to land. Link it in Notion.'
-                  : `${proj?.name} is internal. Mark it client-facing before releasing.`}
+                  : !proj?.client_facing
+                    ? `${proj?.name} is internal. Mark it client-facing before releasing.`
+                    : 'No time on this one yet. Their Window is a calendar, so an entry with no day to sit on would never appear in it. Place it under Where it sits first.'}
               </p>
             )}
 

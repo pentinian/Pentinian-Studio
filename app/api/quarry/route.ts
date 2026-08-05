@@ -174,6 +174,19 @@ async function releaseOne(
       error: `"${project?.name ?? 'That project'}" is internal. Mark it client-facing before releasing.` };
   }
 
+  /* No time, no release.
+   *
+   * The client's Window is a calendar: the log asks for a month of entries by
+   * started_at and skips any that have none. An entry released without one therefore
+   * lands in this table, reports itself released, and is never visible to the person
+   * it was released to. Checked here as well as in the Atelier because this is the
+   * only door into the client's view, and a rule that only exists in the interface is
+   * a rule the next caller does not have to keep. */
+  if (!source.started_at) {
+    return { ok: false, status: 409,
+      error: 'That entry has no time on it, so it has no day to sit on in their Window. Place it first.' };
+  }
+
   // Releasing a whole day sends no text, so each field falls back to what the entry
   // already holds rather than being blanked. A batch release must never quietly empty
   // the words someone wrote.
