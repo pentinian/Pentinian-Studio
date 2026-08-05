@@ -66,7 +66,8 @@ export async function notifyOfReply(reply: Reply): Promise<void> {
           ${esc(body)}
         </blockquote>
         <p style="font:400 13px/1.6 system-ui,sans-serif;color:#8E8D7F">
-          Answer it in the Atelier: <a href="${site}/atelier">${site}/atelier</a>
+          Answer it in the Atelier:
+          <a href="${site}/atelier?at=replies&p=${encodeURIComponent(reply.projectId)}">${site}/atelier</a>
         </p>`,
     }),
   });
@@ -141,7 +142,7 @@ export async function notifyOfNote(note: Note): Promise<void> {
         </blockquote>
         <p style="font:400 13px/1.6 system-ui,sans-serif;color:#8E8D7F">
           Nothing has changed on their side. It is waiting in the Atelier under Console:
-          <a href="${site}/atelier">${site}/atelier</a>
+          <a href="${site}/atelier?at=replies&p=${encodeURIComponent(note.projectId)}">${site}/atelier</a>
         </p>`,
     }),
   });
@@ -199,7 +200,7 @@ export async function notifyOfLetter(letter: Letter): Promise<void> {
         <blockquote style="font:400 15px/1.65 system-ui,sans-serif;color:#5B5C51;border-left:2px solid #7E9270;margin:0 0 20px;padding:2px 0 2px 14px;white-space:pre-wrap">${esc(letter.text.slice(0, 1200))}${letter.text.length > 1200 ? '\n\n[...]' : ''}</blockquote>
         <p style="font:400 13px/1.6 system-ui,sans-serif;color:#8E8D7F">
           It is filed in the ledger, where you can read it whole and answer it:
-          <a href="${site}/atelier">${site}/atelier</a>
+          <a href="${site}/atelier?at=post">${site}/atelier</a>
         </p>`,
     }),
   });
@@ -235,7 +236,7 @@ export async function notifyOfAccessRequest(knock: Knock): Promise<void> {
         ${knock.note ? `<blockquote style="font:400 15px/1.6 system-ui,sans-serif;color:#5B5C51;border-left:2px solid #7E9270;margin:0 0 18px;padding:2px 0 2px 14px">${esc(knock.note.slice(0, 600))}</blockquote>` : ''}
         <p style="font:400 13px/1.6 system-ui,sans-serif;color:#8E8D7F">
           Approve or decline under Access in the Atelier:
-          <a href="${site}/atelier">${site}/atelier</a>
+          <a href="${site}/atelier?at=access">${site}/atelier</a>
         </p>`,
     }),
   });

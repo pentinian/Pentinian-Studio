@@ -64,6 +64,36 @@ export default function AtelierPage() {
 
   const project = projects.find((p) => p.id === selId) ?? null;
 
+  /* Arriving from a notification.
+   *
+   * The emails linked at /atelier, which opens the door but not the room: you are told
+   * someone is asking for access and then handed whichever project happened to be
+   * selected, with the knock one more click away in a place you have to know about.
+   * A link that does not land where it is pointing is half a link.
+   *
+   * So ?at= names the room and ?p= the project when the room is inside one. Read once
+   * on arrival and then wiped from the address bar, because it describes how you got
+   * here rather than where you are, and it should not survive being bookmarked. */
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const at = q.get('at');
+    const p = q.get('p');
+    if (!at) return;
+
+    const studio = ['home', 'studies', 'site', 'post', 'access'] as const;
+    const inProject = ['curation', 'console', 'replies'] as const;
+
+    if ((studio as readonly string[]).includes(at)) {
+      setDomain('studio');
+      setTab(at as typeof tab);
+    } else if ((inProject as readonly string[]).includes(at)) {
+      setDomain('project');
+      setTab(at as typeof tab);
+      if (p) setSelId(p);
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
+
   // A badge that only appears after its tab has been opened is not a badge. Count the
   // people at the door on arrival, from anywhere in the Atelier; WantsIn keeps the
   // number honest once the tab itself is open.
