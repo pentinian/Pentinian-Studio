@@ -30,6 +30,15 @@ const FACES: { k: Item['kind']; label: string }[] = [
   { k: 'request', label: 'Requests' },
 ];
 const FACETS: Item['facet'][] = ['color', 'type', 'rule', 'asset'];
+/* Exactly the words the client reads in their own Window, taken from the same set, so
+   the two cannot describe one request differently. See window/Console.tsx. */
+const REQ_STATES: [string, string][] = [
+  ['open', 'Open'],
+  ['doing', 'In hand'],
+  ['done', 'Done'],
+  ['declined', 'Not doing'],
+];
+
 const FACET_LABEL: Record<string, string> = {
   color: 'Color', type: 'Typeface', rule: 'Rule', asset: 'Asset',
 };
@@ -216,6 +225,19 @@ export default function ConsoleDesk({
               <select className="cn-pick" value={val(it, 'facet') || 'rule'}
                       onChange={(e) => edit(it, 'facet', e.target.value)} aria-label="kind">
                 {FACETS.map((f) => <option key={f} value={f!}>{FACET_LABEL[f!]}</option>)}
+              </select>
+            )}
+            {/* A request's state was readable by the client and settable by nobody.
+                Their Window draws three of them and the public site promises three,
+                so every request anyone ever sent would have read Open for good. */}
+            {it.kind === 'request' && (
+              <select
+                className="cn-pick"
+                value={val(it, 'status') || 'open'}
+                onChange={(e) => patch(it.id, { status: e.target.value })}
+                aria-label="what is happening with this request"
+              >
+                {REQ_STATES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
               </select>
             )}
             <input className="cd-sort" type="number" value={val(it, 'sort')}
