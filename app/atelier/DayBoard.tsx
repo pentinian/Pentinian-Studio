@@ -478,12 +478,21 @@ export default function DayBoard({
             {undated.map((b) => (
               <div
                 key={b.id}
-                className={'db-un' + (edits[b.id] ? ' moved' : '')}
+                className={'db-un' + (edits[b.id] ? ' moved' : '') + (b.released ? ' live' : '')}
                 onPointerDown={(e) => grab(e, b, 'move')}
-                title="Click to open it. Drag it onto an hour to give it a time."
+                title={
+                  b.released
+                    ? 'Released with no time on it, so it is not in their calendar. Drag it onto an hour to fix that.'
+                    : 'Click to open it. Drag it onto an hour to give it a time.'
+                }
               >
                 <span className="db-un-grip" aria-hidden="true" />
                 <span className="db-un-t">{b.title}</span>
+                {/* Released and untimed at once is the one state here that is wrong
+                    rather than merely unfinished: the client has it in their overview
+                    and can never find it in their calendar. It looked identical to a
+                    draft, which is how one sat here unnoticed. */}
+                {b.released && <span className="db-un-live">out, but not on a day</span>}
                 {b.area && <span className="db-un-a">{b.area}</span>}
               </div>
             ))}
@@ -496,8 +505,11 @@ export default function DayBoard({
           )}
           {undated.length > 0 && (
             <p className="cn-note">
-              Waiting for a time. Drag one onto an hour to place it, or open it to
-              release it as it stands.
+              {/* This used to offer releasing one as it stands, which the release path
+                  now refuses: their Window is a calendar, and an entry with no day to
+                  sit on would never appear in it. The offer outlived the behaviour. */}
+              Waiting for a time. Drag one onto an hour to place it. Nothing goes to a
+              client until it has a day, because their Window is a calendar.
             </p>
           )}
         </div>
