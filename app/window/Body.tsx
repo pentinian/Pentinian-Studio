@@ -71,6 +71,9 @@ export default function Body({
         )}
       </StudioHeader>
 
+      {/* The same weather the Foyer keeps, so the room a client is invited
+          into is recognizably the same place they first walked past. */}
+      <div className="sky" aria-hidden="true"><i className="k1" /><i className="k2" /></div>
       <div className="body">
         {fresh ? (
           <>
