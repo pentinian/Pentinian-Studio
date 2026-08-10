@@ -1327,16 +1327,16 @@ body.dragging .db-un{cursor:grabbing}
 .cor-checkins{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px}
 
 /* ---- the weather in the Window --------------------------------------------
-   The same sky the Foyer keeps, quieter: the layered drift and the long quiet
-   bank, grain baked into each shape as everywhere else. */
+   Two of the same five, quieter. The system lives in the site repo under
+   tools/sky; these are its output, not a second set of rules. */
 .sky{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden}
 .sky i{position:absolute; background-repeat:no-repeat; background-size:contain;
   background-position:center; will-change:transform}
-.sky .k1{width:min(580px,58vw); aspect-ratio:2713/785; top:7vh; right:-9vw; opacity:.22;
-  background-image:url("/clouds/cloud-15.svg"); animation:skyDrift 560s linear infinite alternate}
-.sky .k2{width:min(460px,46vw); aspect-ratio:2698/405; bottom:4vh; left:-6vw; opacity:.16;
-  filter:blur(1.1px);
-  background-image:url("/clouds/cloud-16.svg"); animation:skyDrift 700s linear infinite alternate-reverse}
+.sky .k1{width:min(560px,56vw); aspect-ratio:1200/230; top:8vh; right:-8vw; opacity:.22;
+  background-image:url("/clouds/drift.svg"); animation:skyDrift 560s linear infinite alternate}
+.sky .k2{width:min(420px,44vw); aspect-ratio:960/165; bottom:5vh; left:-6vw; opacity:.16;
+  filter:blur(1px);
+  background-image:url("/clouds/wisp.svg"); animation:skyDrift 700s linear infinite alternate-reverse}
 @keyframes skyDrift{from{transform:translateX(0)}to{transform:translateX(-8vw)}}
 @media (prefers-reduced-motion:reduce){.sky i{animation:none}}
 @media (max-width:700px){.sky .k2{display:none} .sky .k1{opacity:.18}}
