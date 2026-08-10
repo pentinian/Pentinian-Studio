@@ -1327,17 +1327,17 @@ body.dragging .db-un{cursor:grabbing}
 .cor-checkins{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px}
 
 /* ---- the weather in the Window --------------------------------------------
-   Two of the same five, quieter. The system lives in the site repo under
-   tools/sky; these are its output, not a second set of rules. */
+   Two of the same eight, quieter. The rules and the prep live in the site repo
+   under tools/sky; these are its output, not a second set of rules. */
 .sky{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden}
 .sky i{position:absolute; background-repeat:no-repeat; background-size:contain;
   background-position:center; will-change:transform}
-.sky .k1{width:min(560px,56vw); aspect-ratio:1200/230; top:8vh; right:-8vw; opacity:.22;
+.sky .k1{width:min(540px,55vw); aspect-ratio:2520/879; top:6vh; right:-8vw; opacity:.2;
   background-image:url("/clouds/drift.svg"); animation:skyDrift 560s linear infinite alternate}
-.sky .k2{width:min(420px,44vw); aspect-ratio:960/165; bottom:5vh; left:-6vw; opacity:.16;
+.sky .k2{width:min(430px,45vw); aspect-ratio:2491/515; bottom:4vh; left:-6vw; opacity:.15;
   filter:blur(1px);
   background-image:url("/clouds/wisp.svg"); animation:skyDrift 700s linear infinite alternate-reverse}
 @keyframes skyDrift{from{transform:translateX(0)}to{transform:translateX(-8vw)}}
 @media (prefers-reduced-motion:reduce){.sky i{animation:none}}
-@media (max-width:700px){.sky .k2{display:none} .sky .k1{opacity:.18}}
+@media (max-width:700px){.sky .k2{display:none} .sky .k1{opacity:.17}}
 .body{position:relative; z-index:1}
