@@ -122,6 +122,25 @@ function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> })
     return (pick ?? '').replace(/\.?$/, '.').trim();
   };
 
+  // A color's name. Curated entries carry theirs (the console row's title);
+  // legacy groups usually SAY their name inside the role prose ("the text is
+  // ink", "becomes Artinian garnet"), so the card reads it out. When neither
+  // speaks, the value leads alone, which is honest.
+  const displayName = (members: Entry[]): string | null => {
+    const curated = members.find((m) => m.payload?.console);
+    if (curated) return String(curated.payload?.name ?? '') || null;
+    for (const m of members) {
+      const p = String(m.payload?.purpose ?? '');
+      const hit = p.match(/(?:is|becomes|stays)\s+(?:the\s+|an?\s+)?([a-z][a-z -]{2,30}?)[.;,]/i);
+      if (hit) {
+        const words = hit[1].trim().split(/\s+/);
+        const last = words[words.length - 1];
+        return last.charAt(0).toUpperCase() + last.slice(1);
+      }
+    }
+    return null;
+  };
+
   const cards = [...groups.entries()].sort((a, z) => a[0].localeCompare(z[0]));
 
   return (
@@ -130,11 +149,13 @@ function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> })
         const names = members.map((m) => String(m.payload?.name ?? '')).sort();
         const steps = names.reduce((n, name) => n + (stems.get(name) ?? 0), 0);
         const pressed = members.find((m) => m.visibility !== 'internal');
+        const name = displayName(members);
         return (
           <figure key={value} className="kit-pcard">
             <i style={{ background: value }} />
             <figcaption>
               <div className="kit-pcard-head">
+                {name ? <strong className="kit-pcard-n">{name}</strong> : null}
                 <code className="kit-pcard-v">{String(members[0].payload?.value ?? '')}</code>
                 {pressed ? <VisTag e={pressed} /> : null}
               </div>

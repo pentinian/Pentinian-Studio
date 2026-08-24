@@ -1460,3 +1460,6 @@ body.dragging .db-un{cursor:grabbing}
   border-bottom:1px solid var(--line); vertical-align:top}
 .brand-retired td:first-child{font:500 11px/1.5 var(--mono); color:var(--ink); white-space:nowrap}
 .brand-retired td code{font:400 11px/1.4 var(--mono)}
+.kit-pcard-n{font:500 15px/1.2 var(--serif); color:var(--ink)}
+.kit-pcard-head{flex-wrap:wrap}
+.kit-pcard-head .kit-pcard-v{margin-left:auto}
