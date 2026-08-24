@@ -7,6 +7,10 @@
 // limicon and unimpact bundles exist on disk but have no Atelier project;
 // they are ignored here until Pen adds lanes.
 
+// LimIcon and UnImpact are wired ahead of their projects: the day a studio
+// project carries one of these exact names, its lane, canon, and seeded
+// ratified palette all connect without a code change. A near miss name shows
+// up in the sync report's lanesWithoutProject, loudly.
 export const LANES: Record<string, string> = {
   'Artinian Gems': 'artinian',
   'Caveman Rebrand': 'caveman',
@@ -15,6 +19,9 @@ export const LANES: Record<string, string> = {
   'Pentinian App': 'atelier',
   // Fixture data, marked as fixture by the bundle itself.
   'Rehearsal Client': 'rehearsal',
+  // Wired ahead of arrival; see the note above.
+  LimIcon: 'limicon',
+  UnImpact: 'unimpact',
 };
 
 export function slugForProject(name: string | null | undefined): string | null {
