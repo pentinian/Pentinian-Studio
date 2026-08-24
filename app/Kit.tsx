@@ -101,6 +101,62 @@ const bySortThenName = (a: Entry, z: Entry) => {
   return String(a.payload?.name ?? a.title).localeCompare(String(z.payload?.name ?? z.title));
 };
 
+/** Branding presents color grouped by VALUE: the brand has a handful of real
+ *  colors wearing many name tags, so each color renders once, value led, with
+ *  its token names as chips beneath. Legacy aliases collapse instead of
+ *  multiplying, and a near paper value stays visible inside its hairline. */
+function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> }) {
+  const groups = new Map<string, Entry[]>();
+  for (const e of list) {
+    const v = String(e.payload?.value ?? '').trim().toLowerCase();
+    if (!groups.has(v)) groups.set(v, []);
+    groups.get(v)!.push(e);
+  }
+
+  const role = (members: Entry[]): string => {
+    const curated = members.find((m) => m.payload?.console);
+    const text = String((curated ?? members[0]).payload?.purpose ?? '');
+    if (!text) return '';
+    const sentences = text.split(/\.\s+/).filter(Boolean);
+    const pick = curated ? sentences[0] : sentences[sentences.length - 1];
+    return (pick ?? '').replace(/\.?$/, '.').trim();
+  };
+
+  const cards = [...groups.entries()].sort((a, z) => a[0].localeCompare(z[0]));
+
+  return (
+    <div className="kit-palette">
+      {cards.map(([value, members]) => {
+        const names = members.map((m) => String(m.payload?.name ?? '')).sort();
+        const steps = names.reduce((n, name) => n + (stems.get(name) ?? 0), 0);
+        const pressed = members.find((m) => m.visibility !== 'internal');
+        return (
+          <figure key={value} className="kit-pcard">
+            <i style={{ background: value }} />
+            <figcaption>
+              <div className="kit-pcard-head">
+                <code className="kit-pcard-v">{String(members[0].payload?.value ?? '')}</code>
+                {pressed ? <VisTag e={pressed} /> : null}
+              </div>
+              {role(members) ? <p className="kit-pcard-role">{role(members)}</p> : null}
+              <div className="kit-alias">
+                {names.map((n) => (
+                  <code key={n}>{n}</code>
+                ))}
+                {steps > 0 ? (
+                  <a className="kit-x" href="#kit-buildcolor">
+                    {steps} build step{steps === 1 ? '' : 's'}
+                  </a>
+                ) : null}
+              </div>
+            </figcaption>
+          </figure>
+        );
+      })}
+    </div>
+  );
+}
+
 function Swatches({ list, dense, stems }: { list: Entry[]; dense?: boolean; stems?: Map<string, number> }) {
   return (
     <div className={'kit-colors' + (dense ? ' build' : '')}>
@@ -283,7 +339,7 @@ export default function Kit({
           {b.brandColors.length > 0 && (
             <section className="kit-ch" id="kit-color">
               <h2>Color</h2>
-              <Swatches list={b.brandColors} stems={b.stems} />
+              <Palette list={b.brandColors} stems={b.stems} />
             </section>
           )}
 

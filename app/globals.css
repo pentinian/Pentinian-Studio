@@ -1424,3 +1424,39 @@ body.dragging .db-un{cursor:grabbing}
 .kit-colors.build{grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px}
 .kit-colors.build .kit-sw i{height:40px}
 .kit-sw-none{background:repeating-linear-gradient(45deg, var(--paper-2) 0 6px, var(--bone) 6px 12px)}
+
+/* the kit as widgets: each chapter a contained module, tables composed */
+.kit-ch{background:var(--bone); border:1px solid var(--line); border-radius:12px;
+  padding:18px 20px 20px; margin:18px 0}
+.kit-ch h2{border-bottom:1px solid var(--line); margin:0 0 16px; padding-bottom:10px}
+.kit-part{margin-top:38px}
+.kit-part-h{border-top:0; padding-top:0}
+.kit-part-sub{margin-bottom:4px}
+
+/* palette: color grouped by value */
+.kit-palette{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px}
+.kit-pcard{margin:0; border:1px solid var(--line); border-radius:10px; overflow:hidden;
+  background:var(--paper)}
+.kit-pcard i{display:block; height:92px; box-shadow:inset 0 0 0 1px var(--line)}
+.kit-pcard figcaption{padding:10px 12px 12px; display:flex; flex-direction:column; gap:6px}
+.kit-pcard-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.kit-pcard-v{font:500 13px/1.2 var(--mono); color:var(--ink)}
+.kit-pcard-role{font:400 11px/1.5 var(--sans); color:var(--ink-2); margin:0}
+.kit-alias{display:flex; flex-wrap:wrap; gap:4px; align-items:center}
+.kit-alias code{font:400 9.5px/1 var(--mono); color:var(--ink-3); background:var(--paper-2);
+  border:1px solid var(--line); border-radius:4px; padding:3px 5px}
+.kit-sw i{box-shadow:inset 0 0 0 1px var(--line)}
+
+/* retired, composed as the warning widget it is */
+.kit-ch.brand-retired{background:rgba(138,47,38,.04); border-color:rgba(138,47,38,.25)}
+.brand-retired h3{font:500 12px/1 var(--sans); letter-spacing:.14em; text-transform:uppercase;
+  color:#8a2f26; margin:0 0 14px; display:flex; align-items:center; gap:8px}
+.brand-retired h3::before{content:''; width:7px; height:7px; border-radius:50%; background:#8a2f26}
+.brand-retired table{width:100%; border-collapse:collapse}
+.brand-retired th{font:500 9.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase;
+  color:#8a2f26; text-align:left; padding:0 12px 8px 0; background:none;
+  border-bottom:1px solid rgba(138,47,38,.3)}
+.brand-retired td{font:400 11.5px/1.5 var(--sans); color:var(--ink-2); padding:8px 12px 8px 0;
+  border-bottom:1px solid var(--line); vertical-align:top}
+.brand-retired td:first-child{font:500 11px/1.5 var(--mono); color:var(--ink); white-space:nowrap}
+.brand-retired td code{font:400 11px/1.4 var(--mono)}
