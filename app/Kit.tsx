@@ -156,10 +156,14 @@ function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> })
   return (
     <div className="kit-palette">
       {cards.map(([value, members]) => {
-        const names = members.map((m) => String(m.payload?.name ?? '')).sort();
-        const steps = names.reduce((n, name) => n + (stems.get(name) ?? 0), 0);
-        const pressed = members.find((m) => m.visibility !== 'internal');
         const name = displayName(members);
+        // The card's own name is not an alias of itself.
+        const names = members
+          .map((m) => String(m.payload?.name ?? ''))
+          .filter((n) => n && n !== name)
+          .sort();
+        const steps = names.reduce((n, alias) => n + (stems.get(alias) ?? 0), 0);
+        const pressed = members.find((m) => m.visibility !== 'internal');
         return (
           <figure key={value} className="kit-pcard">
             <i style={{ background: value }} />
