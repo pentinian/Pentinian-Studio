@@ -82,8 +82,12 @@ export async function migrateWorklog(db: any): Promise<MigrateResult> {
       started_at: r.started_at,
       minutes: r.minutes,
     };
-    // The hash covers everything whose change should reach the brain.
-    const content_hash = sha256(canonical({ body: r.body ?? null, payload }));
+    const provenance = r.notion_id
+      ? `synced from Notion (${r.notion_id}); the Build row is the working copy`
+      : 'written by hand in the Atelier';
+    // The hash covers everything whose change should reach the brain,
+    // provenance included, so a reworded line propagates instead of hiding.
+    const content_hash = sha256(canonical({ body: r.body ?? null, payload, provenance }));
 
     const row: any = {
       project_id: r.project_id,
@@ -93,9 +97,7 @@ export async function migrateWorklog(db: any): Promise<MigrateResult> {
       title,
       body: r.body ?? null,
       payload,
-      provenance: r.notion_id
-        ? `synced from Notion (${r.notion_id}); the Quarry row is the working copy`
-        : 'written by hand in the Atelier',
+      provenance,
       entry_key: `worklog:${r.id}`,
       content_hash,
       visibility,

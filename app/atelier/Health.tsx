@@ -101,7 +101,7 @@ export default function Health() {
           {bad ? 'Something needs attention' : 'Everything is running'}
         </span>
         <span className="hz-sum">
-          {h.counts.quarry} in the Quarry
+          {h.counts.quarry} in Build
           {sync ? ` · synced ${ago(sync.at)}` : ''}
         </span>
         <span className="hz-caret" aria-hidden="true">{open ? '−' : '+'}</span>

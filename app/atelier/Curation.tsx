@@ -66,7 +66,7 @@ export default function Curation({
 
   const load = useCallback(async () => {
     const res = await fetch('/api/quarry', { cache: 'no-store' });
-    if (!res.ok) { setMsg('Could not load the Quarry.'); return; }
+    if (!res.ok) { setMsg('Could not load Build.'); return; }
     const d = await res.json();
     setRaw(d.raw); setReleased(d.released); setProjects(d.projects);
   }, []);
@@ -229,11 +229,11 @@ export default function Curation({
       {/* ---------------- the queue ---------------- */}
       <div className="cur-queue">
         <div className="cur-head">
-          <span className="ln">Quarry</span>
+          <span className="ln">Build</span>
           <button
             className="cur-scope"
             onClick={() => setScope(scope === 'project' ? 'all' : 'project')}
-            title="Switch between this project and everything in the Quarry"
+            title="Switch between this project and everything in Build"
           >
             {scope === 'all' || !projectId ? 'everything' : projectName ?? 'this project'}
           </button>

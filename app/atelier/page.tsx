@@ -256,7 +256,7 @@ export default function AtelierPage() {
   }
 
   async function migrateQuarry() {
-    setMsg('Folding the Quarry into the brain…');
+    setMsg('Folding Build into the brain…');
     const res = await fetch('/api/brain', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -271,7 +271,7 @@ export default function AtelierPage() {
     const c = j.console;
     const cr = j.console_reconciliation;
     setMsg(
-      `Folded. Quarry: ${j.migration.created} new, ${j.migration.updated} updated, ` +
+      `Folded. Build: ${j.migration.created} new, ${j.migration.updated} updated, ` +
         `${j.migration.unchanged} unchanged (${r.synced_entries_in} in, ${r.brain_worklog_out} out, ` +
         `${r.match ? 'match' : 'MISMATCH'}).` +
         (c && cr
@@ -290,7 +290,7 @@ export default function AtelierPage() {
     const j = await res.json();
     setMsg(
       res.ok
-        ? `Pulled ${j.pulled} entries into the Quarry.` +
+        ? `Pulled ${j.pulled} entries into Build.` +
             (j.unmatchedProjects?.length
               ? ` ${j.unmatchedProjects.length} named a project that does not exist here, so those cannot reach anyone: ${j.unmatchedProjects.join(', ')}.`
               : '') +
@@ -451,7 +451,7 @@ export default function AtelierPage() {
                   Brain
                 </button>
                 <button className={tab === 'curation' ? 'on' : ''} onClick={() => setTab('curation')}>
-                  Curation
+                  Build
                 </button>
                 <button className={tab === 'inspiration' ? 'on' : ''} onClick={() => setTab('inspiration')}>
                   Inspiration

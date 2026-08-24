@@ -1463,3 +1463,7 @@ body.dragging .db-un{cursor:grabbing}
 .kit-pcard-n{font:500 15px/1.2 var(--serif); color:var(--ink)}
 .kit-pcard-head{flex-wrap:wrap}
 .kit-pcard-head .kit-pcard-v{margin-left:auto}
+/* the ratified palette sits four across */
+.kit-palette{grid-template-columns:repeat(4,1fr)}
+.kit-pcard i{height:80px}
+@media (max-width:820px){.kit-palette{grid-template-columns:repeat(2,1fr)}}

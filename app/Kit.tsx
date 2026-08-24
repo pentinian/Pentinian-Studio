@@ -141,7 +141,17 @@ function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> })
     return null;
   };
 
-  const cards = [...groups.entries()].sort((a, z) => a[0].localeCompare(z[0]));
+  // Ratified colors carry their order; a group's seat is its lowest sort.
+  // Unratified projects have no sorts, so their groups fall back to value
+  // order, which is stable and honest.
+  const seat = (members: Entry[]) =>
+    Math.min(...members.map((m) => (typeof m.payload?.sort === 'number' ? m.payload.sort : Infinity)));
+  const cards = [...groups.entries()].sort((a, z) => {
+    const sa = seat(a[1]);
+    const sz = seat(z[1]);
+    if (sa !== sz) return sa < sz ? -1 : 1;
+    return a[0].localeCompare(z[0]);
+  });
 
   return (
     <div className="kit-palette">
@@ -237,8 +247,35 @@ export default function Kit({
     );
     const otherTokens = tokens.filter((e) => !colorTokens.includes(e) && !faceTokens.includes(e));
 
-    const brandColors = colorTokens.filter((e) => tokenTier(String(e.payload?.name ?? '')) === 'branding');
-    const buildColors = colorTokens.filter((e) => tokenTier(String(e.payload?.name ?? '')) === 'build');
+    // Membership in the Branding palette is ratification, when ratification
+    // exists: curated console colors define the set and its order, canon
+    // values matching a ratified value ride along as aliases, and canon
+    // values nobody ratified (the deep garnet) fall to Build. A project with
+    // no ratified rows falls back to the tier heuristic so its book is never
+    // empty.
+    const curatedColors = colorTokens.filter((e) => e.payload?.console);
+    const canonBranding = colorTokens.filter(
+      (e) => !e.payload?.console && tokenTier(String(e.payload?.name ?? '')) === 'branding'
+    );
+    const canonBuild = colorTokens.filter(
+      (e) => !e.payload?.console && tokenTier(String(e.payload?.name ?? '')) === 'build'
+    );
+    let brandColors: Entry[];
+    let buildColors: Entry[];
+    if (curatedColors.length > 0) {
+      const ratified = new Set(
+        curatedColors.map((e) => String(e.payload?.value ?? '').trim().toLowerCase())
+      );
+      const matching = canonBranding.filter((e) =>
+        ratified.has(String(e.payload?.value ?? '').trim().toLowerCase())
+      );
+      const fallen = canonBranding.filter((e) => !matching.includes(e));
+      brandColors = [...curatedColors, ...matching];
+      buildColors = [...canonBuild, ...fallen];
+    } else {
+      brandColors = canonBranding;
+      buildColors = canonBuild;
+    }
     const faces = [...faceTokens, ...brand.filter((e) => e.payload?.kind === 'face')];
 
     const rules = brand.filter((e) => e.payload?.kind === 'rule');
@@ -678,7 +715,7 @@ export default function Kit({
                 {allWork ? 'Show recent only' : `Show all ${b.work.length}`}
               </button>
             )}
-            <p className="kit-note">The Quarry remains the working surface; this is the record.</p>
+            <p className="kit-note">Build remains the working surface; this is the record.</p>
           </section>
         </div>
       )}
