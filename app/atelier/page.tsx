@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import Brain from './Brain';
 import ConsoleDesk from './ConsoleDesk';
 import Curation from './Curation';
 import Studies from './Studies';
@@ -34,7 +35,7 @@ type Proj = {
 };
 
 export default function AtelierPage() {
-  const [tab, setTab] = useState<'curation' | 'console' | 'replies' | 'site' | 'access' | 'home' | 'post' | 'studies'>('curation');
+  const [tab, setTab] = useState<'brain' | 'curation' | 'inspiration' | 'requests' | 'replies' | 'site' | 'access' | 'home' | 'post' | 'studies'>('brain');
   // Two domains, not one list. Editing the public site is not managing a client's build,
   // and putting both in the same rail meant every project row sat next to two controls
   // that had nothing to do with any project.
@@ -81,7 +82,7 @@ export default function AtelierPage() {
     if (!at) return;
 
     const studio = ['home', 'studies', 'site', 'post', 'access'] as const;
-    const inProject = ['curation', 'console', 'replies'] as const;
+    const inProject = ['curation', 'inspiration', 'requests', 'replies'] as const;
 
     if ((studio as readonly string[]).includes(at)) {
       setDomain('studio');
@@ -228,6 +229,61 @@ export default function AtelierPage() {
     load();
   }
 
+  async function syncHekate() {
+    setMsg('Reading the canon\u2026');
+    const res = await fetch('/api/brain/sync-hekate', { method: 'POST' });
+    const j = await res.json();
+    if (!res.ok) {
+      setMsg(`Hekate sync error: ${j.error}`);
+      return;
+    }
+    const parts = (j.bundles ?? []).map((b: any) =>
+      b.status === 'ingested'
+        ? `${b.slug} ${b.created} new, ${b.updated} updated, ${b.unchanged} unchanged` +
+          (b.stale_removed ? `, ${b.stale_removed} stale removed` : '') +
+          (b.stale_kept ? `, ${b.stale_kept} stale kept (pressed; demote by hand)` : '')
+        : `${b.slug} ${b.status}`
+    );
+    const drift = (j.lanesWithoutProject ?? []).length
+      ? ` Lanes with no project row: ${j.lanesWithoutProject.join(', ')}. A rename somewhere needs the lane map to follow.`
+      : '';
+    setMsg(
+      `Canon read (index ${j.indexGenerated ?? 'undated'}, ${j.transport}): ` +
+        (parts.join('; ') || 'index listed nothing') +
+        drift
+    );
+    setRefreshKey((n) => n + 1);
+  }
+
+  async function migrateQuarry() {
+    setMsg('Folding the Quarry into the brain…');
+    const res = await fetch('/api/brain', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ migrate: true }),
+    });
+    const j = await res.json();
+    if (!res.ok) {
+      setMsg(`Migration error: ${j.error}`);
+      return;
+    }
+    const r = j.reconciliation;
+    const c = j.console;
+    const cr = j.console_reconciliation;
+    setMsg(
+      `Folded. Quarry: ${j.migration.created} new, ${j.migration.updated} updated, ` +
+        `${j.migration.unchanged} unchanged (${r.synced_entries_in} in, ${r.brain_worklog_out} out, ` +
+        `${r.match ? 'match' : 'MISMATCH'}).` +
+        (c && cr
+          ? ` Console: ${c.created} new, ${c.updated} updated, ${c.unchanged} unchanged ` +
+            `(${cr.notes_in} in, ${cr.brain_console_out} out, ${cr.match ? 'match' : 'MISMATCH'}), ` +
+            `${c.requests_left} request${c.requests_left === 1 ? '' : 's'} left with correspondence.`
+          : '') +
+        ' Idempotent; safe to press again.'
+    );
+    setRefreshKey((n) => n + 1);
+  }
+
   async function sync() {
     setMsg('Syncing from Notion…');
     const res = await fetch('/api/notion-sync', { method: 'POST' });
@@ -270,7 +326,13 @@ export default function AtelierPage() {
     <>
       {/* Same header the Window uses, so the two read as rooms rather than products. */}
       <StudioHeader room="atelier" staff email={email} name={name}>
-        <button className="mini-btn pri" onClick={sync} style={{ marginLeft: 'auto' }}>
+        <button className="mini-btn" onClick={migrateQuarry} style={{ marginLeft: 'auto' }}>
+          Fold
+        </button>
+        <button className="mini-btn" onClick={syncHekate}>
+          Sync Canon
+        </button>
+        <button className="mini-btn pri" onClick={sync}>
           Sync Notion
         </button>
       </StudioHeader>
@@ -322,7 +384,7 @@ export default function AtelierPage() {
               onClick={() => {
                 setSelId(p.id);
                 setDomain('project');
-                if (tab === 'site' || tab === 'access' || tab === 'home' || tab === 'post' || tab === 'studies') setTab('curation');
+                if (tab === 'site' || tab === 'access' || tab === 'home' || tab === 'post' || tab === 'studies') setTab('brain');
               }}
               title={p.client_facing ? 'Client-facing' : 'Internal'}
             >
@@ -385,11 +447,17 @@ export default function AtelierPage() {
           <div className="tabs">
             {domain === 'project' ? (
               <>
+                <button className={tab === 'brain' ? 'on' : ''} onClick={() => setTab('brain')}>
+                  Brain
+                </button>
                 <button className={tab === 'curation' ? 'on' : ''} onClick={() => setTab('curation')}>
                   Curation
                 </button>
-                <button className={tab === 'console' ? 'on' : ''} onClick={() => setTab('console')}>
-                  Console
+                <button className={tab === 'inspiration' ? 'on' : ''} onClick={() => setTab('inspiration')}>
+                  Inspiration
+                </button>
+                <button className={tab === 'requests' ? 'on' : ''} onClick={() => setTab('requests')}>
+                  Requests
                 </button>
                 <button className={tab === 'replies' ? 'on' : ''} onClick={() => setTab('replies')}>
                   Replies
@@ -460,12 +528,18 @@ export default function AtelierPage() {
 
           {msg && <p style={{ fontSize: 12.5, color: 'var(--sage-deep)', margin: '0 0 14px' }}>{msg}</p>}
 
+          {tab === 'brain' && selId && <Brain projectId={selId} key={selId + refreshKey} />}
+
           {tab === 'curation' && (
             <Curation projectId={selId} projectName={project?.name ?? null} refreshKey={refreshKey} />
           )}
 
-          {tab === 'console' && (
-            <ConsoleDesk projectId={selId} projectName={project?.name ?? null} refreshKey={refreshKey} />
+          {tab === 'inspiration' && (
+            <ConsoleDesk projectId={selId} projectName={project?.name ?? null} refreshKey={refreshKey} only="inspiration" />
+          )}
+
+          {tab === 'requests' && (
+            <ConsoleDesk projectId={selId} projectName={project?.name ?? null} refreshKey={refreshKey} only="request" />
           )}
 
           {tab === 'replies' && <Replies />}

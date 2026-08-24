@@ -44,14 +44,19 @@ const FACET_LABEL: Record<string, string> = {
 };
 
 export default function ConsoleDesk({
-  projectId, projectName, refreshKey,
+  projectId, projectName, refreshKey, only,
 }: {
   projectId: string | null;
   projectName: string | null;
   refreshKey: number;
+  /** Lock the desk to one face. The Console tab retired into two rooms:
+   *  Inspiration and Requests each mount this desk locked to their kind.
+   *  Brand notes now live in the Brain and are edited at their sources;
+   *  their release press arrives with Phase B. */
+  only?: 'inspiration' | 'request';
 }) {
   const [items, setItems] = useState<Item[]>([]);
-  const [face, setFace] = useState<Item['kind']>('brand');
+  const [face, setFace] = useState<Item['kind']>(only ?? 'brand');
   const [msg, setMsg] = useState('');
   const [bad, setBad] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -123,10 +128,13 @@ export default function ConsoleDesk({
   // board rather than in the same list. Mixing them would mean scanning a column of
   // rows to work out which ones are asking you something.
   const shown = items.filter((i) => i.kind === face && !(i.kind === 'brand' && i.from_client));
-  const pending = face === 'brand'
+  // Client brand suggestions are asks, so with the brand face retired they
+  // surface in the Requests room, where asks live.
+  const showAsks = face === 'brand' || only === 'request';
+  const pending = showAsks
     ? items.filter((i) => i.kind === 'brand' && i.from_client && i.status === 'open')
     : [];
-  const answered = face === 'brand'
+  const answered = showAsks
     ? items.filter((i) => i.kind === 'brand' && i.from_client && i.status === 'declined')
     : [];
   const stagedCount = (k: Item['kind']) =>
@@ -138,18 +146,20 @@ export default function ConsoleDesk({
   return (
     <div className="cd">
       <div className="cd-h">
-        <div className="cd-faces">
-          {FACES.map((f) => (
-            <button key={f.k} className={'cd-face' + (face === f.k ? ' on' : '')}
-                    onClick={() => { setFace(f.k); setAdding(null); }}>
-              {f.label}
-              {stagedCount(f.k) > 0 && <i title="staged, not yet released">{stagedCount(f.k)}</i>}
-              {f.k === 'brand' && askCount > 0 && (
-                <i className="ask" title="waiting on you">{askCount}</i>
-              )}
-            </button>
-          ))}
-        </div>
+        {!only && (
+          <div className="cd-faces">
+            {FACES.map((f) => (
+              <button key={f.k} className={'cd-face' + (face === f.k ? ' on' : '')}
+                      onClick={() => { setFace(f.k); setAdding(null); }}>
+                {f.label}
+                {stagedCount(f.k) > 0 && <i title="staged, not yet released">{stagedCount(f.k)}</i>}
+                {f.k === 'brand' && askCount > 0 && (
+                  <i className="ask" title="waiting on you">{askCount}</i>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
         <span className="cd-note">
           {projectName}. Staged items are invisible to the client until released.
         </span>

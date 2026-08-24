@@ -1,0 +1,48 @@
+{
+ "authoritative": "FIXTURE. This bundle is invented for the Rehearsal Client and describes nothing real; the stores hold no rehearsal project.",
+ "canon": {
+  "recorded_count": 2,
+  "retired": [
+   {
+    "at": "2026-08-21T00:00:00Z",
+    "by": "fixture",
+    "found_at": "nowhere; fixture",
+    "name": "--rh-ghostlight",
+    "replaced_by": "#6B7A8C",
+    "value": "#F2EFE6",
+    "why": "FIXTURE retired value, present so the warning treatment can be seen in rehearsal."
+   }
+  ],
+  "rules": {
+   "0": "FIXTURE rule: everything in this lane is stage dressing."
+  },
+  "source": "fixture",
+  "tokens": {
+   "--rh-curtain": {
+    "at": "2026-08-21T00:00:00Z",
+    "by": "fixture",
+    "provenance": "fixture",
+    "purpose": "FIXTURE token, the rehearsal curtain red.",
+    "value": "#8C4A52"
+   },
+   "--rh-stage": {
+    "at": "2026-08-21T00:00:00Z",
+    "by": "fixture",
+    "provenance": "fixture",
+    "purpose": "FIXTURE token, the rehearsal stage blue.",
+    "value": "#6B7A8C"
+   }
+  }
+ },
+ "docs": [],
+ "generated": "2026-08-21T00:00:00Z",
+ "profile": {
+  "summary": "FIXTURE. A rehearsal client for walking the Atelier without touching anything real."
+ },
+ "schema": "hekate.brain/1",
+ "slug": "rehearsal",
+ "taxonomy": {
+  "count": 0,
+  "specimens": []
+ }
+}

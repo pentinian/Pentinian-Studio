@@ -1325,3 +1325,102 @@ body.dragging .db-un{cursor:grabbing}
 .ppl-who{flex:1; min-width:0; font:400 13px/1.4 var(--sans); color:var(--ink)}
 
 .cor-checkins{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+
+/* the Brain tab. House materials only: qcard bones, tag badges, mono labels.
+   The retired table is deliberately alarming; see Brain.tsx for why. */
+.brain-chips{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px}
+.brain-list{max-width:760px}
+.brain-card-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.brain-card-head strong{font:400 14px/1.35 var(--serif); color:var(--ink)}
+.brain-badges{margin-left:auto; display:inline-flex; gap:6px}
+.brain-body{margin:7px 0 0; font-size:12.5px; line-height:1.55; color:var(--ink-2); white-space:pre-line}
+.brain-prov{margin:8px 0 0; font:400 10px/1.5 var(--mono); color:var(--ink-3)}
+.brain-truth{max-width:70ch; font-size:12.5px; color:var(--ink-2); border-left:2px solid var(--sage); padding-left:12px; margin:0 0 18px}
+.brain-empty{max-width:56ch; font-size:13.5px; color:var(--ink-2); border:1px dashed var(--line-2); border-radius:10px; padding:18px}
+.brand-face section{margin:0 0 26px}
+.brand-face h3{font:400 15px/1.2 var(--serif); color:var(--ink); margin:0 0 10px}
+.brand-face table{width:100%; border-collapse:collapse; background:var(--bone); border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.brand-face th{font:500 9.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; text-align:left; color:var(--ink-3); padding:9px 11px; border-bottom:1px solid var(--line-2)}
+.brand-face td{font-size:12.5px; color:var(--ink-2); padding:9px 11px; border-bottom:1px solid var(--line); vertical-align:top}
+.brand-face tr:last-child td{border-bottom:0}
+.brand-face code{font:400 11.5px/1.4 var(--mono); color:var(--ink)}
+.brand-sw{display:inline-block; width:16px; height:16px; border-radius:4px; border:1px solid var(--line-2)}
+.brand-retired h3{color:#8a2f26}
+.brand-retired table{border-color:rgba(138,47,38,.5)}
+.brand-retired th{background:rgba(138,47,38,.12); color:#8a2f26; border-bottom-color:rgba(138,47,38,.4)}
+.brand-retired td{color:var(--ink-2)}
+.brand-retired code{color:#8a2f26; text-decoration:line-through}
+.brand-retired td:nth-child(3) code{text-decoration:none; color:var(--sage-deep)}
+.brain-pre{font:400 11px/1.55 var(--mono); color:var(--ink-2); white-space:pre-wrap; margin:6px 0 0; max-height:220px; overflow:auto}
+
+/* ---- the kit: a project's brain as a brand book -------------------------- */
+.kit{max-width:880px}
+.kit-viewbar{display:flex; gap:6px; margin-bottom:14px}
+.kit-id h1{font:500 34px/1.15 var(--serif); color:var(--ink); margin:0 0 6px}
+.kit-id-sub{font:400 13px/1.5 var(--sans); color:var(--ink-2); margin:0 0 10px}
+.kit-rail{display:flex; flex-wrap:wrap; gap:2px 18px; padding:12px 0; margin:14px 0 6px;
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+.kit-rail a{font:500 12.5px/1.6 var(--sans); color:var(--ink-2); text-decoration:none}
+.kit-rail a:hover{color:var(--ink)}
+.kit-rail a span{color:var(--ink-3); font-size:10.5px}
+.kit-ch{margin:34px 0; scroll-margin-top:80px}
+.kit-ch h2{font:500 21px/1.2 var(--serif); color:var(--ink); margin:0 0 14px;
+  padding-bottom:8px; border-bottom:1px solid var(--line)}
+.kit-note{font:400 11px/1.5 var(--sans); color:var(--ink-3); margin:10px 0 0}
+.kit-colors{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px}
+.kit-sw{margin:0; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--bone)}
+.kit-sw i{display:block; height:74px}
+.kit-sw figcaption{padding:8px 10px 10px; display:flex; flex-direction:column; gap:3px}
+.kit-sw code{font:500 11px/1.3 var(--mono); color:var(--ink)}
+.kit-sw-v{font:400 10.5px/1.3 var(--mono); color:var(--ink-3); word-break:break-all}
+.kit-sw p{font:400 10.5px/1.45 var(--sans); color:var(--ink-2); margin:2px 0 0}
+.kit-face{display:grid; grid-template-columns:1fr 240px; gap:16px; align-items:baseline;
+  padding:14px 0; border-bottom:1px solid var(--line)}
+.kit-face-sample{font-size:24px; line-height:1.3; color:var(--ink); margin:0; overflow-wrap:break-word}
+.kit-face-meta{display:flex; flex-direction:column; gap:3px}
+.kit-face-meta code{font:500 11px/1.3 var(--mono); color:var(--ink)}
+.kit-face-meta p{font:400 10.5px/1.45 var(--sans); color:var(--ink-2); margin:2px 0 0}
+.kit-measures{width:100%; border-collapse:collapse}
+.kit-measures td{padding:7px 10px 7px 0; border-bottom:1px solid var(--line);
+  font:400 12px/1.4 var(--sans); color:var(--ink-2); vertical-align:middle}
+.kit-measures code{font:500 11px/1.3 var(--mono); color:var(--ink)}
+.kit-measure-cell{width:250px}
+.kit-measure-bar{display:block; height:8px; border-radius:4px; background:var(--sage-soft)}
+.kit-rules{margin:0; padding-left:22px; display:flex; flex-direction:column; gap:14px}
+.kit-rule-line{font:400 16.5px/1.45 var(--serif); color:var(--ink); margin:0}
+.kit-rule-why{font:400 11.5px/1.5 var(--sans); color:var(--ink-3); margin:3px 0 0}
+.kit-specs{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px}
+.kit-spec ul{margin:8px 0 0; padding-left:16px; font:400 11.5px/1.5 var(--sans); color:var(--ink-2)}
+.kit-docs{width:100%; border-collapse:collapse}
+.kit-docs td{padding:6px 10px 6px 0; border-bottom:1px solid var(--line);
+  font:400 11.5px/1.4 var(--sans); color:var(--ink-3)}
+.kit-docs code{font:500 11px/1.3 var(--mono); color:var(--ink)}
+.kit-work{display:flex; flex-direction:column; margin-bottom:10px}
+.kit-work-row{display:flex; gap:12px; align-items:baseline; padding:7px 0;
+  border-bottom:1px solid var(--line)}
+.kit-work-row time{font:400 10.5px/1.3 var(--mono); color:var(--ink-3); flex:none; width:74px}
+.kit-work-title{font:400 12.5px/1.4 var(--sans); color:var(--ink); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.kit-fold{border-bottom:1px solid var(--line); padding:6px 0}
+.kit-fold summary{font:500 12.5px/1.5 var(--sans); color:var(--ink-2); cursor:pointer}
+.kit-fold summary:hover{color:var(--ink)}
+@media (max-width:700px){
+  .kit-face{grid-template-columns:1fr}
+  .kit-measure-cell{display:none}
+}
+.kit-spec-head{display:flex; align-items:center; gap:8px; justify-content:space-between}
+.kit-spec-purpose{font:400 11.5px/1.5 var(--sans); color:var(--ink-2); margin:6px 0 0}
+/* the three strata */
+.kit-part{margin:44px 0 0}
+.kit-part-h{font:500 13px/1 var(--sans); letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ink-3); margin:0; padding-top:14px; border-top:2px solid var(--line-2)}
+.kit-part-sub{font:400 12px/1.5 var(--sans); color:var(--ink-3); margin:6px 0 0}
+.kit-rail-part{display:flex; gap:2px 12px; flex-wrap:wrap; align-items:baseline; margin-right:10px}
+.kit-rail-part b{font:500 10px/1.6 var(--sans); letter-spacing:.18em; text-transform:uppercase;
+  color:var(--ink-3)}
+.kit-x{font:500 10.5px/1.4 var(--sans); color:var(--sage-deep); text-decoration:none;
+  border-bottom:1px solid rgba(94,115,85,.35)}
+.kit-x:hover{color:var(--ink)}
+.kit-colors.build{grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px}
+.kit-colors.build .kit-sw i{height:40px}
+.kit-sw-none{background:repeating-linear-gradient(45deg, var(--paper-2) 0 6px, var(--bone) 6px 12px)}

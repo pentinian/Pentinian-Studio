@@ -1,0 +1,43 @@
+{
+ "schema": "hekate.brain-index/1",
+ "generated": "2026-08-21T21:32:04Z",
+ "bundles": [
+  {
+   "slug": "artinian",
+   "file": "artinian.brain.json",
+   "bytes": 47073,
+   "sha256": "b56a4f8a4b83f28cc6294760915d4af08c6e86b7133eb8c0cbacf17b3f33fb32"
+  },
+  {
+   "slug": "caveman",
+   "file": "caveman.brain.json",
+   "bytes": 1143150,
+   "sha256": "3f7ee5059952fb3439e0e432ba2aaa79e252e6f5c066853b73c821632e5dd3c0"
+  },
+  {
+   "slug": "limicon",
+   "file": "limicon.brain.json",
+   "bytes": 988465,
+   "sha256": "38b28430b926cd656087fe90b9b351f1be8b7083be3a49962457e674f01f94e4"
+  },
+  {
+   "slug": "unimpact",
+   "file": "unimpact.brain.json",
+   "bytes": 1315811,
+   "sha256": "cb71b1286a00899828c265d87fd5738650b6f0a9d4be87dfef4196615be4566e"
+  },
+  {
+   "slug": "pentinian",
+   "file": "pentinian.brain.json",
+   "bytes": 48509,
+   "sha256": "ea40ee0044fd6e4f6871e4f1fcdbdba7ad12742693e02093d66305d54cfe51a6"
+  },
+  {
+   "slug": "rehearsal",
+   "file": "rehearsal.brain.json",
+   "bytes": 1268,
+   "sha256": "a89ab3c5fccf33910bfd328cc040c80bac99c33078370ff12c9b9fbcbb9d1804",
+   "note": "fixture; exists only in the committed fixtures, never in the shared stores"
+  }
+ ]
+}

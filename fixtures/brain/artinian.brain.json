@@ -1,0 +1,467 @@
+{
+  "authoritative": "the JSON stores under HEKATE_HOME; this bundle is a projection of them at the moment above",
+  "canon": {
+    "recorded_count": 21,
+    "retired": [
+      {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "found_at": "core.css:36, core-v2.css:36, core-v3.css:36",
+        "name": "--ice",
+        "replaced_by": "#1B181E",
+        "value": "#FAF5EE",
+        "why": "The Caveman original, light text on a dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "found_at": "core.css:37, core-v2.css:37, core-v3.css:37",
+        "name": "--cream",
+        "replaced_by": "#1B181E",
+        "value": "#FAF5EE",
+        "why": "The Caveman original, light text on a dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "found_at": "core.css:39, core-v2.css:39, core-v3.css:39",
+        "name": "--green-deep",
+        "replaced_by": "#FAF5EE",
+        "value": "#1B181E",
+        "why": "The Caveman original, a dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "found_at": "core.css:74, core-v2.css:74, core-v3.css:74",
+        "name": "--cgs-core-forest",
+        "replaced_by": "#FAF5EE",
+        "value": "#1B181E",
+        "why": "The Caveman original, a dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "found_at": "core.css:75, core-v2.css:75, core-v3.css:75",
+        "name": "--cgs-core-forest-dark",
+        "replaced_by": "#FAF5EE",
+        "value": "#041d19",
+        "why": "The Caveman original, the darkest ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "found_at": "core.css:76, core-v2.css:76, core-v3.css:76",
+        "name": "--cgs-core-forest-muted",
+        "replaced_by": "#FAF5EE",
+        "value": "#1a4750",
+        "why": "The Caveman original, a muted dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:40, core-v2.css:40, core-v3.css:40",
+        "name": "--green-mid",
+        "replaced_by": "#FAF5EE",
+        "value": "#1a4750",
+        "why": "The Caveman original, a mid dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:41, core-v2.css:41, core-v3.css:41",
+        "name": "--green-light",
+        "replaced_by": "#FAF5EE",
+        "value": "#205560",
+        "why": "The Caveman original, a lighter dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:42, core-v2.css:42, core-v3.css:42",
+        "name": "--green-dark",
+        "replaced_by": "#FAF5EE",
+        "value": "#0e2f37",
+        "why": "The Caveman original, a deeper dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:80, core-v2.css:80, core-v3.css:80",
+        "name": "--cgs-core-text",
+        "replaced_by": "#1B181E",
+        "value": "#f5f7f4",
+        "why": "The Caveman original, near white text on a dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:81, core-v2.css:81, core-v3.css:81",
+        "name": "--cgs-core-text-muted",
+        "replaced_by": "#595658",
+        "value": "rgba(245, 247, 244, 0.72)",
+        "why": "The Caveman original, near white text at 72 percent on a dark ground. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:46, core-v2.css:46, core-v3.css:46",
+        "name": "--gold-light",
+        "replaced_by": "#84221C",
+        "value": "#caa55c",
+        "why": "The Caveman original, the light Caveman gold. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:47, core-v2.css:47, core-v3.css:47",
+        "name": "--gold-dark",
+        "replaced_by": "#671B16",
+        "value": "#6E1C17",
+        "why": "The Caveman original, a near miss garnet, two points off the deep garnet. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:55, core-v2.css:55, core-v3.css:55",
+        "name": "--gold-20",
+        "replaced_by": "rgba(132,34,28,.22)",
+        "value": "rgba(132, 34, 28, 0.20)",
+        "why": "The Caveman original, the same garnet tint at alpha 0.20. The sweep keeps the role and flips the value. Never restore."
+      },
+      {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "found_at": "core.css:77, core-v2.css:77, core-v3.css:77",
+        "name": "--cgs-core-gold",
+        "replaced_by": "#84221C",
+        "value": "#d1b375",
+        "why": "The Caveman original, the Caveman gold. The sweep keeps the role and flips the value. Never restore."
+      }
+    ],
+    "rules": {},
+    "source": "recorded during builds",
+    "tokens": {
+      "--a2-garnet-12": {
+        "at": "2026-08-21T20:37:13Z",
+        "by": "measurement",
+        "provenance": "recorded",
+        "purpose": "Minted 2026-08-21 as group 0 of the token rename, shipped in 2.146.0. The garnet anchor at 12 percent alpha, for borders and hairlines sitting over imagery where the opaque --a2-garnet-wash would cover what is beneath. 132,34,28 IS #84221C, so this is derived from the anchor rather than eyeballed. Target of the rename for --gold-12, which has 12 live consumers. Verified at :root on all six measured surfaces after deploy; before the enqueue handle was bumped a2-tokens-v2 to v3 it read unset on every one of them while every other signal reported success.",
+        "value": "rgba(132,34,28,.12)"
+      },
+      "--a2-garnet-22": {
+        "at": "2026-08-21T20:37:13Z",
+        "by": "measurement",
+        "provenance": "recorded",
+        "purpose": "Minted 2026-08-21 as group 0 of the token rename, shipped in 2.146.0. The heavier step of the same garnet tint. Target of the rename for --gold-20, which has 18 live consumers. The name carries 22 and not 20 deliberately: the sweep moved this alpha from a pre-sweep 0.20 to .22 with no explanation, and Pen ruled that the mint takes the LIVE value so the name tells the truth and pixel identity holds. Restoring .20 is recorded separately as a proposal with its own before and after; it is not part of this rename. Verified at :root on all six measured surfaces after deploy.",
+        "value": "rgba(132,34,28,.22)"
+      },
+      "--cgs-core-forest": {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground the ground is alabaster.",
+        "value": "#FAF5EE"
+      },
+      "--cgs-core-forest-dark": {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground the ground is alabaster.",
+        "value": "#FAF5EE"
+      },
+      "--cgs-core-forest-muted": {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground the ground is alabaster.",
+        "value": "#FAF5EE"
+      },
+      "--cgs-core-gold": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman gold accent becomes Artinian garnet. Garnet stays the single accent.",
+        "value": "#84221C"
+      },
+      "--cgs-core-text": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground the text is ink.",
+        "value": "#1B181E"
+      },
+      "--cgs-core-text-muted": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground the text is ink.",
+        "value": "#595658"
+      },
+      "--cream": {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground the text is ink.",
+        "value": "#1B181E"
+      },
+      "--gold": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman gold accent becomes Artinian garnet. Garnet stays the single accent. Confirmed unchanged: core-v3.css:45 already carries #84221C, so the sweep restates rather than flips it.",
+        "value": "#84221C"
+      },
+      "--gold-06": {
+        "at": "2026-08-21T17:38:44Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman gold accent becomes Artinian garnet. Garnet stays the single accent. Introduced by the sweep, same A2-R13 pass as gold-08. No pre-sweep value exists in core-v3.css.",
+        "value": "rgba(132,34,28,.06)"
+      },
+      "--gold-08": {
+        "at": "2026-08-21T17:38:44Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman gold accent becomes Artinian garnet. Garnet stays the single accent. Introduced by the sweep. A2-R13 notes the gold tints were missed and thumb, spec and popup borders stayed gold. No pre-sweep value exists in core-v3.css, so there is nothing to retire.",
+        "value": "rgba(132,34,28,.08)"
+      },
+      "--gold-12": {
+        "at": "2026-08-21T17:38:44Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman gold accent becomes Artinian garnet. Garnet stays the single accent. Confirmed unchanged: core-v3.css:54 carries the same color, written rgba(132, 34, 28, 0.12). The difference is notation, not value.",
+        "value": "rgba(132,34,28,.12)"
+      },
+      "--gold-20": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman gold accent becomes Artinian garnet. Garnet stays the single accent. Note the alpha moved from 0.20 to 0.22.",
+        "value": "rgba(132,34,28,.22)"
+      },
+      "--gold-dark": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman gold accent becomes Artinian garnet. Garnet stays the single accent.",
+        "value": "#671B16"
+      },
+      "--gold-light": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman gold accent becomes Artinian garnet. Garnet stays the single accent.",
+        "value": "#84221C"
+      },
+      "--green-dark": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground this is alabaster.",
+        "value": "#FAF5EE"
+      },
+      "--green-deep": {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground the ground is alabaster.",
+        "value": "#FAF5EE"
+      },
+      "--green-light": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground this is alabaster.",
+        "value": "#FAF5EE"
+      },
+      "--green-mid": {
+        "at": "2026-08-21T17:38:43Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground this is alabaster.",
+        "value": "#FAF5EE"
+      },
+      "--ice": {
+        "at": "2026-08-21T17:12:48Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "The de-dark sweep at a2-specimen-chrome.css:168-181. The Caveman names encode a dark design; on a light ground the text is ink.",
+        "value": "#1B181E"
+      }
+    }
+  },
+  "docs": [
+    {
+      "bytes": 6624,
+      "file": "artinian-canon.md",
+      "mtime": 1787333942,
+      "sha256": "52566cb44ba5cde01bdbb283c6b9c70db4855039743386f0975ed9e725e9e7a1"
+    },
+    {
+      "bytes": 19405,
+      "file": "artinian-contact-outliers.md",
+      "mtime": 1785446621,
+      "sha256": "771d46846cffa94a1b723602a6f0b1aa908eb7a7f65d9ddc7ad4ed243f2ea2d4"
+    },
+    {
+      "bytes": 8419,
+      "file": "artinian-desk-layout-plan.md",
+      "mtime": 1786661118,
+      "sha256": "276d660dfeba3427607b62cbd9af39f354a4a42c24c2ad3b2c78cbffdedd7f2e"
+    },
+    {
+      "bytes": 3327,
+      "file": "artinian-golive-mail-and-remittance.md",
+      "mtime": 1786733554,
+      "sha256": "043019903e7b8c4cbc2b35699112a36cb81bc1c30094d9329c404d9024415a82"
+    },
+    {
+      "bytes": 8893,
+      "file": "artinian-master-plan-what-is-next.md",
+      "mtime": 1786987719,
+      "sha256": "16f1f1823ac221719456ee0562017d8ded1151e04df91b47ac0efb8bbef8b794"
+    },
+    {
+      "bytes": 5991,
+      "file": "desk-evaluation.md",
+      "mtime": 1786462530,
+      "sha256": "27bceb957e8f09e722e5a2837f9fb7c9152bf47cf19e0a0c6abb04340d8583c6"
+    },
+    {
+      "bytes": 8600,
+      "file": "handoff-prompt.md",
+      "mtime": 1787251286,
+      "sha256": "1f21e3b2a228067fde36ff8532d0c4de238afabcb0e52e6d761bf0f9937f685a"
+    },
+    {
+      "bytes": 6171,
+      "file": "inventory-2026-08-21.md",
+      "mtime": 1787334605,
+      "sha256": "35cb2b202a9641ff3e9ae00b310b950b643b56d17e5f848bba41eaf5afc38007"
+    },
+    {
+      "bytes": 8310,
+      "file": "rename-baseline-v2.md",
+      "mtime": 1787342408,
+      "sha256": "48f606cd46c6a989ef74f91bc4381e8e8c775083ffbea8902d8ba43097b881dc"
+    },
+    {
+      "bytes": 6149,
+      "file": "rename-baseline.md",
+      "mtime": 1787335616,
+      "sha256": "8357ad447391527f8c784c53c7fd68d6e1ea2d7d2ea274330c1bb20308177c00"
+    },
+    {
+      "bytes": 16550,
+      "file": "rename-map.md",
+      "mtime": 1787342423,
+      "sha256": "bfb2d51226bfdb14f3976701c5c5911f04636f4134111c98876b419dc227e294"
+    },
+    {
+      "bytes": 5564,
+      "file": "site-becomes-the-record.md",
+      "mtime": 1787243215,
+      "sha256": "66edccf73509a36feeb49e6253c5b048430a713ee765bcbd4d22c29fcfd41e1c"
+    },
+    {
+      "bytes": 7182,
+      "file": "trade-desk-functionality-audit.md",
+      "mtime": 1787178317,
+      "sha256": "92124a2ae1700906568708e15ce7af416d860dc2b9106337e4969515d447fa65"
+    },
+    {
+      "bytes": 8858,
+      "file": "trade-desk-parity-review.md",
+      "mtime": 1787168931,
+      "sha256": "ce2a16589442940579f92ffa3833a77ba96dedcdfa68d53139dc195ba2ae1bff"
+    }
+  ],
+  "generated": "2026-08-21T21:32:04Z",
+  "profile": {
+    "boundaries": [
+      "The dev seals stand, mail interceptor and blog_public 0, until go-live is called explicitly.",
+      "The storefront never wears desk styling. Probe checks 16, 26 and 29 enforce it.",
+      "Never hand-edit a file on the server. Patches only, with exact-string asserts, written at the end so a mismatched anchor aborts before touching anything.",
+      "No em or en dashes anywhere, including commit messages. American spelling. They and them for Pen in writing.",
+      "Deliverables get written to ~/Studio/_artinian/docs/, not left in chat. A report that only lives in a session is unreachable from every other session, which is the exact failure this whole system exists to fix. Write the file, then confirm the byte count, because a write that was blocked reads the same as one that landed until someone looks."
+    ],
+    "cache_bust": {
+      "current": [],
+      "mechanism": "filename",
+      "note": "Proved by slidein-v2.min.js: after editing the source, bumping the enqueue handle from cgs-slidein-v9 to v10, and a full wp sg purge, the browser still fetched the old 135,574 byte file. It only updated when the file was renamed to slidein-v3.min.js. The host strips the version query string, so a plugin-served asset carries its version in its name. Assets SG minifies into siteground-optimizer-assets/ are the exception: the generated filename contains the handle, so a handle bump busts those."
+    },
+    "deploy": {
+      "fence": "The assert set inside the patch script. Every replacement asserts its anchor string appears exactly once before anything is written, and the file write happens at the end, so a mismatched anchor aborts before touching the file.",
+      "skill": "wordpress-update",
+      "steps": [
+        "1. Write a Python patch script with exact-string asserts for every replacement. Never hand-edit on the server.",
+        "2. scp the patch to /tmp on the server and run it there with python3.",
+        "3. php -l every touched PHP file. One or two files per ssh call; three or more tends to time out.",
+        "4. If JS changed, pull to the sandbox and minify with esbuild. slidein.js is whitespace-only (--minify-whitespace, identifiers preserved, about 135KB). inventory-search.js is full (--minify, about 81KB). Match the existing file size or the flags were wrong.",
+        "5. Push the built file back under a NEW filename if it is served from the plugin path, because cache busting lives in the filename.",
+        "6. wp sg purge, backgrounded with nohup and a sleep 22, because it outlives a normal ssh call.",
+        "7. Verify live in the browser by measuring, not by rereading the code.",
+        "8. php tools/sweep-orphans.php --live to clear orphaned minified files.",
+        "9. Prepend the entry to CHANGELOG.md, asserting no em or en dashes first.",
+        "10. wp eval-file tools/probe-deck.php, 30 of 30, then git add -A and git commit -F a message file."
+      ]
+    },
+    "model": "One shop engine and one set of desk components are rendered three times over the same inventory at three permission levels, storefront, staff desk and customer trade desk, so almost every screen already exists somewhere and the work is nearly always to scope an existing component rather than build a new one.",
+    "summary": "The staff desk and the customer trade desk for Artinian Gems, a wholesale colored-stone dealer, delivered as one WordPress plugin over a WooCommerce inventory of about 4,600 stones and finished pieces. It serves two audiences from one codebase: Artinian staff running memos, invoices, documents and shows, and about 289 wholesale jewelers who browse at their own price, request stones on memo, and build client pages.",
+    "traps": [
+      "Cache busting lives in the FILENAME because this host strips ?ver from static assets. Recognize it when: you edited a JS file, bumped the handle, purged, and the browser still serves the old byte count. Nuance: for assets SG minifies into siteground-optimizer-assets/, the generated filename carries the handle, so a handle bump works there and only there.",
+      "Dead selectors that stopped matching. Six in one window. data-nav where the markup says data-primary; an href rewrite still looking for free-consultation; a custody regex matching SKU# when the ledger mostly writes \u2116 13376 \u00b7. Recognize it when: a feature does half its job. The data changes but the highlight does not. Nothing errors.",
+      "Media queries read the viewport, containers do not. A pane rendered in a 602px drawer kept its two-column grid because a max-width:720px rule was measuring a wide window.",
+      "A grid painted while hidden measures zero. Deep-linking into a closed room produced a blank column. One resize on room open fixes it.",
+      "wc_price() returns the dollar sign as an HTML entity. Escaping it again shows a customer &#036;. Decode at source.",
+      "Scroll-lock gutter race. body.cgs-no-scroll hides the scrollbar before the unified lock measures it, so the lock reads zero and the page shifts 4px.",
+      "Two iframes measured in one call return empty. One at a time.",
+      "Screenshots race animations. Put the settle in its own tool call.",
+      "The snapshot at ~/Studio/_artinian-snapshot is a point-in-time reading pulled from the sandbox. Re-pull before any ingest, and treat a survey older than the last deploy as a survey of the past.",
+      "The local mirror at Studio/caveman-gems-support/artinian-gems-plugins/artinian-gems-core is 1.16.0 against the server's 2.143.0. Never point anything at it. A stale build wearing the code's name produces a record that is confidently wrong and looks right.",
+      "The Hekate scripts are on the Mac and the ssh access is in the sandbox, so no single shell can do both. Snapshot from the sandbox, run Hekate on the Mac, against a shared Studio path.",
+      "The Caveman palette names are inverted on purpose. a2-specimen-chrome.css lines 168 to 181 run a de-dark sweep at :root, .cgs-core-theme that keeps each Caveman name's role and flips its value: --green-deep and the forest names become alabaster grounds, --ice, --cream and --cgs-core-text become ink text, --gold becomes garnet. Every declaration is !important, so it wins regardless of load order and the risk is presence, not ordering. Measured on the trade desk, the storefront and the staff desk: swept values on all three. It reverts only where that sheet does not load, which today is wp-admin, and a surface that loads cgs-core.min.css without it would get --ice: #FAF5EE, light text on a light ground, with no obvious cause. Recognize it when: a name reads backwards against its value. That is the sweep, not a mistake. Where a name reads backwards against its value, suspect a deliberate remap before suspecting a mistake, and go and read the comment above the declaration.",
+      "assets/css holds three copies of the core stylesheet and only core-v3.css is enqueued, as handle cgs-core at includes/Assets.php:409. core-v2.css is byte identical to it (md5 7d1dc0989af2, 34409 bytes) and core.css is an older 34336 byte variant. A grep for a token therefore returns three files and two of them are dead weight. Edit core-v3.css. Recognize it when: a change to a color or a token has no effect anywhere and the file you edited looks correct.",
+      "The fallback vector, which is sharper than an alias. a2-chrome-v1.css:60 declares --ice: var(--a2-alabaster, #FAF5EE). The fallback IS the retired value. On any surface where --a2-alabaster fails to resolve, alabaster returns with no error. Measured precisely: this is the only instance in the codebase. It is scoped to .cg-edit-marquee rather than :root, so it does not inherit sitewide, and the sweep's !important at :root masks it everywhere else. Two further lines that look identical, category-search.css:17 and :18, sit inside a documentation comment block and are not declarations at all. Recognize it when: a component reverts to a pre-sweep color while the rest of the page is correct. Look for a var() whose fallback is the retired value, not for a broken rule.",
+      "There is a stray copy of a2-specimen-chrome.css at the plugin ROOT, 70876 bytes dated Aug 4, beside the live one at assets/css/modules/a2-specimen-chrome.css, 79922 bytes dated Aug 6. They are not identical and the root copy is the older one. It is the only place --cgs-core-font-display is declared as Bodoni Moda, which is why a survey reports a three way font conflict that does not exist live. Together with core.css and core-v2.css that is three stray stylesheet copies in the tree. Recognize it when: a grep returns a file path with no assets/css/ prefix, or a token appears to have one more variant than the live page shows.",
+      "--cgs-core-font-display resolves to 'Playfair Display', Didot, serif on all three surfaces measured, the trade desk, the storefront and the staff desk. The apparent three way conflict is two live declarations plus one dead: core-v3.css:88 says Aboreto, assets/css/modules/a2-specimen-chrome.css:33 says Playfair Display and wins, artinian-gems-core.php:260 sets the same Playfair inline, and the Bodoni Moda variant exists only in the stray copy at the plugin root, a2-specimen-chrome.css:25, which is dead. Headings compute Playfair Display everywhere, including the site title and the trade desk vhead. document.fonts.check: Aboreto false, Playfair Display true, Bodoni Moda true. Bodoni Moda is not among the loaded faces, so its true is a locally installed font on this machine and not something a customer has.",
+      "PROPOSAL, not done, changes rendered output so it belongs to its own session. The Aboreto critical fonts block at includes/Assets.php:75 to 107 declares an @font-face, preloads the TTF, and applies font-family Aboreto !important to every heading and site title. It wins nowhere. Measured on the trade desk, the storefront and the staff desk: every heading computes Playfair Display, document.fonts.check for Aboreto is false, and the face reports status unloaded, meaning the file is preloaded and then never used. Proposed: retire the block and its preload. Expected visual delta: none. Expected network delta: one fewer TTF preload. Gate on both sides: capture the computed font-family of h1, h2 and .wp-block-site-title on the trade desk, a storefront page, the staff desk and one block pattern page before and after. Any change means the block was winning somewhere unmeasured and the change must be reverted.",
+      "The snapshot re-pull must be rsync -a --delete --exclude='.hekate' artinian:<plugin path>/ ~/Studio/_artinian-snapshot/. Without the exclude, --delete removes .hekate/project.json, which does not exist server-side, and the project name guard dies silently while everything else looks fine.",
+      "What the hooks do and do not see on this project, corrected. Server edits go through a Python patch script scp'd to /tmp and run there, so the PostToolUse house rules hook never observes them; the patch script's own exact-string asserts are the only fence on that path. Everything written to ~/Studio DOES pass through the hook, deliverables and canon exports included. Proven 2026-08-21: the first attempt to write docs/inventory-2026-08-21.md was BLOCKED on six em dashes, on the same day the no-dashes boundary was recorded. Note this correction was recorded as a new trap rather than an amendment, because profile.py carries learn and tidy and no verb that edits an entry in place.",
+      "The dual token sheet is one file under two handles, not two sheets. assets/css/a2-tokens-v1.css is enqueued twice: artinian-gems-core.php:197 registers it sitewide as handle a2-tokens-v2, which Parcel, TrunkShow, TrunkShowLanding and PrivateViewing then declare as a dependency; StaffDesk.php:316 and TradeDesk.php:1626 enqueue the SAME file again under handle a2-tokens. SG minifies per handle, so both a2-tokens-v2.min.css and a2-tokens.min.css exist and both arrive on the staff desk. They are byte identical, md5 4539d293d147506650340d2c1b0858d9, 1346 bytes each, so nothing renders wrong; it is one redundant request and a survey that counts the same custom properties twice. a2-tokens-v2 is the canonical handle, being the sitewide registration with dependents. The desk modules should depend on it rather than re-enqueue the file. Not fixed, deliberately. Note also that the handle version and the filename version disagree by design: the handle carries the cache-bust counter, the filename carries the sheet's own generation.",
+      "The .cg-edit-marquee fallback vector is a DELETION, not a migration. Its only declaration is assets/css/modules/a2-chrome-v1.css:60, --ice: var(--a2-alabaster, #FAF5EE), and the class renders nowhere. Checked 2026-08-21 on four fronts: the markup appears in no plugin PHP, in no theme or mu-plugin file, in no live DOM on the storefront, the trade desk or the staff desk, and its 49 database rows are ALL post_type revision with status inherit, zero published. It was removed from the Home page and survives only in revision history. The CSS block styling it is dead weight. Recognize the shape: a class present in CSS and in wp_posts, but every row a revision, means the component was deleted from the page and its stylesheet was never cleaned.",
+      "The four probe components are all deletions, the marquee pattern four more times. Checked 2026-08-21. .cgs-deals-banner is dead TWICE: cgs_b2c_popups_disabled is 1, so Banner::init returns before registering its wp_body_open hook (A2-W13), and Banner::render also opens with an unconditional return (A2-L5, output retired for the B2B build), leaving the rest of the function unreachable. .cgs-ticket-slidein__panel is emitted only by blocks/ticket-request-toggle/render.php, and that block appears in zero post_content rows, so it is registered and never placed. .cgs-core-section and .cg-env-wrap have no PHP or JS emitter at all and appear in no post_content; they exist only in core*.css and editor.css. Consequence for measurement: these four cannot serve as rename probes. The tokens they consume still have live consumers elsewhere, chiefly on the single product page and checkout, and those are the surfaces where this rename can actually be proven.",
+      "PROPOSAL, not done, changes rendered output so it is gated separately. --gold-20 is swept to rgba(132,34,28,.22) from a pre-sweep rgba(132, 34, 28, 0.20). The alpha moved two points and nothing in the sweep comment explains it. Pen ruled that the rename mints --a2-garnet-22 at the live .22, so the name tells the truth and pixel identity holds. Restoring .20 is a separate change for Pen to take or leave, with its own before and after: it touches 22 live consumers, chiefly .cgs-sp-sold-stamp, .cgs-sp-thumbs and .cg-hover-lift:hover on the single product page, plus core-v3.css. Gate on both sides: capture the computed border and background of those selectors on a product page before and after, and expect a visible delta, because unlike the font proposal this one is meant to change a pixel.",
+      "Three more stylesheets are dead weight beyond core.css and core-v2.css, and one of them is large. Unreferenced from includes/ and with no minified artifact loading live: assets/css/modules/category-archive.css, which carries 40 var() consumers of Caveman-era tokens and is superseded by category-archive-v2.css; assets/css/modules/single-product-parchment.css, 2 consumers, superseded by single-product-v2.css which is what SingleProductParchment.php actually enqueues; and the stray a2-specimen-chrome.css at the plugin root, 3 consumers, superseded by the copy in assets/css/modules/. Excluding these three plus the dead core pair takes the rename from 337 asserts across 23 files to 292 across 20. Recognize the shape: a module file with a -v2 sibling means the unsuffixed one is probably retired, and only the enqueue tells you which.",
+      "The Hekate scripts path rotates and must be resolved at call time, never hard-coded. On 2026-08-21 the plugin directory moved from rpm/plugin_01FWkU2ttRXj3vkXrisqRpJi to rpm/plugin_01E4kThJWtVpp3XynZkY5z9H MID-SESSION, with no warning and no error until a script ran. The failure is quiet in the worst way: every subprocess returned rc=2 with 'can't open file ... profile.py', but the calling script carried on and printed 'profile copied, 14964 bytes', which is the UNCHANGED profile, so the run looked like it had done something. Use ~/Studio/_hekate_path.py scripts_dir(), which globs for a scripts dir containing profile.py and a brain.py carrying retire, and takes the newest. Check the record's own counts before and after any write, from ~/.hekate-profiles/artinian.json, not from what the command said. Older copies exist under ~/Downloads/hekate, 'hekate 2' and 'hekate 3'; the one in Downloads/hekate has no retire verb, so it is pre 1.3.0 and must not be used.",
+      "The checkout page does not exist in the user journey any more, and checkout.css is orphaned. Measured live 2026-08-21. /checkout/ and /cart/ both 302 to /memo-list/ for a signed in trade user, and to /trade-access/ for anyone signed out. woocommerce_checkout_page_id is still 30, the page still carries a Woo checkout block, and Assets.php:815 still enqueues cgs-checkout behind if(is_checkout()), but that conditional never fires because nobody ever lands on the page. cgs-checkout.min.css is served on ZERO pages. Consequence: assets/css/modules/checkout.css and its 48 var() consumers, the second largest group in the token rename, style a page that cannot be reached. This is the memo and invoice model working as designed; the stylesheet is what was left behind. Do not treat checkout.css as live and do not use /checkout/ as a measurement surface.",
+      "A measurement surface must be identified by its FINAL url, not the one requested. On 2026-08-21 the rename baseline captured a surface labelled checkout by loading /checkout/. It silently landed on /memo-list/, so the reading was of the memo list under the name checkout. The after pack would have compared memo-list to memo-list, passed, and been reported as proof that checkout was unchanged, while checkout.css went entirely unmeasured. Every probe must record location.pathname AFTER load and compare it to what was asked for. Eight of twenty five candidate urls on this site redirect: /checkout/ and /cart/ to /memo-list/, /my-account/ and /shop/ to /, /my-showcases/ to /trade-desk/, and three /guides/ children to nested paths.",
+      "43 percent of the token rename touches CSS that renders nowhere. Measured 2026-08-21 two ways that agree: which stylesheets the served HTML links, and whether the component's own class appears in the live DOM. REACHABLE, 162 of 284 asserts: core-v3.css 42 and Assets.php inline 23 on every page, single-product.css 81 plus single-product-v2.css 2 plus SoldStateSync 2 on the product page, page-rail 11 on the front page and the desk, homepage.css 1 on the front page. UNREACHABLE, 122 asserts: checkout.css 48, roundtable.css 25, hero-rotator 12, PartnersHero 10, vip-registration 9, mounting-matcher 5, concierge-request 4, deals-banner 3, what-to-expect 2, concierge-hero 2, team-showcase 1, SingleProductParchment 1. Note page-rail is reachable even though no page-rail stylesheet is served as its own file, so a stylesheet census ALONE gives a false negative; the DOM check is what caught it. The pixel identity contract cannot be proven by measurement for the unreachable 122; those groups are verified by code assert only, and that limit must be stated rather than papered over.",
+      "The rename measurement protocol, and what it can and cannot gate. A color histogram over every element and sixteen color bearing properties, taken inside a same origin iframe at 1440px, 2500ms after load. Proven equivalent to a real navigation: the product page returned digest 6e2cc2b7 both ways. Determinism varies by surface and must be respected: the product page, the trade desk, the desk and the memo list are bit identical across reloads, so they gate on full digest equality. The STOREFRONT IS NOT, varying by 247 elements and 68 buckets between two loads, and its value set is not stable either, so it gates only on the retired value check and is otherwise advisory. Gate A applies everywhere and is absolute: zero occurrences of the seven retired Caveman hexes caa55c, 0e2f37, 1a4750, 205560, f5f7f4, d1b375, 6E1C17. Baseline reads zero on all surfaces, so any appearance after an edit means a fallback fired or a literal was copied across unchanged.",
+      "--a2-garnet-12 and --a2-garnet-22 do not exist yet and must be minted BEFORE any consumer points at them. Measured at :root on all six surfaces 2026-08-21: both return unset. The rename maps --gold-12 (12 consumers) and --gold-20 (18 consumers) onto them. Because the pair rule writes var(--a2-garnet-12, rgba(132,34,28,.12)) the fallback would carry the value even unminted, which is exactly why this is easy to miss: it would look correct and would be relying on the fallback path this whole rename exists to eliminate. Mint both in assets/css/a2-tokens-v1.css as their own deploy, group zero, before group one.",
+      "QUARANTINE RULE, Pen's ruling 2026-08-21, binding. Twelve files render on no published page and are deliberately NOT migrated, NOT archived and NOT touched by the token rename: assets/css/modules/checkout.css (48 asserts), roundtable.css (25), blocks/hero-rotator/style.css (12), includes/Modules/PartnersHero/Enhancer.php (10), blocks/vip-registration/style.css (9), mounting-matcher.css (5), blocks/concierge-request/style.css (4), deals-banner.css (3), blocks/what-to-expect/style.css (2), blocks/concierge-hero/style.css (2), team-showcase.css (1), SingleProductParchment.php (1). 122 asserts total. THE RULE WITH TEETH: no new surface may enqueue a quarantined sheet without migrating it first. These are not merely unused files. Each carries Caveman token names whose values now come only from the sweep, plus retired-palette fallbacks underneath. Serving one on a new page fails silently: it renders correctly right up until the sweep is not there, and then it renders teal and gold with no error. Quarantine is not archival on purpose, because archiving would assert these files are finished with and nobody has made that call; checkout.css styles a checkout the memo and invoice model replaced, and whether that page returns is a business question.",
+      "SWEEP REMOVAL IS GATED ON QUARANTINE RESOLUTION. Recorded 2026-08-21, before any phase 3 exists, because the obvious next step after a token rename is to delete the sweep block and that step is unsafe here. The sweep at assets/css/modules/a2-specimen-chrome.css:168-181 is what gives every Caveman name its current Artinian value. Removing it was always the intended end of the rename. It cannot happen while any quarantined sheet still references Caveman names, and twelve of them do, alongside 47 fallbacks across the codebase still carrying the retired palette. Take the sweep out and those files are not broken, they are DORMANT: correct on disk, wrong the instant anything serves them, with no error at any point. Re-serving one afterward resurrects teal grounds and gold accents silently. So the order is: resolve quarantine file by file, each one either migrated or genuinely retired, THEN consider the sweep. That resolution is its own reckoning and it is Pen's call, not a cleanup task. Until then the sweep stays, including the declarations for the four zero-consumer tokens, because quarantined files reference two of them.",
+      "Token rename final scope, Pen's ruling 2026-08-21: rename the 162, quarantine the 122. Seven files are migrated, in this order, smallest blast radius first, one deploy per group with the probe deck and the measurement gate between each: group 0 mints --a2-garnet-12 and --a2-garnet-22 in assets/css/a2-tokens-v1.css and touches nothing else; then homepage.css 1 assert, single-product-v2.css 2, SoldStateSync.php 2, blocks/page-rail/style.css 11, Assets.php 23, core-v3.css 42, single-product.css 81. Of 329 asserts surveyed: 162 renamed, 122 quarantined, 45 excluded as living in the five dead files. Note groups 1 and 4 land on the storefront, which is not digest-gateable, so they are verified by the retired-value check plus a hand comparison of the garnet buckets rather than by digest equality.",
+      "A GREEN GATE PROVES NOTHING UNTIL YOU PROVE THE CHANGE REACHED A BROWSER. Group 0 of the token rename, 2026-08-21. The mint landed on disk, SG regenerated a2-tokens-v2.min.css at 1416 bytes carrying both tints, and the served URL returned it. The measurement gate then reported five PASS verdicts, bit identical digests, zero retired values. Every signal was green and the change had reached NO browser: stylesheet URLs carry no query, the host strips ?ver, so clients kept the 1346 byte July copy and :root still read (unset) for both tints. The gate could not see it because an unchanged page IS a pass when the change is additive. The check that caught it was measuring the thing the change was supposed to alter, --a2-garnet-12 at :root, rather than only measuring that nothing else moved. ALWAYS assert the positive: name what the edit should make true, and read that value back from the live DOM, not from the file on disk.",
+      "Cache busting for a plugin stylesheet means bumping the ENQUEUE HANDLE, confirmed by experiment 2026-08-21. SG-Optimizer minifies each registered sheet to assets/css/<...>/<HANDLE>.min.css, so the served filename tracks the handle and nothing else. Editing the source regenerates that file lazily on the next request, correctly, at a URL every browser already has cached, and ?ver is stripped by the host. So: a2-tokens-v2 became a2-tokens-v3 (10 references across 5 files), cgs-homepage became cgs-homepage-v2, cgs-sp-v3 became cgs-sp-v4. Note the module SingleProductParchment already knew this and documented it in its own comment; it renamed its handle for exactly this reason in Job 18 and carries an inline cache-bypass block for the load-bearing rules. Cost of the ritual: each bump orphans the previous .min.css, which is the 330 orphan problem, so run tools/sweep-orphans.php --live after a run of bumps.",
+      "There are TWO Artinian token vocabularies, and the sweep sheet declares the second one. assets/css/a2-tokens-v1.css holds the canonical long names: --a2-hairline, --a2-alabaster, --a2-ink-70, --a2-surface-raised. assets/css/modules/a2-specimen-chrome.css ALSO opens with a :root block declaring SHORT aliases that exist nowhere else: --a2-hair, --a2-alab, --a2-ink70, --a2-raised, plus --a2-garnet, --a2-ink, --a2-sapphire and the font names. var(--a2-hair,...) appears in 21 live files. Consequence for the sweep: a2-specimen-chrome.css is NOT merely the Caveman de-dark block. Deleting it would take the short alias vocabulary with it and 21 files would fall back to their literals silently. This compounds the existing rule that sweep removal is gated on quarantine resolution: it is now gated on alias resolution too. Whoever takes that on must first decide whether the short aliases become canonical, get migrated to the long names, or move into a2-tokens-v1.css where they belong.",
+      "A third token vocabulary exists outside both the Caveman and Artinian sets: 2744 var() uses across families named --dk-*, --sd-*, --v-*, --acc-*, --eg-*, --sl-*, --cgs-*, --font-*. Censused 2026-08-21, stray folder and dead files excluded. They are module-scoped palettes and their DISCIPLINE VARIES, which is the finding. --sd-* (staff desk, 242 uses) and --v-* (vault, 180) are properly aliased: --sd-ink:var(--a2-ink,#1B181E). --dk-* (desk, 1126 uses, the largest family in the codebase) is NOT: a2-desk.css:69-78 declares --dk-ink:#1B181E, --dk-garnet:#84221C, --dk-hair:#DBD6D1 as bare literals that duplicate the Artinian anchor VALUES without referencing the tokens. So changing --a2-garnet moves the storefront and the staff desk and the vault, and leaves the desk behind. Not in scope for the rename and not touched. Worth knowing before anyone changes an anchor and checks only one surface.",
+      "Verifying a deployed asset by curling a path you guessed will lie to you. On 2026-08-21 a check for the group 1 edit curled assets/css/cgs-homepage-v2.min.css and got back nine occurrences of var(--cream, #FAF5EE), which read as proof the edit had not landed. The real file is under assets/css/MODULES/, and the guessed path returned a 307KB WordPress 404 page whose INLINE CSS contains those nine occurrences, from the still unmigrated Assets.php block. A 404 body full of the site's own CSS pattern matches like a stylesheet. Always print the HTTP status with -w 'code=%{http_code} bytes=%{size_download}' and treat anything other than 200 as no answer. The same trap fired twice in one session; the second time the body reported 16 var(--gold.",
+      "The patch scripts write BEFORE their post-write checks, so a failing check does not roll back. Group 2 exited rc=1 on a check of mine that was simply wrong (it looked for a nested var(--a2-garnet,#84221C)) string that legitimately still exists elsewhere in the sheet, on the --cgs-sp-gold family). The edit itself was correct and already applied and the served file proved it. Two consequences. First, rc=1 from these scripts means INVESTIGATE, not roll back, and the files are already changed. Second, the useful asserts are the ones that run BEFORE the write, where refusing costs nothing; group 2's pre-write assert correctly refused a first attempt because the handle appeared 3 times rather than the expected 1, two code sites plus a comment recording an earlier rename."
+    ],
+    "verify": [
+      "Measure in the live page rather than rereading the code.",
+      "The probe deck is the gate. 30 checks, must be 30/30. Checks 25 to 30 guard the customer surfaces specifically.",
+      "getComputedStyle().fontFamily returns the DECLARED first family, not the rendered one. It does not prove a font loaded. Use document.fonts.check.",
+      "Measuring the drawer's hidden copy of a trade desk element instead of the page's returns zero and has misled before.",
+      "Exercise a route as a guest and as two different members, and prove the two see disjoint data. A 401 for the guest is the expected shape."
+    ]
+  },
+  "schema": "hekate.brain/1",
+  "slug": "artinian",
+  "taxonomy": {
+    "count": 0,
+    "specimens": []
+  }
+}

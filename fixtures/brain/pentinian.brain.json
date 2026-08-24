@@ -1,0 +1,1081 @@
+{
+  "authoritative": "the JSON stores under HEKATE_HOME; this bundle is a projection of them at the moment above",
+  "canon": {
+    "recorded_count": 30,
+    "retired": [],
+    "rules": {
+      "JS off must still serve the words": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "statement": "Enforced by smoke.mjs character minimums per page.",
+        "why": "Recorded at onboarding from the recon of 2026-08-21."
+      },
+      "four files, one token set": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "statement": "The color and type tokens are redeclared in index.html:27, cs.css:5, pen.html:20 and 404.html:15 with identical values and different subsets. Editing one silently leaves three behind; propagation is by hand.",
+        "why": "Recorded at onboarding from the recon of 2026-08-21."
+      },
+      "per page accents are theming, not drift": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "statement": "Each case study page declares its own --accent and --accent-soft inline, overriding cs.css: artinian #8f4a3e, caveman #3d6a70, limicon #7a5f86, unimpact #3f5a86, studiolo #8a5a3d, colophon #5E7355. Deliberate per project theming.",
+        "why": "Recorded at onboarding from the recon of 2026-08-21."
+      },
+      "reserve for the longest case": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "statement": "Repeated units containing variable length text reserve height for the longest variant or the layout aligns to nothing. Applied at .c-title min-height 1.92em and .lb-th span min-height 2.7em.",
+        "why": "Recorded at onboarding from the recon of 2026-08-21."
+      },
+      "scrubbed, not timed": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "statement": "Every scroll driven value is a pure function of scrollY, so scrolling up runs any effect backwards.",
+        "why": "Recorded at onboarding from the recon of 2026-08-21."
+      }
+    },
+    "source": "recorded during builds",
+    "tokens": {
+      "--bone": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:27, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#FAF7EF"
+      },
+      "--clay": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:30, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#B0805C"
+      },
+      "--clay-deep": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:30, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#8C5E3E"
+      },
+      "--grain": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:32, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "<inline feTurbulence data URI, see file>"
+      },
+      "--haze": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:30, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#93A6AC"
+      },
+      "--ink": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:28, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#23251E"
+      },
+      "--ink-2": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:28, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#5B5C51"
+      },
+      "--ink-3": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:28, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#8E8D7F"
+      },
+      "--line": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:29, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "rgba(35,37,30,.12)"
+      },
+      "--line-2": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:29, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "rgba(35,37,30,.22)"
+      },
+      "--line-3": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:29, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "rgba(35,37,30,.34)"
+      },
+      "--mo-ease": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "motion.css:40, the arrival system vocabulary.",
+        "value": "cubic-bezier(.22,.72,.3,1)"
+      },
+      "--mo-op": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "motion.css:42, the arrival system vocabulary.",
+        "value": ".8s"
+      },
+      "--mo-spring": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "motion.css:41, the arrival system vocabulary.",
+        "value": "cubic-bezier(.28,1.3,.5,1)"
+      },
+      "--mo-tf": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "motion.css:43, the arrival system vocabulary.",
+        "value": "1s"
+      },
+      "--mo-y": {
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "motion.css:44, the arrival system vocabulary.",
+        "value": "16px"
+      },
+      "--mono": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:31, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "'IBM Plex Mono',ui-monospace,'SFMono-Regular',monospace"
+      },
+      "--oat": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:27, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#E3DAC7"
+      },
+      "--paper": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:27, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#F1ECE1"
+      },
+      "--paper-2": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:27, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#E8E2D4"
+      },
+      "--sage": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:30, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#7E9270"
+      },
+      "--sage-deep": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:30, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#5E7355"
+      },
+      "--sage-soft": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:30, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "#AFC0A0"
+      },
+      "--sans": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:31, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "'Inter',system-ui,sans-serif"
+      },
+      "--serif": {
+        "at": "2026-08-21T19:49:00Z",
+        "by": "session",
+        "provenance": "recorded",
+        "purpose": "index.html:31, the foyer authoritative set. Redeclared as subsets in cs.css:5, pen.html:20, 404.html:15; there is no shared token file.",
+        "value": "'Newsreader',Georgia,serif"
+      }
+    }
+  },
+  "docs": [
+    {
+      "bytes": 5357,
+      "file": "canon-2026-08-21.md",
+      "mtime": 1787341742,
+      "sha256": "7061708410371251361b9c690132afe9e61ccce249a6eb8518b21e2d2b6572d3"
+    },
+    {
+      "bytes": 6614,
+      "file": "profile-2026-08-21.md",
+      "mtime": 1787342366,
+      "sha256": "8961ea98724cf0bcc1b6e6855ca1162b8b2206f3e055aea4425431f0bf183719"
+    },
+    {
+      "bytes": 1858,
+      "file": "survey-2026-08-21-v2.md",
+      "mtime": 1787344634,
+      "sha256": "64dab820173bc6f62e5d40a3f629b4a55b4a39734ca1dcfa9409d4c451b47567"
+    },
+    {
+      "bytes": 1188,
+      "file": "survey-2026-08-21.md",
+      "mtime": 1787341742,
+      "sha256": "9b7dd69f4f5a4d4a95647cc0a88575ef70fcf2edb8af1f1f8aee94f4f8de9006"
+    },
+    {
+      "bytes": 4651,
+      "file": "taxonomy-2026-08-21.md",
+      "mtime": 1787341742,
+      "sha256": "1a38d47b13aa7646bd4ab7c38eb94dacde488f3864b66c17688339624da09f49"
+    }
+  ],
+  "generated": "2026-08-21T21:32:04Z",
+  "profile": {
+    "boundaries": [
+      "Deliverables get written to ~/Studio/_pentinian/docs/, not left in chat, and the byte count is confirmed after every write, because a blocked write reads the same as a landed one until someone looks. Proven live: osascript to Terminal returned its usual tab id while a classifier blocked the command and nothing executed.",
+      "Never commit as a non-pentinian author. The fence is pentinian <308107907+pentinian@users.noreply.github.com>. A foreign author does not fail loudly: the push succeeds, GitHub accepts it, and Vercel silently Blocks the build.",
+      "Never push without node smoke.mjs printing SMOKE OK.",
+      "Never add a positioned or filtered ancestor near .console or the sunset fixed layers.",
+      "Never let the dusk treatment dim the page. Vibrance is carried by luminance preserving saturation; darkening was explicitly rejected.",
+      "Never reproduce a case study gate state as open in markup. Gated studies ship noindex and locked; smoke.mjs enforces it."
+    ],
+    "cache_bust": {
+      "current": [],
+      "mechanism": "none",
+      "note": "Correct rather than missing: assets link with bare filenames and Vercel serves index.html with max-age=0 must-revalidate. Verification is age: 0 plus a content grep."
+    },
+    "deploy": {
+      "fence": "Commit author must be pentinian <308107907+pentinian@users.noreply.github.com>. The repo local git config pins it; a fresh clone will not inherit it.",
+      "skill": "Edits with file tools or asserted python scripts; push runs from Pen own Terminal via osascript.",
+      "steps": [
+        "Edit files in the working tree, with exact string asserts if scripted.",
+        "node smoke.mjs and require SMOKE OK.",
+        "Commit and push from Pen own Terminal via osascript, authored as pentinian.",
+        "Wait 75 to 85 seconds.",
+        "Verify live at pentinian.com: age: 0 header plus a content grep with a cache busting query."
+      ]
+    },
+    "model": "One 5,245 line index.html is effectively the whole site, with motion.css and motion.js as the arrival system and cs.css shared by the six study pages. No framework, no build step. A change is hand verified geometry at multiple widths, then pushed from Pen own terminal.",
+    "summary": "Pentinian studio marketing site at pentinian.com: a static one page foyer plus six case study pages and one serverless waitlist endpoint, selling a solo design and build studio. Prospective clients only; existing clients live in the separate Window app, a different repo.",
+    "traps": [
+      "A SessionStart hook cannot fire in a session that was already running when the plugin was installed. An absent brief there is evidence of nothing, in either direction.",
+      "Never conclude the plugin is gone from the state of a cache directory. The hostloop cache is a corpse that outlives its deletion in loaded context; this session drew exactly that false conclusion once. The rpm path and the mirror at ~/Studio/_hekate/current are the two real locations.",
+      "The plugin id rotates on every upgrade, so a script path held from earlier in the session is already stale. This session hit it live: a no set report that was true of the cache copy and false of the install. Resolve by find at call time, every time.",
+      "The token set is redeclared in four files with identical values and different subsets: index.html:27, cs.css:5, pen.html:20, 404.html:15. There is no shared token file, so editing one silently leaves three behind.",
+      "osascript do script to Terminal returns a tab reference whether or not a shell ever ran the command, and a classifier can block execution invisibly. The return value confirms Terminal received an instruction, nothing more. Verify by reading the artifact, never the return.",
+      ".console is laid out with right:50.5%, so any positioned ancestor becomes its containing block and the console halves, reading about 223px instead of about 456px. Happened twice, both times from position:relative on .c-left.",
+      "backdrop-filter on .wait captures fixed descendants. A filtered ancestor is the containing block for position:fixed children, so the sun anchors to the section instead of the viewport.",
+      "A raw # in an SVG data URI truncates at the fragment. Hit three times. Percent encode it as %23.",
+      "An orphan closing brace or an unterminated comment silently eats the next rule. CSS error recovery shows nothing anywhere. Diagnose by counting rules in the CSSOM, not by reading source. One brace lived in index.html for days applying narrow screen sizes at every width.",
+      "A Python edit script that throws before its write drops every edit silently while printing nothing alarming. Four incidents. Assert the matches and verify the write afterwards.",
+      "offsetWidth of a display:none element is 0, and a || fallback then poisons every number downstream. One such line produced a 40 percent size error and a 16px position error at once.",
+      "The harness lies about scroll. Playwright pre scrolls hover targets into view and the screenshot photographs the harness own scrolling. Two fixes shipped for a bug that did not exist. When a measurement and a screenshot disagree, distrust the instrument first.",
+      "Position based selectors are quiet liars. An nth-child trim broke when siblings were added ahead of it and hid every real entry. Select by adjacency.",
+      "overlay and soft-light pass mid grey unchanged, so they are near no-ops against feTurbulence noise. They look like the right blend for grain and do nothing.",
+      "preload=none video has no intrinsic size until metadata arrives; frames collapse unless aspect-ratio is stated.",
+      "/tmp in the sandbox is cleared without warning; playwright and libXdamage needed reinstalling five times in one session."
+    ],
+    "verify": [
+      "Measure in the live page rather than rereading the code.",
+      "node smoke.mjs must print SMOKE OK before any push, and smoke is blind to geometry: it passed through both console width breaks, the orphan brace, and the ghosting paint. It is a content and error check; the eyes and the measurements do the rest.",
+      "Measure the ink, not the box. A group getBoundingClientRect includes off centre shade circles and will mislead.",
+      "Sample several viewport widths. 390, 560, 700, 820, 1100 and 1500 have each caught a distinct bug.",
+      "For anything scroll driven, verify the return trip restores the exact starting values.",
+      "Compute contrast ratios numerically rather than judging by eye.",
+      "A deploy is proven only against the live domain: age: 0 in the response headers plus a content grep with a cache busting query. A stale age with correct content on GitHub means the build never ran, and the deployment reads Blocked, not Failed."
+    ]
+  },
+  "schema": "hekate.brain/1",
+  "slug": "pentinian",
+  "taxonomy": {
+    "count": 5,
+    "specimens": [
+      {
+        "adapt": [
+          "data-clock, data-clock-group, data-rd per element."
+        ],
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "constraints": [
+          "Never add a new easing or distance. If something does not fit .rise with --far, --blur and --spring, that is the question to answer, not a variant to invent. The hidden state lives behind .anim on the html element; without that flag nothing hides, deliberately, so JS off still serves the words."
+        ],
+        "css": [],
+        "files": [
+          "/Users/penfinity/Studio/_pentinian/Pentinian-Site/motion.js"
+        ],
+        "kind": "motion",
+        "markup": [],
+        "name": "Arrival system .rise/.rose",
+        "purpose": "",
+        "revisions": [],
+        "selector": "",
+        "states": {},
+        "tokens": [],
+        "variants": [],
+        "verified": "Unified 2026-08; 23 uses in index.html; smoke checks nothing carrying a reveal class stays invisible after scrolling to the bottom."
+      },
+      {
+        "adapt": [
+          "Add four files named alike and it wires itself; nothing else varies."
+        ],
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "constraints": [
+          "The naming is the contract: name.mp4 at 720px for the panel, name-lg.mp4 at 2200px for the lightbox, poster by swapping .mp4 to .jpg. State aspect-ratio, because preload none video has no intrinsic size until metadata arrives."
+        ],
+        "css": [],
+        "files": [
+          "/Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html"
+        ],
+        "kind": "media",
+        "markup": [
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2359",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.2 7.8 C18.4 7.7 18.8 7.2 19.2 6.9 C19.5 6.7 19.9 6.4 20.3 6.3 C20.7 6.1 21.1 5.9 21.5 5.9 C21.9 5.8 22.3 5.7 22.7 5.7 C23.1 5.7 23.5 5.7 23.8 5.8 C24.2 5.9 24.6 6",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2363",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M9.6 22.9 L8.8 21.5 M14.2 22.9 L13.4 21.5 M18.8 22.9 L18 21.5 M23.4 22.9 L22.6 21.5 M28 22.9 L27.2 21.5 M32.2 22.9 L31.5 21.6\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2366",
+            "attrs": "class=\"sn-dot\" cx=\"5.9\" cy=\"6.2\" r=\"1.05\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2367",
+            "attrs": "class=\"sn-dot\" cx=\"10.9\" cy=\"9.3\" r=\"0.85\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2368",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M17.1 4.3 Q17.9 2.5 16.4 1.5 Q15.5 3 17.1 4.3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2369",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.6 4.9 Q20.5 5.1 21 3.4 Q19.3 3 18.6 4.9\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2370",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.4 6.5 Q18.9 8.4 20.6 8.3 Q20.4 6.6 18.4 6.5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2371",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M16.9 6.9 Q15.2 7.9 15.8 9.5 Q17.4 8.8 16.9 6.9\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2372",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M16 5.5 Q14.5 4.2 13.2 5.3 Q14.4 6.6 16 5.5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2373",
+            "attrs": "class=\"sn-eye\" cx=\"17.4\" cy=\"5.6\" r=\"0.62\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2374",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.2 3 Q29.5 2.2 29 1 Q27.8 1.5 28.2 3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2375",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.9 4.1 Q30 5.1 31.1 4.2 Q30.1 3.2 28.9 4.1\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2376",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.1 5 Q27.4 6.4 28.6 7.2 Q29.3 6 28.1 5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2377",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M26.9 4.6 Q25.4 4.4 25 5.7 Q26.4 6 26.9 4.6\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2378",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M27 3.3 Q26.6 1.8 25.3 1.9 Q25.5 3.2 27 3.3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2379",
+            "attrs": "class=\"sn-eye\" cx=\"27.8\" cy=\"4\" r=\"0.52\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2380",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M22.6 5 Q21.2 3.2 19.5 3.5 Q20.3 5 22.6 5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2386",
+            "attrs": "class=\"lb\" id=\"lb\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"lb-cap\" hidden",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2387",
+            "attrs": "class=\"lb-card\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2388",
+            "attrs": "class=\"lb-x\" id=\"lb-x\" type=\"button\" aria-label=\"Close\"",
+            "tag": "button"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2389",
+            "attrs": "class=\"lb-head\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2390",
+            "attrs": "class=\"lb-say\" id=\"lb-say\"",
+            "tag": "p"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2391",
+            "attrs": "class=\"lb-frame\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2395",
+            "attrs": "class=\"lb-rail\" id=\"lb-rail\" role=\"tablist\" aria-label=\"Other clips from this project\"",
+            "tag": "div"
+          }
+        ],
+        "name": "Clip panels .viz-clip/.clip-open",
+        "purpose": "",
+        "revisions": [],
+        "selector": "",
+        "states": {},
+        "tokens": [
+          "--ac",
+          "--acw",
+          "--bg",
+          "--bg2",
+          "--bone",
+          "--clay",
+          "--clay-deep",
+          "--d",
+          "--dusk",
+          "--f",
+          "--grain",
+          "--haze",
+          "--hue",
+          "--hue-ink",
+          "--ink",
+          "--ink-2",
+          "--ink-3",
+          "--len",
+          "--lift",
+          "--line",
+          "--line-2",
+          "--line-3",
+          "--mo-ease",
+          "--mo-spring",
+          "--mono",
+          "--over",
+          "--paper",
+          "--paper-2",
+          "--rd",
+          "--sage",
+          "--sage-deep",
+          "--sage-soft",
+          "--sans",
+          "--seg",
+          "--serif",
+          "--set",
+          "--slide-h",
+          "--t",
+          "--w"
+        ],
+        "variants": [],
+        "verified": "Two encodes per clip confirmed in repo; frames hold at all six test widths."
+      },
+      {
+        "adapt": [
+          "Label, target and popover copy per chip; one shared popover serves all nine."
+        ],
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "constraints": [
+          "The popover is position fixed, so never put a transform or filter on .hero-chips; a transformed ancestor becomes the containing block and the popover anchors wrong."
+        ],
+        "css": [],
+        "files": [
+          "/Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html"
+        ],
+        "kind": "chip",
+        "markup": [
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2359",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.2 7.8 C18.4 7.7 18.8 7.2 19.2 6.9 C19.5 6.7 19.9 6.4 20.3 6.3 C20.7 6.1 21.1 5.9 21.5 5.9 C21.9 5.8 22.3 5.7 22.7 5.7 C23.1 5.7 23.5 5.7 23.8 5.8 C24.2 5.9 24.6 6",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2363",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M9.6 22.9 L8.8 21.5 M14.2 22.9 L13.4 21.5 M18.8 22.9 L18 21.5 M23.4 22.9 L22.6 21.5 M28 22.9 L27.2 21.5 M32.2 22.9 L31.5 21.6\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2366",
+            "attrs": "class=\"sn-dot\" cx=\"5.9\" cy=\"6.2\" r=\"1.05\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2367",
+            "attrs": "class=\"sn-dot\" cx=\"10.9\" cy=\"9.3\" r=\"0.85\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2368",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M17.1 4.3 Q17.9 2.5 16.4 1.5 Q15.5 3 17.1 4.3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2369",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.6 4.9 Q20.5 5.1 21 3.4 Q19.3 3 18.6 4.9\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2370",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.4 6.5 Q18.9 8.4 20.6 8.3 Q20.4 6.6 18.4 6.5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2371",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M16.9 6.9 Q15.2 7.9 15.8 9.5 Q17.4 8.8 16.9 6.9\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2372",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M16 5.5 Q14.5 4.2 13.2 5.3 Q14.4 6.6 16 5.5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2373",
+            "attrs": "class=\"sn-eye\" cx=\"17.4\" cy=\"5.6\" r=\"0.62\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2374",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.2 3 Q29.5 2.2 29 1 Q27.8 1.5 28.2 3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2375",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.9 4.1 Q30 5.1 31.1 4.2 Q30.1 3.2 28.9 4.1\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2376",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.1 5 Q27.4 6.4 28.6 7.2 Q29.3 6 28.1 5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2377",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M26.9 4.6 Q25.4 4.4 25 5.7 Q26.4 6 26.9 4.6\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2378",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M27 3.3 Q26.6 1.8 25.3 1.9 Q25.5 3.2 27 3.3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2379",
+            "attrs": "class=\"sn-eye\" cx=\"27.8\" cy=\"4\" r=\"0.52\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2380",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M22.6 5 Q21.2 3.2 19.5 3.5 Q20.3 5 22.6 5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2386",
+            "attrs": "class=\"lb\" id=\"lb\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"lb-cap\" hidden",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2387",
+            "attrs": "class=\"lb-card\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2388",
+            "attrs": "class=\"lb-x\" id=\"lb-x\" type=\"button\" aria-label=\"Close\"",
+            "tag": "button"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2389",
+            "attrs": "class=\"lb-head\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2390",
+            "attrs": "class=\"lb-say\" id=\"lb-say\"",
+            "tag": "p"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2391",
+            "attrs": "class=\"lb-frame\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2395",
+            "attrs": "class=\"lb-rail\" id=\"lb-rail\" role=\"tablist\" aria-label=\"Other clips from this project\"",
+            "tag": "div"
+          }
+        ],
+        "name": "Hero chips .hchip with .chip-pop",
+        "purpose": "",
+        "revisions": [],
+        "selector": "",
+        "states": {},
+        "tokens": [
+          "--ac",
+          "--acw",
+          "--bg",
+          "--bg2",
+          "--bone",
+          "--clay",
+          "--clay-deep",
+          "--d",
+          "--dusk",
+          "--f",
+          "--grain",
+          "--haze",
+          "--hue",
+          "--hue-ink",
+          "--ink",
+          "--ink-2",
+          "--ink-3",
+          "--len",
+          "--lift",
+          "--line",
+          "--line-2",
+          "--line-3",
+          "--mo-ease",
+          "--mo-spring",
+          "--mono",
+          "--over",
+          "--paper",
+          "--paper-2",
+          "--rd",
+          "--sage",
+          "--sage-deep",
+          "--sage-soft",
+          "--sans",
+          "--seg",
+          "--serif",
+          "--set",
+          "--slide-h",
+          "--t",
+          "--w"
+        ],
+        "variants": [],
+        "verified": "Nine chips, one .chip-pop, checked against the containing block trap 2026-08."
+      },
+      {
+        "adapt": [
+          "Filled from whichever panel was pressed; rail order follows the panels."
+        ],
+        "at": "2026-08-21T19:49:01Z",
+        "by": "session",
+        "constraints": [
+          "The large view reads its content out of the pressed panel rather than duplicating it, which is what keeps the two renders from drifting. The rail is built on open and emptied on close. Reserve .lb-th span height for the longest title."
+        ],
+        "css": [],
+        "files": [
+          "/Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html"
+        ],
+        "kind": "lightbox",
+        "markup": [
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2359",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.2 7.8 C18.4 7.7 18.8 7.2 19.2 6.9 C19.5 6.7 19.9 6.4 20.3 6.3 C20.7 6.1 21.1 5.9 21.5 5.9 C21.9 5.8 22.3 5.7 22.7 5.7 C23.1 5.7 23.5 5.7 23.8 5.8 C24.2 5.9 24.6 6",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2363",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M9.6 22.9 L8.8 21.5 M14.2 22.9 L13.4 21.5 M18.8 22.9 L18 21.5 M23.4 22.9 L22.6 21.5 M28 22.9 L27.2 21.5 M32.2 22.9 L31.5 21.6\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2366",
+            "attrs": "class=\"sn-dot\" cx=\"5.9\" cy=\"6.2\" r=\"1.05\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2367",
+            "attrs": "class=\"sn-dot\" cx=\"10.9\" cy=\"9.3\" r=\"0.85\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2368",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M17.1 4.3 Q17.9 2.5 16.4 1.5 Q15.5 3 17.1 4.3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2369",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.6 4.9 Q20.5 5.1 21 3.4 Q19.3 3 18.6 4.9\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2370",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.4 6.5 Q18.9 8.4 20.6 8.3 Q20.4 6.6 18.4 6.5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2371",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M16.9 6.9 Q15.2 7.9 15.8 9.5 Q17.4 8.8 16.9 6.9\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2372",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M16 5.5 Q14.5 4.2 13.2 5.3 Q14.4 6.6 16 5.5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2373",
+            "attrs": "class=\"sn-eye\" cx=\"17.4\" cy=\"5.6\" r=\"0.62\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2374",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.2 3 Q29.5 2.2 29 1 Q27.8 1.5 28.2 3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2375",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.9 4.1 Q30 5.1 31.1 4.2 Q30.1 3.2 28.9 4.1\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2376",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.1 5 Q27.4 6.4 28.6 7.2 Q29.3 6 28.1 5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2377",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M26.9 4.6 Q25.4 4.4 25 5.7 Q26.4 6 26.9 4.6\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2378",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M27 3.3 Q26.6 1.8 25.3 1.9 Q25.5 3.2 27 3.3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2379",
+            "attrs": "class=\"sn-eye\" cx=\"27.8\" cy=\"4\" r=\"0.52\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2380",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M22.6 5 Q21.2 3.2 19.5 3.5 Q20.3 5 22.6 5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2386",
+            "attrs": "class=\"lb\" id=\"lb\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"lb-cap\" hidden",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2387",
+            "attrs": "class=\"lb-card\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2388",
+            "attrs": "class=\"lb-x\" id=\"lb-x\" type=\"button\" aria-label=\"Close\"",
+            "tag": "button"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2389",
+            "attrs": "class=\"lb-head\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2390",
+            "attrs": "class=\"lb-say\" id=\"lb-say\"",
+            "tag": "p"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2391",
+            "attrs": "class=\"lb-frame\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2395",
+            "attrs": "class=\"lb-rail\" id=\"lb-rail\" role=\"tablist\" aria-label=\"Other clips from this project\"",
+            "tag": "div"
+          }
+        ],
+        "name": "Lightbox .lb with .lb-rail",
+        "purpose": "",
+        "revisions": [],
+        "selector": "",
+        "states": {},
+        "tokens": [
+          "--ac",
+          "--acw",
+          "--bg",
+          "--bg2",
+          "--bone",
+          "--clay",
+          "--clay-deep",
+          "--d",
+          "--dusk",
+          "--f",
+          "--grain",
+          "--haze",
+          "--hue",
+          "--hue-ink",
+          "--ink",
+          "--ink-2",
+          "--ink-3",
+          "--len",
+          "--lift",
+          "--line",
+          "--line-2",
+          "--line-3",
+          "--mo-ease",
+          "--mo-spring",
+          "--mono",
+          "--over",
+          "--paper",
+          "--paper-2",
+          "--rd",
+          "--sage",
+          "--sage-deep",
+          "--sage-soft",
+          "--sans",
+          "--seg",
+          "--serif",
+          "--set",
+          "--slide-h",
+          "--t",
+          "--w"
+        ],
+        "variants": [],
+        "verified": "Renders the same content in two places by reference, confirmed in source."
+      },
+      {
+        "adapt": [
+          ".con-list content and .c-bot per project; geometry constant."
+        ],
+        "at": "2026-08-21T19:49:02Z",
+        "by": "session",
+        "constraints": [
+          "Laid out with right:50.5 percent, so any positioned ancestor becomes its containing block and the console halves to about 223px. Never add position relative to .c-left. Trims select by adjacency, never nth-child."
+        ],
+        "css": [],
+        "files": [
+          "/Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html"
+        ],
+        "kind": "layout",
+        "markup": [
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2359",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.2 7.8 C18.4 7.7 18.8 7.2 19.2 6.9 C19.5 6.7 19.9 6.4 20.3 6.3 C20.7 6.1 21.1 5.9 21.5 5.9 C21.9 5.8 22.3 5.7 22.7 5.7 C23.1 5.7 23.5 5.7 23.8 5.8 C24.2 5.9 24.6 6",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2363",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M9.6 22.9 L8.8 21.5 M14.2 22.9 L13.4 21.5 M18.8 22.9 L18 21.5 M23.4 22.9 L22.6 21.5 M28 22.9 L27.2 21.5 M32.2 22.9 L31.5 21.6\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2366",
+            "attrs": "class=\"sn-dot\" cx=\"5.9\" cy=\"6.2\" r=\"1.05\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2367",
+            "attrs": "class=\"sn-dot\" cx=\"10.9\" cy=\"9.3\" r=\"0.85\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2368",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M17.1 4.3 Q17.9 2.5 16.4 1.5 Q15.5 3 17.1 4.3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2369",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.6 4.9 Q20.5 5.1 21 3.4 Q19.3 3 18.6 4.9\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2370",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M18.4 6.5 Q18.9 8.4 20.6 8.3 Q20.4 6.6 18.4 6.5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2371",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M16.9 6.9 Q15.2 7.9 15.8 9.5 Q17.4 8.8 16.9 6.9\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2372",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M16 5.5 Q14.5 4.2 13.2 5.3 Q14.4 6.6 16 5.5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2373",
+            "attrs": "class=\"sn-eye\" cx=\"17.4\" cy=\"5.6\" r=\"0.62\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2374",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.2 3 Q29.5 2.2 29 1 Q27.8 1.5 28.2 3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2375",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.9 4.1 Q30 5.1 31.1 4.2 Q30.1 3.2 28.9 4.1\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2376",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M28.1 5 Q27.4 6.4 28.6 7.2 Q29.3 6 28.1 5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2377",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M26.9 4.6 Q25.4 4.4 25 5.7 Q26.4 6 26.9 4.6\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2378",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M27 3.3 Q26.6 1.8 25.3 1.9 Q25.5 3.2 27 3.3\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2379",
+            "attrs": "class=\"sn-eye\" cx=\"27.8\" cy=\"4\" r=\"0.52\"/",
+            "tag": "circle"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2380",
+            "attrs": "class=\"sn-fine\" pathLength=\"1\" d=\"M22.6 5 Q21.2 3.2 19.5 3.5 Q20.3 5 22.6 5\"/",
+            "tag": "path"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2386",
+            "attrs": "class=\"lb\" id=\"lb\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"lb-cap\" hidden",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2387",
+            "attrs": "class=\"lb-card\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2388",
+            "attrs": "class=\"lb-x\" id=\"lb-x\" type=\"button\" aria-label=\"Close\"",
+            "tag": "button"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2389",
+            "attrs": "class=\"lb-head\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2390",
+            "attrs": "class=\"lb-say\" id=\"lb-say\"",
+            "tag": "p"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2391",
+            "attrs": "class=\"lb-frame\"",
+            "tag": "div"
+          },
+          {
+            "at": "Users/penfinity/Studio/_pentinian/Pentinian-Site/index.html:2395",
+            "attrs": "class=\"lb-rail\" id=\"lb-rail\" role=\"tablist\" aria-label=\"Other clips from this project\"",
+            "tag": "div"
+          }
+        ],
+        "name": "Selected Work console .console",
+        "purpose": "",
+        "revisions": [],
+        "selector": "",
+        "states": {},
+        "tokens": [
+          "--ac",
+          "--acw",
+          "--bg",
+          "--bg2",
+          "--bone",
+          "--clay",
+          "--clay-deep",
+          "--d",
+          "--dusk",
+          "--f",
+          "--grain",
+          "--haze",
+          "--hue",
+          "--hue-ink",
+          "--ink",
+          "--ink-2",
+          "--ink-3",
+          "--len",
+          "--lift",
+          "--line",
+          "--line-2",
+          "--line-3",
+          "--mo-ease",
+          "--mo-spring",
+          "--mono",
+          "--over",
+          "--paper",
+          "--paper-2",
+          "--rd",
+          "--sage",
+          "--sage-deep",
+          "--sage-soft",
+          "--sans",
+          "--seg",
+          "--serif",
+          "--set",
+          "--slide-h",
+          "--t",
+          "--w"
+        ],
+        "variants": [],
+        "verified": "Broke twice from ancestor positioning; both incidents documented in file comments."
+      }
+    ]
+  }
+}
