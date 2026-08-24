@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Kit, { type Entry } from '@/app/Kit';
+import Kit, { type Entry, type Standing } from '@/app/Kit';
 
 // The Brain tab: everything the studio knows about one project. The default
 // face is the kit, a brand book projection of the same entries the flat lens
@@ -20,6 +20,7 @@ export default function Brain({ projectId }: { projectId: string }) {
   const [filter, setFilter] = useState<(typeof TYPES)[number] | 'all'>('all');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
+  const [note, setNote] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,6 +40,31 @@ export default function Brain({ projectId }: { projectId: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // The press. One entry, one movement; the kit's chips carry the buttons.
+  const press = useCallback(
+    async (id: string, to: Standing) => {
+      const res = await fetch('/api/brain/press', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, to }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setNote(`Press refused: ${j.error}`);
+        return;
+      }
+      setNote(
+        j.to === 'released'
+          ? `Released: ${j.title}.`
+          : j.from === 'released'
+            ? `Pulled back: ${j.title}.`
+            : `${j.title} is ${j.to}.`
+      );
+      load();
+    },
+    [load]
+  );
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -85,8 +111,10 @@ export default function Brain({ projectId }: { projectId: string }) {
         </button>
       </div>
 
+      {note && <p className="muted">{note}</p>}
+
       {view === 'kit' ? (
-        <Kit entries={entries} projectName={projectName} lane={lane} />
+        <Kit entries={entries} projectName={projectName} lane={lane} onPress={press} />
       ) : (
         <>
           <div className="brain-chips">

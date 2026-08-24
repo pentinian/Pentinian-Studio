@@ -88,10 +88,39 @@ function measureBar(v: string): number | null {
   return n > 0 && n <= 240 ? n : null;
 }
 
-function VisTag({ e }: { e: Entry }) {
-  if (e.visibility === 'internal') return null;
+export type Standing = 'internal' | 'staged' | 'released';
+export type PressFn = (id: string, to: Standing) => void | Promise<void>;
+
+/** Standing, and in the Atelier, the press. The Window mounts this kit with
+ *  no press function, so its read only nature is structural, not styled. */
+function VisTag({ e, onPress }: { e: Entry; onPress?: PressFn }) {
+  const chip =
+    e.visibility === 'internal' ? 'tag' : e.visibility === 'released' ? 'tag sage' : 'tag clay';
+  if (!onPress) {
+    if (e.visibility === 'internal') return null;
+    return <span className={chip}>{e.visibility}</span>;
+  }
+  const acts: [string, Standing][] =
+    e.visibility === 'internal'
+      ? [
+          ['stage', 'staged'],
+          ['release', 'released'],
+        ]
+      : e.visibility === 'staged'
+        ? [
+            ['release', 'released'],
+            ['unstage', 'internal'],
+          ]
+        : [['pull back', 'staged']];
   return (
-    <span className={'tag ' + (e.visibility === 'released' ? 'sage' : 'clay')}>{e.visibility}</span>
+    <span className="kit-press">
+      <span className={chip}>{e.visibility}</span>
+      {acts.map(([label, to]) => (
+        <button key={to} className="kit-press-b" onClick={() => onPress(e.id, to)}>
+          {label}
+        </button>
+      ))}
+    </span>
   );
 }
 
@@ -105,7 +134,15 @@ const bySortThenName = (a: Entry, z: Entry) => {
  *  colors wearing many name tags, so each color renders once, value led, with
  *  its token names as chips beneath. Legacy aliases collapse instead of
  *  multiplying, and a near paper value stays visible inside its hairline. */
-function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> }) {
+function Palette({
+  list,
+  stems,
+  onPress,
+}: {
+  list: Entry[];
+  stems: Map<string, number>;
+  onPress?: PressFn;
+}) {
   const groups = new Map<string, Entry[]>();
   for (const e of list) {
     const v = String(e.payload?.value ?? '').trim().toLowerCase();
@@ -163,7 +200,9 @@ function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> })
           .filter((n) => n && n !== name)
           .sort();
         const steps = names.reduce((n, alias) => n + (stems.get(alias) ?? 0), 0);
-        const pressed = members.find((m) => m.visibility !== 'internal');
+        // The press target is the ratified row when one exists; pressing a
+        // palette card presses the decision, not an alias.
+        const pressTarget = members.find((m) => m.payload?.console) ?? members[0];
         return (
           <figure key={value} className="kit-pcard">
             <i style={{ background: value }} />
@@ -171,8 +210,8 @@ function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> })
               <div className="kit-pcard-head">
                 {name ? <strong className="kit-pcard-n">{name}</strong> : null}
                 <code className="kit-pcard-v">{String(members[0].payload?.value ?? '')}</code>
-                {pressed ? <VisTag e={pressed} /> : null}
               </div>
+              <VisTag onPress={onPress} e={pressTarget} />
               {role(members) ? <p className="kit-pcard-role">{role(members)}</p> : null}
               <div className="kit-alias">
                 {names.map((n) => (
@@ -192,7 +231,17 @@ function Palette({ list, stems }: { list: Entry[]; stems: Map<string, number> })
   );
 }
 
-function Swatches({ list, dense, stems }: { list: Entry[]; dense?: boolean; stems?: Map<string, number> }) {
+function Swatches({
+  list,
+  dense,
+  stems,
+  onPress,
+}: {
+  list: Entry[];
+  dense?: boolean;
+  stems?: Map<string, number>;
+  onPress?: PressFn;
+}) {
   return (
     <div className={'kit-colors' + (dense ? ' build' : '')}>
       {list.map((e) => {
@@ -220,7 +269,7 @@ function Swatches({ list, dense, stems }: { list: Entry[]; dense?: boolean; stem
                   step of {stem}
                 </a>
               ) : null}
-              <VisTag e={e} />
+              <VisTag onPress={onPress} e={e} />
             </figcaption>
           </figure>
         );
@@ -233,10 +282,13 @@ export default function Kit({
   entries,
   projectName,
   lane,
+  onPress,
 }: {
   entries: Entry[];
   projectName: string;
   lane: string | null;
+  /** The Atelier passes the press; the Window never does. */
+  onPress?: PressFn;
 }) {
   const [allWork, setAllWork] = useState(false);
 
@@ -401,7 +453,7 @@ export default function Kit({
           {b.brandColors.length > 0 && (
             <section className="kit-ch" id="kit-color">
               <h2>Color</h2>
-              <Palette list={b.brandColors} stems={b.stems} />
+              <Palette list={b.brandColors} stems={b.stems} onPress={onPress} />
             </section>
           )}
 
@@ -427,7 +479,7 @@ export default function Kit({
                           source
                         </a>
                       ) : null}
-                      <VisTag e={e} />
+                      <VisTag onPress={onPress} e={e} />
                     </div>
                   </div>
                 );
@@ -451,7 +503,7 @@ export default function Kit({
                   return (
                     <li key={e.id}>
                       <p className="kit-rule-line">
-                        {ruleText(e)} <VisTag e={e} />
+                        {ruleText(e)} <VisTag onPress={onPress} e={e} />
                       </p>
                       {why ? <p className="kit-rule-why">{why}</p> : null}
                     </li>
@@ -469,7 +521,7 @@ export default function Kit({
                   <div key={e.id} className="qcard kit-spec">
                     <div className="kit-spec-head">
                       <strong>{String(e.payload.name ?? e.title)}</strong>
-                      <VisTag e={e} />
+                      <VisTag onPress={onPress} e={e} />
                     </div>
                     {e.payload.note ? <p className="kit-spec-purpose">{String(e.payload.note)}</p> : null}
                     {e.payload.url ? (
@@ -504,7 +556,7 @@ export default function Kit({
                         {e.asset_path ? <span className="kit-note"> file attached</span> : null}
                       </td>
                       <td>
-                        <VisTag e={e} />
+                        <VisTag onPress={onPress} e={e} />
                       </td>
                     </tr>
                   ))}
@@ -526,7 +578,7 @@ export default function Kit({
           {b.buildColors.length > 0 && (
             <section className="kit-ch" id="kit-buildcolor">
               <h2>Color Steps</h2>
-              <Swatches list={b.buildColors} dense />
+              <Swatches list={b.buildColors} dense onPress={onPress} />
             </section>
           )}
 
@@ -687,7 +739,7 @@ export default function Kit({
                       </td>
                       <td>{e.payload?.bytes ? `${e.payload.bytes} bytes` : ''}</td>
                       <td>
-                        <VisTag e={e} />
+                        <VisTag onPress={onPress} e={e} />
                       </td>
                     </tr>
                   ))}
@@ -710,7 +762,7 @@ export default function Kit({
                 <div key={e.id} className="kit-work-row">
                   <time>{new Date(e.created).toLocaleDateString()}</time>
                   <span className="kit-work-title">{e.title}</span>
-                  <VisTag e={e} />
+                  <VisTag onPress={onPress} e={e} />
                 </div>
               ))}
             </div>

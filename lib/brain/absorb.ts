@@ -5,9 +5,10 @@
 // species, and the boundary that keeps replies out of the brain keeps them
 // out too.
 //
-// Standing mirrors the console each run: a released note arrives released
-// with its stamp, everything else staged, exactly the meaning the console
-// already had. Idempotent by entry_key console:<id> and a real content hash.
+// Standing mirrors the console once, at arrival: a released note arrives
+// released with its stamp, everything else staged. After arrival the press
+// owns standing. Idempotent by entry_key console:<id> and a real content
+// hash.
 
 import { slugForProject } from './lanes';
 import { sha256, canonical } from './ingest';
@@ -112,13 +113,16 @@ export async function absorbConsole(db: any): Promise<AbsorbResult> {
       updated_at: new Date().toISOString(),
     };
 
+    // Standing mirrors the console ONCE, at arrival. After that the press
+    // owns it; a re-absorbed edit updates content and leaves standing alone.
     const prior = brainByKey.get(row.entry_key);
     if (prior) {
-      if (prior.visibility === row.visibility && prior.content_hash === row.content_hash) {
+      if (prior.content_hash === row.content_hash) {
         unchanged++;
         continue;
       }
-      const { error } = await db.from('brain_entries').update(row).eq('id', prior.id);
+      const { visibility: _v, released_at: _r, ...contentOnly } = row;
+      const { error } = await db.from('brain_entries').update(contentOnly).eq('id', prior.id);
       if (error) throw new Error(`updating ${row.entry_key}: ${error.message}`);
       updated++;
     } else {

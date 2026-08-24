@@ -106,15 +106,17 @@ export async function migrateWorklog(db: any): Promise<MigrateResult> {
       updated_at: new Date().toISOString(),
     };
 
-    // The one place visibility IS written: migration mirrors standing that a
-    // human already pressed in the old system. It never invents a release.
+    // Standing mirrors the old system ONCE, at arrival. After that the press
+    // owns it: a content update never touches visibility, so a standing Pen
+    // pressed in the brain survives every later fold.
     const prior = brainByKey.get(row.entry_key);
     if (prior) {
-      if (prior.visibility === row.visibility && prior.content_hash === row.content_hash) {
+      if (prior.content_hash === row.content_hash) {
         unchanged++;
         continue;
       }
-      const { error } = await db.from('brain_entries').update(row).eq('id', prior.id);
+      const { visibility: _v, released_at: _r, ...contentOnly } = row;
+      const { error } = await db.from('brain_entries').update(contentOnly).eq('id', prior.id);
       if (error) throw new Error(`updating ${row.entry_key}: ${error.message}`);
       updated++;
     } else {
