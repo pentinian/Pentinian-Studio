@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { record } from '@/lib/events';
 import { flushDue } from '@/lib/mail';
+import { migrateWorklog } from '@/lib/brain/migrate';
+import { absorbConsole } from '@/lib/brain/absorb';
 
 // The scheduled pull from Notion.
 //
@@ -51,6 +54,34 @@ export async function GET(request: Request) {
     // Separate from the sync's own record: "the schedule fired" and "the pull worked"
     // are different questions, and a cron that stops firing is the quieter failure.
     await record('cron', res.ok, res.ok ? undefined : `HTTP ${res.status}`, body);
+
+    // The morning fold: what the pull brought in becomes brain, so the book
+    // is current before anyone presses anything. The fold converges and can
+    // never touch a standing a human pressed, which is what makes it safe to
+    // run unattended; and its failure is isolated, because a broken fold must
+    // not cost the sync that already landed.
+    try {
+      const db = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false } }
+      );
+      const folded = await migrateWorklog(db);
+      const consoleFold = await absorbConsole(db);
+      console.log(
+        'morning fold',
+        JSON.stringify({ worklog: folded.migration, console: consoleFold.console })
+      );
+      await record(
+        'cron',
+        folded.reconciliation.match && consoleFold.reconciliation.match,
+        'morning fold',
+        { worklog: folded.reconciliation, console: consoleFold.reconciliation }
+      );
+    } catch (e: any) {
+      console.error('morning fold threw', e?.message);
+      await record('cron', false, e?.message ?? 'morning fold threw');
+    }
 
     // The morning post: scheduled letters due by now go out with the same bell.
     try {
