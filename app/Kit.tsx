@@ -332,7 +332,12 @@ export default function Kit({
       brandColors = canonBranding;
       buildColors = canonBuild;
     }
-    const faces = [...faceTokens, ...brand.filter((e) => e.payload?.kind === 'face')];
+    // Type joins the ratified mechanism: curated faces define the chapter
+    // with role and order; canon stacks fall to Build's Type Stacks. A lane
+    // with no ratified face keeps its canon stacks up top, honestly.
+    const curatedFaces = brand.filter((e) => e.payload?.kind === 'face').sort(bySortThenName);
+    const faces = curatedFaces.length > 0 ? curatedFaces : faceTokens;
+    const buildStacks = curatedFaces.length > 0 ? faceTokens : [];
 
     const rules = brand.filter((e) => e.payload?.kind === 'rule');
     const allVoiceRules = rules.filter((e) => ruleTier(ruleText(e)) === 'branding');
@@ -362,6 +367,7 @@ export default function Kit({
       brandColors,
       buildColors,
       faces,
+      buildStacks,
       voiceTone,
       lexicon,
       voiceRules,
@@ -404,6 +410,7 @@ export default function Kit({
       sub: 'Branding plus the fine detail: standardized bits pulled from during building.',
       chapters: [
         { id: 'buildcolor', name: 'Color Steps', count: b.buildColors.length },
+        { id: 'buildtype', name: 'Type Stacks', count: b.buildStacks.length },
         { id: 'measures', name: 'Measures and Motion', count: b.measures.length },
         { id: 'components', name: 'Components', count: b.specimens.length },
         { id: 'buildrules', name: 'Build Rules', count: b.buildRules.length },
@@ -654,7 +661,7 @@ export default function Kit({
       )}
 
       {/* ===================================================== BUILD ==== */}
-      {(b.buildColors.length || b.measures.length || b.specimens.length || b.buildRules.length || b.retired.length) > 0 && (
+      {(b.buildColors.length || b.buildStacks.length || b.measures.length || b.specimens.length || b.buildRules.length || b.retired.length) > 0 && (
         <div className="kit-part">
           <h2 className="kit-part-h">Build</h2>
           <p className="kit-part-sub">
@@ -665,6 +672,31 @@ export default function Kit({
             <section className="kit-ch" id="kit-buildcolor">
               <h2>Color Steps</h2>
               <Swatches list={b.buildColors} dense onPress={onPress} />
+            </section>
+          )}
+
+          {b.buildStacks.length > 0 && (
+            <section className="kit-ch" id="kit-buildtype">
+              <h2>Type Stacks</h2>
+              {b.buildStacks.map((e) => {
+                const stack = String(e.payload.value ?? '');
+                return (
+                  <div key={e.id} className="kit-face">
+                    <p className="kit-face-sample" style={stack ? { fontFamily: stack } : undefined}>
+                      The quick brown fox jumps over the lazy dog, 0123456789
+                    </p>
+                    <div className="kit-face-meta">
+                      <code>{String(e.payload.name ?? '')}</code>
+                      <code className="kit-sw-v">{stack}</code>
+                      {e.payload.purpose ? <p>{String(e.payload.purpose).slice(0, 160)}</p> : null}
+                      <VisTag onPress={onPress} e={e} />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="kit-note">
+                Canon stacks the code standardizes; the ratified faces above govern the brand.
+              </p>
             </section>
           )}
 

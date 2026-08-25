@@ -81,8 +81,19 @@ export async function absorbConsole(db: any): Promise<AbsorbResult> {
       type = 'brand';
       payload = { kind: 'token', name: title, value: n.swatch ?? '', purpose: n.body ?? '', url: n.url, console: true, sort: n.sort };
     } else if (n.facet === 'type') {
+      // A face's counter column carries its full stack; the title is the
+      // family's display name. Falls back to the title alone when no stack
+      // was recorded, which the renderer treats honestly.
       type = 'brand';
-      payload = { kind: 'face', name: title, stack: title, note: n.body, url: n.url, console: true, sort: n.sort };
+      payload = {
+        kind: 'face',
+        name: title,
+        stack: (n.counter ?? '').trim() || title,
+        note: n.body,
+        url: n.url,
+        console: true,
+        sort: n.sort,
+      };
     } else if (n.facet === 'asset') {
       type = 'file';
       payload = { kind: 'asset', name: title, note: n.body, url: n.url, shot: n.shot, console: true, sort: n.sort };
