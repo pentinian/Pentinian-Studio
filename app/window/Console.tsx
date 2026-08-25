@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Attach from './Attach';
 import Files from './Files';
+import WindowKit from './WindowKit';
 import Overview from './Overview';
 import { ExampleInspiration, ExampleRequest } from './Mocks';
 
@@ -226,11 +227,12 @@ export default function Console({
 
       {face === 'files' && <Files projectId={projectId} projectName={projectName} />}
 
-      {face === 'brand' && !missing && (
-        <Brand
-          notes={settledBrand} suggestions={suggestions} ready={ready} staff={staff}
-          shotUrls={shotUrls} add={add} remove={remove} projectName={projectName}
-        />
+      {/* Phase C: the brand face is the book, read from window_brain, released
+          projections only. The old note board (Brand below) is unmounted, not
+          deleted: per note suggestions pause until the consolidation; general
+          requests are unaffected and live on their own face. */}
+      {face === 'brand' && !missing && projectId && (
+        <WindowKit projectId={projectId} projectName={projectName ?? ''} />
       )}
 
       {face === 'inspiration' && !missing && (
@@ -256,8 +258,8 @@ export default function Console({
 // Read only here. Brand is authored in the Atelier and passed deliberately, so this
 // side is a board to look at rather than a form to fill in.
 //
-// Colours sit on one row as pure swatches. The name and the purpose live underneath
-// the cursor, because five labelled chips is a table and a table is not a palette: you
+// Colors sit on one row as pure swatches. The name and the purpose live underneath
+// the cursor, because five labeled chips is a table and a table is not a palette: you
 // look at a palette to see the colors next to each other, which is exactly what a
 // caption on every one prevents.
 function Brand({ notes, suggestions, ready, staff, shotUrls, add, remove, projectName }: any) {
@@ -466,7 +468,7 @@ function Row({ label, no, children }: { label: string; no?: string; children: Re
 }
 
 // Saying "the sage is too soft" should take ten seconds and land where it will be seen.
-// The alternative is an email, and an email about a colour is lost by Thursday.
+// The alternative is an email, and an email about a color is lost by Thursday.
 function Ask({ n, pending, onAsk }: { n: Note; pending: number; onAsk: (n: Note) => void }) {
   return (
     <span className="bx-foot">

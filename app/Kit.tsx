@@ -876,11 +876,16 @@ export default function Kit({
           <section className="kit-ch" id="kit-work">
             <h2>Work Record</h2>
             <div className="kit-work">
+              {/* Worklog pressing pauses here on purpose: the client work log
+                  has its own curated projection with shaped titles and times,
+                  and its release press lives with that shaping in Build. A
+                  brain press for worklogs would release nothing a client sees,
+                  which is worse than no button. Consolidation reunites them. */}
               {shownWork.map((e) => (
                 <div key={e.id} className="kit-work-row">
                   <time>{new Date(e.created).toLocaleDateString()}</time>
                   <span className="kit-work-title">{e.title}</span>
-                  <VisTag onPress={onPress} e={e} />
+                  <VisTag e={e} />
                 </div>
               ))}
             </div>
