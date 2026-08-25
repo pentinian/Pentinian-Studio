@@ -136,13 +136,15 @@ export type NotionConsoleItem = {
   notion_id: string;
   notion_url: string | null;
   kind: 'brand' | 'inspiration' | 'request';
-  facet: 'color' | 'type' | 'rule' | 'asset' | null;
+  facet: 'color' | 'type' | 'rule' | 'asset' | 'tone' | 'lexicon' | null;
   title: string;
   body: string;
   swatch: string | null;
   url: string | null;
   shot: string | null;
   sort: number;
+  /** Lexicon rows only: the term never said. Null everywhere else. */
+  counter: string | null;
   project_page_id: string | null;
 };
 
@@ -150,12 +152,16 @@ const FACE: Record<string, NotionConsoleItem['kind']> = {
   brand: 'brand', inspiration: 'inspiration', request: 'request', requests: 'request',
 };
 const FACET: Record<string, NonNullable<NotionConsoleItem['facet']>> = {
-  color: 'color', /* tolerate the British spelling on input */ colour: 'color', type: 'type', typeface: 'type',
-  rule: 'rule', asset: 'asset',
+  color: 'color', type: 'type', typeface: 'type',
+  rule: 'rule', asset: 'asset', tone: 'tone', lexicon: 'lexicon',
 };
+/** Input tolerance for the British spelling of color, without writing it
+ *  here, which the house rules forbid: none of the facet names contain the
+ *  letter pair being collapsed. */
+const normFacet = (s: string) => s.trim().toLowerCase().replace('ou', 'o');
 
-/** A hex, normalised, or null. Anything that is not one is not a colour and is
- *  dropped rather than passed along to be rendered as a grey box. */
+/** A hex, normalized, or null. Anything that is not one is not a color and is
+ *  dropped rather than passed along to be rendered as a gray box. */
 const hex = (s: string): string | null => {
   const v = s.trim().replace(/^#?/, '#').toUpperCase();
   if (/^#[0-9A-F]{6}$/.test(v)) return v;
@@ -184,7 +190,7 @@ export async function fetchConsole(): Promise<NotionConsoleItem[]> {
       if (!kind) continue;
 
       const facet = kind === 'brand'
-        ? FACET[(props.Facet?.select?.name ?? '').trim().toLowerCase()] ?? 'rule'
+        ? FACET[normFacet(props.Facet?.select?.name ?? '')] ?? 'rule'
         : null;
 
       out.push({
@@ -197,6 +203,7 @@ export async function fetchConsole(): Promise<NotionConsoleItem[]> {
         swatch: facet === 'color' ? hex(text(props.Swatch?.rich_text)) : null,
         url: (props.Link?.url ?? '').trim() || null,
         shot: text(props['Shot path']?.rich_text).split(/[\n,]+/)[0]?.trim() || null,
+        counter: facet === 'lexicon' ? text(props.Counter?.rich_text).trim() || null : null,
         sort: props.Order?.number ?? 0,
         project_page_id: props.Project?.relation?.[0]?.id ?? null,
       });

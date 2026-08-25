@@ -335,10 +335,21 @@ export default function Kit({
     const faces = [...faceTokens, ...brand.filter((e) => e.payload?.kind === 'face')];
 
     const rules = brand.filter((e) => e.payload?.kind === 'rule');
-    const voiceRules = rules.filter((e) => ruleTier(ruleText(e)) === 'branding');
+    const allVoiceRules = rules.filter((e) => ruleTier(ruleText(e)) === 'branding');
     const buildRules = rules.filter((e) => ruleTier(ruleText(e)) === 'build');
 
-    for (const l of [brandColors, buildColors, faces, voiceRules, buildRules]) l.sort(bySortThenName);
+    // The language guide's anatomy. Tone and lexicon arrive ratified through
+    // the console; principles are ratified rules; and once any part of a
+    // guide exists, unratified rules fall to the Rulings appendix, the case
+    // law beneath the law. A lane with no guide yet keeps its flat list.
+    const voiceTone = brand.filter((e) => e.payload?.kind === 'voice-tone').sort(bySortThenName);
+    const lexicon = brand.filter((e) => e.payload?.kind === 'voice-lexicon').sort(bySortThenName);
+    const curatedPrinciples = allVoiceRules.filter((e) => e.payload?.console).sort(bySortThenName);
+    const guideExists = voiceTone.length > 0 || lexicon.length > 0 || curatedPrinciples.length > 0;
+    const voiceRules = guideExists ? curatedPrinciples : allVoiceRules;
+    const rulings = guideExists ? allVoiceRules.filter((e) => !e.payload?.console) : [];
+
+    for (const l of [brandColors, buildColors, faces, voiceRules, buildRules, rulings]) l.sort(bySortThenName);
 
     // Interlink counts: branding stem -> number of build steps beneath it.
     const stems = new Map<string, number>();
@@ -351,7 +362,10 @@ export default function Kit({
       brandColors,
       buildColors,
       faces,
+      voiceTone,
+      lexicon,
       voiceRules,
+      rulings,
       buildRules,
       stems,
       inspiration: entries.filter((e) => e.type === 'inspiration').sort(bySortThenName),
@@ -376,7 +390,11 @@ export default function Kit({
       chapters: [
         { id: 'color', name: 'Color', count: b.brandColors.length },
         { id: 'type', name: 'Type', count: b.faces.length },
-        { id: 'voice', name: 'Voice', count: b.voiceRules.length },
+        {
+          id: 'voice',
+          name: 'Voice',
+          count: b.voiceTone.length + b.lexicon.length + b.voiceRules.length + b.rulings.length,
+        },
         { id: 'inspiration', name: 'Inspiration', count: b.inspiration.length },
         { id: 'assets', name: 'Assets', count: b.assets.length },
       ],
@@ -445,7 +463,7 @@ export default function Kit({
       </header>
 
       {/* ================================================== BRANDING ==== */}
-      {(b.brandColors.length || b.faces.length || b.voiceRules.length || b.inspiration.length || b.assets.length) > 0 && (
+      {(b.brandColors.length || b.faces.length || b.voiceTone.length || b.lexicon.length || b.voiceRules.length || b.rulings.length || b.inspiration.length || b.assets.length) > 0 && (
         <div className="kit-part">
           <h2 className="kit-part-h">Branding</h2>
           <p className="kit-part-sub">The surface. What the brand is.</p>
@@ -491,25 +509,93 @@ export default function Kit({
             </section>
           )}
 
-          {b.voiceRules.length > 0 && (
+          {(b.voiceTone.length || b.lexicon.length || b.voiceRules.length || b.rulings.length) > 0 && (
             <section className="kit-ch" id="kit-voice">
               <h2>Voice</h2>
-              <ol className="kit-rules">
-                {b.voiceRules.map((e) => {
-                  const why =
-                    typeof e.payload.rule === 'object' && e.payload.rule?.why
-                      ? String(e.payload.rule.why)
-                      : null;
-                  return (
-                    <li key={e.id}>
-                      <p className="kit-rule-line">
-                        {ruleText(e)} <VisTag onPress={onPress} e={e} />
-                      </p>
-                      {why ? <p className="kit-rule-why">{why}</p> : null}
-                    </li>
-                  );
-                })}
-              </ol>
+
+              {/* The register: what the brand sounds like, before any rule. */}
+              {b.voiceTone.length > 0 && (
+                <div className="kit-tone">
+                  {b.voiceTone.map((e) => (
+                    <div key={e.id} className="kit-tone-card">
+                      <strong>{String(e.payload.name ?? e.title)}</strong>
+                      {e.payload.note ? <p>{String(e.payload.note)}</p> : null}
+                      <VisTag onPress={onPress} e={e} />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Terminology law: say this, never that, because. */}
+              {b.lexicon.length > 0 && (
+                <table className="kit-lex">
+                  <thead>
+                    <tr>
+                      <th>Say</th>
+                      <th>Never</th>
+                      <th>Because</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {b.lexicon.map((e) => (
+                      <tr key={e.id}>
+                        <td className="kit-lex-say">{String(e.payload.say ?? '')}</td>
+                        <td className="kit-lex-never">{String(e.payload.never ?? '')}</td>
+                        <td>{String(e.payload.why ?? '')}</td>
+                        <td>
+                          <VisTag onPress={onPress} e={e} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {/* Phrasing law: the principles. */}
+              {b.voiceRules.length > 0 && (
+                <ol className="kit-rules">
+                  {b.voiceRules.map((e) => {
+                    const why =
+                      typeof e.payload.rule === 'object' && e.payload.rule?.why
+                        ? String(e.payload.rule.why)
+                        : null;
+                    return (
+                      <li key={e.id}>
+                        <p className="kit-rule-line">
+                          {ruleText(e)} <VisTag onPress={onPress} e={e} />
+                        </p>
+                        {why ? <p className="kit-rule-why">{why}</p> : null}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+
+              {/* Case law: rulings made on real occasions, beneath the guide. */}
+              {b.rulings.length > 0 && (
+                <details className="kit-fold kit-rulings">
+                  <summary>
+                    Rulings, {b.rulings.length}. Case law from real occasions; the guide above
+                    governs, these record.
+                  </summary>
+                  <ul>
+                    {b.rulings.map((e) => {
+                      const why =
+                        typeof e.payload.rule === 'object' && e.payload.rule?.why
+                          ? String(e.payload.rule.why)
+                          : null;
+                      return (
+                        <li key={e.id}>
+                          {ruleText(e)}
+                          {why ? <span className="kit-rule-why"> {why}</span> : null}{' '}
+                          <VisTag onPress={onPress} e={e} />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </details>
+              )}
             </section>
           )}
 

@@ -35,7 +35,7 @@ export async function absorbConsole(db: any): Promise<AbsorbResult> {
   const notes = await all(
     db,
     'project_notes',
-    'id,project_id,kind,facet,title,body,url,swatch,shot,status,from_client,sort,created_at,released_at,notion_id'
+    'id,project_id,kind,facet,title,body,url,swatch,shot,status,from_client,sort,created_at,released_at,notion_id,counter'
   );
   const projects = await all(db, 'projects', 'id,name');
   const nameById = new Map(projects.map((p: any) => [p.id, p.name]));
@@ -62,6 +62,21 @@ export async function absorbConsole(db: any): Promise<AbsorbResult> {
     if (n.kind === 'inspiration') {
       type = 'inspiration';
       payload = { kind: 'inspiration', name: title, note: n.body, url: n.url, shot: n.shot, sort: n.sort };
+    } else if (n.facet === 'tone') {
+      // The register: one named quality per row, its meaning in the body.
+      type = 'brand';
+      payload = { kind: 'voice-tone', name: title, note: n.body ?? '', console: true, sort: n.sort };
+    } else if (n.facet === 'lexicon') {
+      // Terminology law: say this, never that, because.
+      type = 'brand';
+      payload = {
+        kind: 'voice-lexicon',
+        say: title,
+        never: n.counter ?? '',
+        why: n.body ?? '',
+        console: true,
+        sort: n.sort,
+      };
     } else if (n.facet === 'color') {
       type = 'brand';
       payload = { kind: 'token', name: title, value: n.swatch ?? '', purpose: n.body ?? '', url: n.url, console: true, sort: n.sort };
@@ -102,7 +117,7 @@ export async function absorbConsole(db: any): Promise<AbsorbResult> {
       provenance,
       entry_key: `console:${n.id}`,
       content_hash: sha256(
-        canonical({ title, body: n.body, url: n.url, swatch: n.swatch, shot: n.shot, facet: n.facet, kind: n.kind, sort: n.sort, from_client: n.from_client, provenance })
+        canonical({ title, body: n.body, url: n.url, swatch: n.swatch, shot: n.shot, counter: n.counter ?? null, facet: n.facet, kind: n.kind, sort: n.sort, from_client: n.from_client, provenance })
       ),
       // Standing mirrors the console, which remains a pressed surface: released
       // stays released with its stamp, everything else staged. Never internal,

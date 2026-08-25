@@ -144,6 +144,7 @@ export async function POST(request: Request) {
         swatch: it.swatch,
         url: it.url,
         shot: it.shot,
+        counter: it.counter,
         sort: it.sort,
         from_client: false,
         status: it.kind === 'request' ? 'open' : 'none',

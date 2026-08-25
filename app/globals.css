@@ -1474,3 +1474,22 @@ body.dragging .db-un{cursor:grabbing}
   border:1px solid var(--line-2); border-radius:5px; background:var(--paper);
   color:var(--ink-2); cursor:pointer}
 .kit-press-b:hover{color:var(--ink); border-color:var(--line-3)}
+
+/* voice as a language guide */
+.kit-tone{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px}
+.kit-tone-card{border:1px solid var(--line); border-radius:10px; background:var(--paper);
+  padding:12px 14px; display:flex; flex-direction:column; gap:6px}
+.kit-tone-card strong{font:500 15px/1.25 var(--serif); color:var(--ink)}
+.kit-tone-card p{font:400 11.5px/1.5 var(--sans); color:var(--ink-2); margin:0}
+.kit-lex{width:100%; border-collapse:collapse; margin-bottom:18px}
+.kit-lex th{font:500 9.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink-3); text-align:left; padding:0 12px 8px 0; border-bottom:1px solid var(--line-2)}
+.kit-lex td{font:400 11.5px/1.5 var(--sans); color:var(--ink-2); padding:9px 12px 9px 0;
+  border-bottom:1px solid var(--line); vertical-align:top}
+.kit-lex-say{font:500 13px/1.4 var(--serif); color:var(--ink); white-space:nowrap}
+.kit-lex-never{font:400 12px/1.4 var(--sans); color:var(--ink-3); text-decoration:line-through;
+  white-space:nowrap}
+.kit-rulings{margin-top:16px}
+.kit-rulings ul{margin:10px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:8px}
+.kit-rulings li{font:400 12px/1.55 var(--sans); color:var(--ink-2)}
+@media (max-width:760px){.kit-tone{grid-template-columns:1fr}}
