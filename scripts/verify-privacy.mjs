@@ -79,8 +79,25 @@ try {
   // the Quarry, which no client may ever read
   await svc.from('work_log_raw').insert({ project_id: made.project, body: 'raw internal note', notion_id: 'test-' + Date.now() });
 
-  for (const [pid, tag] of [[made.project, 'mine'], [foreignId, 'foreign']]) {
-    const path = `${pid}/test-${tag}.png`;
+  /* Three objects, because the gate has three distinct answers and the old
+   * version of this test only knew about two.
+   *
+   * supabase/shots-gate.sql narrowed what a client may read inside their OWN
+   * project folder: a loose image at the project root is work in progress and
+   * is refused, while anything under files/ is a deliberate attachment and is
+   * signed. Before that migration a client could sign any object under their
+   * own folder, which is the hole the gate closed.
+   *
+   * This test still asserted the pre-gate behavior ("own screenshot: signed"
+   * for a root object), so it failed against a correctly secured database and
+   * demanded the hole be reopened to go green. Corrected 2026-09-15: the root
+   * object is now expected to be REFUSED, which is what the gate is for. */
+  const shotCases = [
+    [`${made.project}/test-mine.png`, 'refuse', 'a loose root image is unreleased work'],
+    [`${made.project}/files/test-attached.png`, 'sign', 'a deliberate attachment under files/'],
+    [`${foreignId}/test-foreign.png`, 'refuse', 'another project entirely'],
+  ];
+  for (const [path] of shotCases) {
     const { error } = await svc.storage.from('shots').upload(path, PNG, { contentType: 'image/png', upsert: true });
     if (!error) made.objects.push(path);
   }
@@ -145,12 +162,15 @@ try {
   c4.error ? ok('comment as another author refused', c4.error.code) : bad('client posted as ANOTHER USER');
 
   console.log('\n=== screenshots ===');
-  for (const path of made.objects) {
-    const isTheirs = path.startsWith(made.project);
+  for (const [path, expect, why] of shotCases) {
     const { data, error } = await asClient.storage.from('shots').createSignedUrl(path, 60);
     const got = !!data?.signedUrl && !error;
-    if (isTheirs) got ? ok('own screenshot: signed') : bad('own screenshot refused', error?.message?.slice(0, 40));
-    else got ? bad('FOREIGN screenshot signed', path) : ok('foreign screenshot refused', error?.message?.slice(0, 34) || 'denied');
+    if (expect === 'sign') {
+      got ? ok(`signed: ${why}`) : bad(`REFUSED but should sign: ${why}`, error?.message?.slice(0, 40));
+    } else {
+      got ? bad(`SIGNED but should refuse: ${why}`, path)
+          : ok(`refused: ${why}`, error?.message?.slice(0, 34) || 'denied');
+    }
   }
 
   console.log('\n=== signed out entirely ===');
