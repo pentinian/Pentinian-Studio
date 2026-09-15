@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Attach from './Attach';
+import Attach from '../Attach';
 import Files from './Files';
 import WindowKit from './WindowKit';
 import Overview from './Overview';

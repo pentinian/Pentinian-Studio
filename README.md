@@ -38,8 +38,8 @@ redirect URL to `https://studio.pentinian.com/auth/callback`.
 ## Checking it still works
 
 **One command: `bash gate.sh`** (add `--fast` to skip the database checks). It runs the
-author fence, `tsc`, a production build, all seven verifiers and a browser probe, then
-confirms the verifiers left no test rows behind. 139 checks as of 2026-09-15.
+author fence, `tsc`, a production build, all seven verifiers and two browser probes,
+then confirms the verifiers left no test rows behind. 160 checks as of 2026-09-15.
 
 Do not run the verifiers by hand unless you know about these two, which cost a session
 each:
@@ -121,10 +121,36 @@ somebody rebuilds what already exists.
 
 Genuinely outstanding:
 
-- **No upload control in the Atelier.** `Curation.tsx` displays the screenshot count
-  and the images but cannot add one. Screenshot attachment works from the Window
-  (`app/window/Attach.tsx` uploads to the `shots` bucket, `Files.tsx` and `Log.tsx`
-  read it back through signed URLs), so this is a gap on the studio side only.
+- ~~**No upload control in the Atelier.**~~ **Built 2026-09-15.** `Curation.tsx`
+  now carries a Screenshots band: upload, thumbnails, and remove, beside the entry
+  it belongs to. Proven end to end by `scripts/probe-atelier-upload.mjs`, which
+  drives TWO clean browser contexts (staff and client, never one cookie jar) and
+  checks 21 things, including that the client CANNOT reach the image while the
+  work is unreleased and CAN the moment it is released. The probe was run against
+  the unfixed code first and fails there, so it is a test rather than a decoration.
+
+  A third README claim died proving it. This section used to say Curation
+  "displays the screenshot count and the images." It displayed the count only:
+  zero `<img>` tags, no `createSignedUrl` call, one sentence reading "N
+  screenshot(s) attached" inside a panel whose entire job is showing what the
+  client will see. Now it renders the pictures.
+
+  How it works, because the shape is not obvious and it is a security posture
+  rather than a preference. Measured 2026-09-15, not inferred:
+  - An admin BROWSER JWT may write into the `shots` bucket, so the file goes
+    straight from the machine to storage and no byte passes through a route.
+  - That same JWT is refused `work_log_raw` outright (Postgres `42501`,
+    permission denied for table). So the PATH is recorded through
+    `/api/quarry`, which is also where the path is checked: a path naming
+    another project's folder is refused, because a release would otherwise sign
+    it for the wrong client.
+  - The object lands at the project ROOT, not under `files/`. `shots-gate.sql`
+    refuses a root object to the client until a released entry names it, so a
+    work screenshot becomes visible when the work is passed and not before.
+    `files/` is for what a client deliberately attached and is readable at once.
+  - `app/window/Attach.tsx` moved to `app/Attach.tsx`, because it now serves both
+    rooms and a second uploader beside it is how two copies of one path rule
+    drift apart. `pretty()` moved with it for the same reason.
 - The question-approval buttons are gone rather than stubbed. They used to render above
   a write path that did not exist. A client now replies on any entry and raises a
   request from the header, both of which are real. The `questions` and `sessions` tables

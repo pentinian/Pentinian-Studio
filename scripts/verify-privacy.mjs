@@ -91,7 +91,19 @@ try {
    * This test still asserted the pre-gate behavior ("own screenshot: signed"
    * for a root object), so it failed against a correctly secured database and
    * demanded the hole be reopened to go green. Corrected 2026-09-15: the root
-   * object is now expected to be REFUSED, which is what the gate is for. */
+   * object is now expected to be REFUSED, which is what the gate is for.
+   *
+   * RULED ON BY PEN, 2026-09-15: "The migration is right, keep the test
+   * change." Recorded here rather than only in a session log so that the next
+   * reader does not open this as a regression. The reasoning she agreed with:
+   * a client holds a REAL Supabase session and can sign any URL the policy
+   * permits, so hiding an unreleased screenshot in the interface is not a gate
+   * and the policy has to be the gate. Reverting the expectation below to
+   * "sign" does not fix a test, it reopens a storage read.
+   *
+   * The Atelier's upload control (added 2026-09-15) writes to the ROOT segment
+   * for exactly this reason: a work screenshot becomes readable when the entry
+   * is released and not before. Case 1 below is that path. */
   const shotCases = [
     [`${made.project}/test-mine.png`, 'refuse', 'a loose root image is unreleased work'],
     [`${made.project}/files/test-attached.png`, 'sign', 'a deliberate attachment under files/'],

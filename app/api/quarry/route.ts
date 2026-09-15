@@ -240,9 +240,10 @@ async function releaseOne(
 }
 
 /**
- * Three jobs, told apart by what arrives.
+ * Four jobs, told apart by what arrives.
  *
  *   { moves: [...] }        arrange a day: move blocks, change how long they read as taking
+ *   { id, shots: [...] }    set the screenshots on an entry
  *   { id, withdraw: true }  pull a released entry back out of the Window
  *   { id, visible }         show or hide one already released
  *
@@ -260,6 +261,59 @@ export async function PATCH(request: Request) {
 
   const body = await request.json().catch(() => null);
   const db = admin();
+
+  /* ------------------------------------------------------------- screenshots
+   *
+   * The upload itself happens in the browser, straight to storage, because the
+   * file is on the machine the person is sitting at and a serverless route
+   * would have to receive the bytes only to forward them. Measured 2026-09-15:
+   * an admin browser JWT IS allowed to write into the shots bucket (the
+   * shots_staff_write policy covers it), and is REFUSED work_log_raw entirely
+   * (Postgres 42501, permission denied for table). That asymmetry is the whole
+   * reason this branch exists: the object can be put there from the browser and
+   * the PATH can only be recorded here.
+   *
+   * The paths are checked rather than taken on trust. A staff caller could
+   * otherwise record a path pointing into ANOTHER project's folder, and then a
+   * release would sign it for the wrong client: the storage policy would permit
+   * the read, because the released row it checks would genuinely name that
+   * object. The gate is only as good as what is allowed into the array. */
+  if (Array.isArray(body?.shots)) {
+    if (!body?.id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+    const { data: entry, error: entryErr } = await db
+      .from('work_log_raw').select('id,project_id').eq('id', body.id).single();
+    if (entryErr || !entry) return NextResponse.json({ error: 'No such entry' }, { status: 404 });
+    if (!entry.project_id) {
+      return NextResponse.json(
+        { error: 'That entry has no project, so a screenshot on it would belong to nobody.' },
+        { status: 409 }
+      );
+    }
+
+    const paths = body.shots.map((p: unknown) => String(p ?? '').trim()).filter(Boolean);
+    const foreign = paths.filter((p: string) => p.split('/')[0] !== entry.project_id);
+    if (foreign.length) {
+      return NextResponse.json(
+        { error: `${foreign.length} of those files belong to a different project. Not recorded.` },
+        { status: 409 }
+      );
+    }
+    if (paths.length > 24) {
+      return NextResponse.json({ error: 'That is more than 24 screenshots on one entry.' }, { status: 409 });
+    }
+
+    const { error } = await db.from('work_log_raw').update({ shots: paths }).eq('id', body.id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    /* An entry already released keeps the same screenshots it was released with
+     * unless they are changed here too. Left alone, adding a shot in the Atelier
+     * would report success and change nothing the client can see, which is the
+     * same class of bug a move without this line would be. */
+    await db.from('work_log_released').update({ shots: paths }).eq('raw_id', body.id);
+
+    return NextResponse.json({ ok: true, shots: paths });
+  }
 
   if (Array.isArray(body?.moves)) {
     const done: string[] = [];

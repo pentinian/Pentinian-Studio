@@ -106,9 +106,13 @@ trap cleanup EXIT
 
 # -------------------------------------------------------------- verifiers ---
 # verify-nonadmin is the signed-in non-admin path, which was inference until
-# 2026-09-15. probe-reply-failure drives a real browser.
+# 2026-09-15. probe-reply-failure and probe-atelier-upload drive real browsers;
+# the upload probe uses TWO browser contexts, staff and client, because a single
+# context carrying a staff cookie is how a privacy check passes for the wrong
+# reason.
 for s in verify-privacy verify-window verify-console verify-replies \
-         verify-window-brain verify-brain verify-nonadmin probe-reply-failure; do
+         verify-window-brain verify-brain verify-nonadmin probe-reply-failure \
+         probe-atelier-upload; do
   step "$s"
   node "scripts/$s.mjs" > "/tmp/pentinian-$s.log" 2>&1
   code=$?

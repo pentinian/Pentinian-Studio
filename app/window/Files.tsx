@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Attach, { isImage } from './Attach';
+import Attach, { isImage, pretty } from '../Attach';
 
 // Everything the project holds, in two halves.
 //
@@ -29,9 +29,9 @@ const KB = (n?: number) =>
   n == null ? '' : n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`;
 const when = (s: string | null) =>
   s ? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-const pretty = (n: string) =>
-  n.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/^\d{10,}-/, '')
-   .replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ');
+// `pretty` used to be declared here. It moved to app/Attach.tsx on 2026-09-15 when
+// the Atelier's screenshot shelf needed the same rule, so that a storage filename
+// reads one way everywhere rather than two ways in two rooms.
 const ext = (p: string) => (p.split('.').pop() ?? '').toUpperCase();
 
 export default function Files({ projectId, projectName }: { projectId: string; projectName: string }) {

@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import Attach, { isImage, pretty } from '../Attach';
 import DayBoard, { type Block, type Edit } from './DayBoard';
 
 // The gate. Left: everything the Quarry holds. Right: exactly what the client
@@ -63,6 +65,13 @@ export default function Curation({
      edits it by typing, so both have to read and write the same pending state or
      they will show two different answers for the same block. */
   const [edits, setEdits] = useState<Record<string, Edit>>({});
+
+  /* Signed URLs for whatever the selected entry carries, keyed by storage path.
+     Screenshots live in a private bucket, so a path is not an image: it has to be
+     signed before anything can be shown. Held per path rather than per entry so
+     moving between entries that share one does not sign it twice. */
+  const [shotUrls, setShotUrls] = useState<Record<string, string>>({});
+  const [shotBusy, setShotBusy] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch('/api/quarry', { cache: 'no-store' });
@@ -181,6 +190,80 @@ export default function Curation({
 
   const projectOf = (id: string | null) => projects.find((p) => p.id === id);
   const isReleased = (id: string) => released.find((r) => r.raw_id === id);
+
+  /* ------------------------------------------------------------- screenshots
+   *
+   * Three facts this is built on, each measured on 2026-09-15 rather than read
+   * off a comment, because two of the three were surprises:
+   *
+   *   1. An admin browser JWT CAN write into the shots bucket. So the file goes
+   *      straight from this machine to storage and no byte passes through a
+   *      serverless route.
+   *   2. That same JWT is REFUSED work_log_raw outright (Postgres 42501,
+   *      "permission denied for table"). It is revoked from `authenticated` on
+   *      purpose. So the PATH cannot be recorded from here and goes through
+   *      /api/quarry, the same door everything else in this panel uses.
+   *   3. An object at the project ROOT is refused to the client until a released
+   *      entry names it. That is supabase/shots-gate.sql, and it is why these
+   *      upload to the root rather than to files/: a work screenshot is not a
+   *      deliberate attachment, and it should become visible when the work is
+   *      released and not one moment sooner.
+   *
+   * So the honest summary of the control below: it puts the image somewhere the
+   * client cannot read yet, and releasing the entry is what lets them read it.
+   */
+  const signShots = useCallback(async (paths: string[]) => {
+    const missing = paths.filter((p) => !shotUrls[p]);
+    if (!missing.length) return;
+    const supabase = createClient();
+    const { data } = await supabase.storage.from('shots').createSignedUrls(missing, 60 * 30);
+    const next: Record<string, string> = {};
+    for (const s of data ?? []) if (s.signedUrl && s.path) next[s.path] = s.signedUrl;
+    if (Object.keys(next).length) setShotUrls((u) => ({ ...u, ...next }));
+  }, [shotUrls]);
+
+  // Sign whatever the open entry carries, as it opens. Not on load for the whole
+  // queue: two hundred entries would mean signing every screenshot in the studio
+  // to show one panel.
+  useEffect(() => { if (sel?.shots?.length) signShots(sel.shots); }, [sel, signShots]);
+
+  /** Record the whole array. The route replaces rather than appends, so add and
+   *  remove are one operation with two callers and there is no second write path
+   *  that could forget a check. */
+  async function setShots(next: string[]) {
+    if (!sel) return;
+    setShotBusy(true); setMsg('');
+    const res = await fetch('/api/quarry', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: sel.id, shots: next }),
+    });
+    const j = await res.json().catch(() => ({}));
+    setShotBusy(false); setOk(res.ok);
+    if (!res.ok) { setMsg(`Could not attach that: ${j.error ?? 'no reason given'}`); return; }
+    // Said out loud, because the gate is not obvious and somebody will reasonably
+    // assume an uploaded screenshot is visible the moment it uploads.
+    setMsg(
+      isReleased(sel.id)
+        ? `${next.length} screenshot${next.length === 1 ? '' : 's'} on this entry. It is already released, so they can see them now.`
+        : `${next.length} screenshot${next.length === 1 ? '' : 's'} on this entry. The client cannot see them until it is released.`
+    );
+    load();
+  }
+
+  async function removeShot(path: string) {
+    if (!sel) return;
+    const next = (sel.shots ?? []).filter((p) => p !== path);
+    await setShots(next);
+    /* The object is deleted too, and only after the row no longer points at it.
+     * The other order leaves a released entry naming a file that is not there,
+     * which renders as a broken frame in somebody's Window. A failure here is
+     * not reported: the row is what governs what a client sees, and an orphaned
+     * object in a private bucket is tidiness rather than a defect. */
+    const supabase = createClient();
+    await supabase.storage.from('shots').remove([path]);
+    setShotUrls((u) => { const n = { ...u }; delete n[path]; return n; });
+  }
 
   async function release(visible = true) {
     if (!sel) return;
@@ -352,7 +435,25 @@ export default function Curation({
               <h4 className="we-title">{draft.title || 'Untitled'}</h4>
               <p className="we-eli5">{draft.eli5 || 'No plain-language summary yet. The client would see nothing here.'}</p>
               {draft.why && <p className="we-why">{draft.why}</p>}
-              {!!sel.shots?.length && <div className="we-shots">{sel.shots.length} screenshot(s) attached</div>}
+              {/* The screenshots, as pictures rather than as a number.
+                  This read "N screenshot(s) attached" until 2026-09-15, which is a
+                  count of something the preview is supposed to be showing. The
+                  panel's whole job is that what you see here is what they read,
+                  and a sentence about images is not the images. */}
+              {!!sel.shots?.length && (
+                <div className="we-gal">
+                  {sel.shots.map((p) =>
+                    shotUrls[p] ? (
+                      <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={shotUrls[p]} alt="" loading="lazy" />
+                      </a>
+                    ) : (
+                      <span key={p} className="we-shot-skel" />
+                    )
+                  )}
+                </div>
+              )}
               {!!sel.links?.length && (
                 <div className="we-shots">
                   {sel.links.length} link{sel.links.length === 1 ? '' : 's'}, shown with the standing
@@ -387,6 +488,74 @@ export default function Curation({
                   onChange={(e) => setDraft({ ...draft, gap_label: e.target.value })}
                 />
               </label>
+
+              {/* ------------------------------------------------ screenshots --
+                  The gap the README called the last genuine stub. Curation showed
+                  the count and could not add one, so every screenshot on a client's
+                  Window had to come from push-shots.mjs at a terminal, with the path
+                  pasted into Notion by hand.
+
+                  Uploads to the project ROOT, not to files/, and that is the whole
+                  security posture in one argument: shots-gate.sql refuses a root
+                  object to the client until a released entry names it, so a
+                  screenshot attached here is invisible to them until the work is
+                  passed. files/ would be visible immediately, which is right for
+                  something a client deliberately attached and wrong for this. */}
+              <div className="cur-shots">
+                <span className="cur-time-l">Screenshots</span>
+
+                {!!sel.shots?.length && (
+                  <div className="cn-grid cur-shot-grid">
+                    {sel.shots.map((p) => (
+                      <div className="cn-thumb" key={p}>
+                        {shotUrls[p] && isImage(p) ? (
+                          <a href={shotUrls[p]} target="_blank" rel="noopener noreferrer" title={p}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={shotUrls[p]} alt="" loading="lazy" />
+                          </a>
+                        ) : (
+                          <span className="cn-doc" />
+                        )}
+                        <span className="cn-cap" title={p.split('/').pop()}>
+                          {pretty(p.split('/').pop() ?? p)}
+                          <button
+                            className="cn-x"
+                            title="Take this off the entry and delete the file"
+                            disabled={shotBusy}
+                            onClick={() => removeShot(p)}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="cn-add-row">
+                  {/* No project, no upload control. Rendering it would offer a
+                      write that builds the path `/<name>`, whose first segment is
+                      empty and matches no project, so storage refuses it and the
+                      person gets a raw policy error for a thing that was never
+                      going to work. The sentence says why instead. */}
+                  {sel.project_id && (
+                    <Attach
+                      projectId={sel.project_id}
+                      label={sel.shots?.length ? 'Add another' : 'Add a screenshot'}
+                      accept="image/*"
+                      folder={null}
+                      onDone={(path) => setShots([...(sel.shots ?? []), path])}
+                    />
+                  )}
+                  <span className="cn-note">
+                    {!sel.project_id
+                      ? 'This entry has no project, so there is nowhere to put a screenshot.'
+                      : isReleased(sel.id)
+                        ? 'This entry is already released, so anything added here reaches them straight away.'
+                        : 'Held with the entry. The client cannot see it until you release this.'}
+                  </span>
+                </div>
+              </div>
 
               {/* The same placement the board edits, reachable from the side you happen
                   to be on. Dragging is faster for arranging a day; typing is exact when

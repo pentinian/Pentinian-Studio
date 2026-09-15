@@ -390,6 +390,16 @@ body.dragging .db-block{cursor:grabbing}
 .cur-time-row input{border:1px solid var(--line); border-radius:7px; padding:8px 9px;
   font:400 11.5px/1 var(--mono); color:var(--ink); background:var(--bone); font-family:inherit}
 
+/* Screenshots on an entry, in the gate. Same rule as .cur-time above it: a labelled
+   band separated by a hairline, so the panel reads as a stack of one-job sections
+   rather than a form with pictures loose in it. The tiles are .cn-thumb, which the
+   Console and the Window's shelf already use; a second thumbnail grammar for the
+   same object in a third place is exactly the drift this file keeps paying for. */
+.cur-shots{margin-top:6px; padding-top:12px; border-top:1px solid var(--line)}
+.cur-shot-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); margin-bottom:9px}
+.cur-shot-grid .cn-cap{display:flex; align-items:center; gap:2px; font-size:10px}
+.cur-shot-grid .cn-cap .cn-x{margin-left:auto}
+
 /* The home page editor. Named blocks beside the live page, rather than a builder over
    hand-written HTML, which produces markup nobody can maintain. */
 .hp-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px}
