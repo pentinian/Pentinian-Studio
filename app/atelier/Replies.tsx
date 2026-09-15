@@ -35,6 +35,9 @@ export default function Replies() {
   const [waiting, setWaiting] = useState(0);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState('');
+  // Keyed by thread, so a failure sits under the answer it belongs to rather
+  // than at the top of a list of other people's conversations.
+  const [err, setErr] = useState<Record<string, string>>({});
   const [showAll, setShowAll] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -54,13 +57,37 @@ export default function Replies() {
     const body = (draft[t.id] ?? '').trim();
     if (!body) return;
     setBusy(t.id);
-    const res = await fetch('/api/comments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry_id: t.entry_id, project_id: t.project_id, body }),
-    });
+    setErr((p) => ({ ...p, [t.id]: '' }));
+
+    /* Same silent-failure class as app/window/Log.tsx say(), fixed in the same
+     * pass. This side is the worse one to lose: a client is waiting on this
+     * reply, and a studio that believes it answered will not answer again. */
+    let res: Response;
+    try {
+      res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: t.entry_id, project_id: t.project_id, body }),
+      });
+    } catch {
+      setBusy('');
+      setErr((p) => ({ ...p, [t.id]: 'That did not send. Check your connection and try again.' }));
+      return;
+    }
     setBusy('');
-    if (!res.ok) return;
+
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({} as any));
+      setErr((p) => ({
+        ...p,
+        [t.id]:
+          res.status === 403 || res.status === 401
+            ? 'Your studio session has expired. Reload the Atelier; your answer is still here.'
+            : (d?.error ?? 'That did not send. Try again in a moment.'),
+      }));
+      return;
+    }
+
     setDraft((p) => ({ ...p, [t.id]: '' }));
     load();
   }
@@ -124,6 +151,9 @@ export default function Replies() {
                 Send
               </button>
             </div>
+            {err[t.id] && (
+              <p className="wl-say-err" role="status" aria-live="polite">{err[t.id]}</p>
+            )}
           </div>
         ))}
       </div>

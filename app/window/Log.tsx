@@ -127,6 +127,10 @@ export default function Log({ projectId }: { projectId: string | null }) {
   const [shotUrls, setShotUrls] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState('');
+  // Keyed by entry, because two entries can be open and a failure belongs under
+  // the one it happened to. A single shared string would post the error under
+  // whichever box the eye happened to be on.
+  const [sayErr, setSayErr] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   /* Where to open.
@@ -283,13 +287,55 @@ export default function Log({ projectId }: { projectId: string | null }) {
     const body = (draft[entry.id] ?? '').trim();
     if (!body) return;
     setBusy(entry.id);
-    const res = await fetch('/api/comments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry_id: entry.id, project_id: entry.project_id, body }),
-    });
+    setSayErr((p) => ({ ...p, [entry.id]: '' }));
+
+    /* A failed send used to return here in silence.
+     *
+     * The route on the other side is careful about this: it answers 403 or 400
+     * with a sentence in it. All of that was being discarded, so the one case
+     * that really happens, a session that lapsed under a page left open, looked
+     * exactly like a send that worked. Their words stayed in the box, which is
+     * the only reason it was survivable: nothing was lost, but nobody was told,
+     * and a client who says something and hears nothing back assumes it landed.
+     *
+     * Measured before fixing (scripts/probe-reply-failure.mjs): the page gained
+     * zero characters of text when the POST failed.
+     *
+     * The draft is deliberately NOT cleared on failure, so pressing Send again
+     * is the whole retry. */
+    let res: Response;
+    try {
+      res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: entry.id, project_id: entry.project_id, body }),
+      });
+    } catch {
+      // The network itself, not the server: offline, asleep, a dropped tunnel.
+      setBusy('');
+      setSayErr((p) => ({
+        ...p,
+        [entry.id]: 'That did not send. Check your connection and press Send again.',
+      }));
+      return;
+    }
     setBusy('');
-    if (!res.ok) return;
+
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({} as any));
+      // A signed-out session is the common case and has a real answer, so it
+      // gets its own sentence rather than the server's word "Not permitted",
+      // which tells a client nothing they can act on.
+      setSayErr((p) => ({
+        ...p,
+        [entry.id]:
+          res.status === 403 || res.status === 401
+            ? 'Your session has expired. Open the Window again and your message is still here.'
+            : (d?.error ?? 'That did not send. Try again in a moment.'),
+      }));
+      return;
+    }
+
     const { comment } = await res.json();
     setComments((p) => ({ ...p, [entry.id]: [...(p[entry.id] ?? []), comment as Comment] }));
     setDraft((p) => ({ ...p, [entry.id]: '' }));
@@ -518,6 +564,13 @@ export default function Log({ projectId }: { projectId: string | null }) {
                             Send
                           </button>
                         </div>
+                        {/* aria-live, because the failure arrives after the press
+                            and a screen reader would otherwise never hear it. */}
+                        {sayErr[e.id] && (
+                          <p className="wl-say-err" role="status" aria-live="polite">
+                            {sayErr[e.id]}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}

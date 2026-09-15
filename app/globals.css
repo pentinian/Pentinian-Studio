@@ -919,6 +919,11 @@ body.dragging .db-block{cursor:grabbing}
 .wl-say input{flex:1; min-width:0; border:1px solid var(--line); border-radius:7px; padding:8px 10px;
   font:400 12.5px/1.4 var(--sans); color:var(--ink); background:var(--paper)}
 .wl-say input:focus{outline:none; border-color:var(--sage)}
+/* A send that failed. Same clay-red register as .cur-msg.bad, which is already
+   what a refusal looks like everywhere else in the app: one fact, one home. */
+.wl-say-err{font:400 12px/1.5 var(--sans); color:#8a4a3d; background:#f6e9e4;
+  border-left:2px solid #c1735f; padding:8px 10px; border-radius:0 5px 5px 0;
+  margin:8px 0 0}
 
 /* ---- the reply inbox ---- */
 .tab-n{display:inline-grid; place-items:center; min-width:16px; height:16px; padding:0 4px;
