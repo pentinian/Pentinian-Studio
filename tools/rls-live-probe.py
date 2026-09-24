@@ -77,6 +77,15 @@ for t in TABLES:
 
 out["tables"] = rows
 out["tables_leaking_rows_to_anon"] = leaked
-out["verdict"] = ("RLS IS APPLIED: anon reads nothing" if not leaked
+# Deliberately narrower than the old wording, which read "RLS IS APPLIED".
+# Every table here answers 42501, "permission denied for table", which is a
+# GRANT refusal raised before any policy is consulted. RLS does not refuse, it
+# FILTERS: a caller holding the grant who matches no policy gets 200 and an
+# empty array. So these readings are equally consistent with RLS switched off
+# on every table, and they say nothing about the caller this app actually
+# fears, a signed-in client. For that, and for which mechanism answered per
+# table, use tools/authz-inventory.py.
+out["verdict"] = ("ANON READS NOTHING (grant wall; RLS state not measured here, "
+                  "see tools/authz-inventory.py)" if not leaked
                   else f"LEAK: anon reads rows from {leaked}")
 print(json.dumps(out, indent=2))
