@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { splitWhy } from '@/lib/window/reason';
 import { createClient } from '@/lib/supabase/client';
 
 // The whole project, rather than one day of it.
@@ -160,8 +161,13 @@ export default function Overview({
                         <span className="ov-when">{when(e.started_at)}</span>
                         <div className="ov-b">
                           <b>{e.title}</b>
+                          {splitWhy(e.why).reason && (
+                            <em className="we-reason">{splitWhy(e.why).reason}</em>
+                          )}
+                          {splitWhy(e.why).sentence && (
+                            <p className="ov-why">{splitWhy(e.why).sentence}</p>
+                          )}
                           {e.eli5 && <p>{e.eli5}</p>}
-                          {e.why && <p className="ov-why">{e.why}</p>}
                         </div>
                         <span className="ov-dur">~{dur(e.minutes ?? 0)}</span>
                       </li>
