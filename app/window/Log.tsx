@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import DaySummary from './DaySummary';
 import QuietDay from './QuietDay';
+import { isImage, pretty } from '../Attach';
 
 // The client's view of the work: a month of days that had work, and the hours inside
 // whichever day they open.
@@ -474,7 +475,11 @@ export default function Log({ projectId }: { projectId: string | null }) {
               }
               const e = row.e;
               const isOpen = openEntry === e.id;
-              const firstShot = e.shots?.[0];
+              // The thumbnail is a picture or nothing. An entry can also carry a
+              // document (a PDF, a CSV), which an <img> would draw as a broken frame.
+              const firstShot = e.shots?.find(isImage);
+              const pics = (e.shots ?? []).filter(isImage);
+              const docs = (e.shots ?? []).filter((p) => !isImage(p));
               return (
                 <div className={'win-entry' + (isOpen ? ' open' : '')} key={e.id}>
                   <button className="we-head" onClick={() => setOpenEntry(isOpen ? null : e.id)}>
@@ -508,9 +513,9 @@ export default function Log({ projectId }: { projectId: string | null }) {
                       {e.eli5 && <p className="we-eli5">{e.eli5}</p>}
                       {e.why && <p className="we-why">{e.why}</p>}
 
-                      {!!e.shots?.length && (
+                      {!!pics.length && (
                         <div className="we-gal">
-                          {e.shots.map((p) =>
+                          {pics.map((p) =>
                             shotUrls[p] ? (
                               <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -518,6 +523,24 @@ export default function Log({ projectId }: { projectId: string | null }) {
                               </a>
                             ) : (
                               <span key={p} className="we-shot-skel" />
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {/* Documents attached to this entry, signed per view like the
+                          screenshots above, so the link is never a standing credential.
+                          They open in a new tab, where the browser shows a PDF itself. */}
+                      {!!docs.length && (
+                        <div className="we-links we-files">
+                          <span className="we-links-l">Attached</span>
+                          {docs.map((p) =>
+                            shotUrls[p] ? (
+                              <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
+                                {pretty(p.split('/').pop() ?? p)} <i>{(p.split('.').pop() ?? '').toUpperCase()}</i>
+                              </a>
+                            ) : (
+                              <span key={p} className="we-shot-skel we-file-skel" />
                             )
                           )}
                         </div>

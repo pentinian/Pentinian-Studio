@@ -57,11 +57,15 @@ export default function Files({ projectId, projectName }: { projectId: string; p
     // Quarry can never contribute one. This is the release gate, not a filter over it.
     const claimed: Item[] = [];
     const groups = (entries ?? []).map((e: any) => {
-      const items: Item[] = (e.shots ?? []).map((p: string) => {
-        const it = { path: p, name: p.split('/').pop() ?? p };
-        claimed.push(it);
-        return it;
-      });
+      // A document under files/ that an entry also names is listed once, under Files,
+      // where it already appears because it was deliberately attached.
+      const items: Item[] = (e.shots ?? [])
+        .filter((p: string) => !p.startsWith(`${projectId}/files/`))
+        .map((p: string) => {
+          const it = { path: p, name: p.split('/').pop() ?? p };
+          claimed.push(it);
+          return it;
+        });
       return { entry: e as Entry, items };
     }).filter((g) => g.items.length);
 
