@@ -907,6 +907,10 @@ body.dragging .db-block{cursor:grabbing}
 .we-links a:hover{border-color:var(--sage); background:rgba(126,146,112,.14)}
 .we-links a i{font-style:normal; opacity:.65}
 .we-links-note{font:400 11px/1.6 var(--sans); color:var(--ink-3); margin:5px 0 0; max-width:62ch}
+/* An attached document is the thing itself rather than a pointer, so it gets a full
+   touch target (44 px) and no dead-link note. */
+.we-files a{display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; box-sizing:border-box}
+.we-file-skel{display:inline-block; width:220px; height:44px; aspect-ratio:auto; vertical-align:top}
 /* Screenshots of an interface are wide, pale and detailed. The first version cropped
    them into 104x70 thumbnails, which showed a meaningless patch of empty page and
    read as a broken image even when the file had loaded perfectly. A screenshot in a
@@ -1053,8 +1057,8 @@ body.dragging .db-block{cursor:grabbing}
 .we-time i{font-style:normal; margin-left:8px}
 .we-title{font:400 15px/1.25 var(--serif,Georgia,serif); color:var(--ink); margin:0 0 5px}
 .we-area{font:500 9px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--sage-deep); margin-bottom:7px}
-.we-eli5{font:400 12.5px/1.6 var(--sans); color:var(--ink-2); margin:0 0 6px}
-.we-why{font:400 11.5px/1.55 var(--sans); color:var(--ink-3); margin:0}
+.we-eli5{font:400 12.5px/1.6 var(--sans); color:var(--ink-2); margin:0 0 6px; white-space:pre-line}
+.we-why{font:400 11.5px/1.55 var(--sans); color:var(--ink-3); margin:0; white-space:pre-line}
 .we-shots{margin-top:8px; font:500 9.5px/1 var(--mono); color:var(--ink-3)}
 .cur-detail{margin-bottom:12px}
 .cur-detail summary{font:500 10px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase;

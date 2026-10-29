@@ -155,7 +155,12 @@ export default function Console({
       (o: any) => o.name && !o.name.startsWith('.') && o.id
     ).length;
     const claimed = (released ?? []).reduce(
-      (n: number, e: any) => n + (Array.isArray(e.shots) ? e.shots.length : 0),
+      // A files/ path named by an entry is already counted in `uploaded`, and the face
+      // lists it once (Files.tsx), so it is counted once here too.
+      (n: number, e: any) =>
+        n + (Array.isArray(e.shots)
+          ? e.shots.filter((p: string) => !p.startsWith(`${projectId}/files/`)).length
+          : 0),
       0
     );
     setFileCount(uploaded + claimed);
