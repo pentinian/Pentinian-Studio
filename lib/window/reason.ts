@@ -7,14 +7,14 @@
 // "<reason>\n<sentence>" (the reason is a decision, the column was already
 // there, and a second column was not worth a migration). This splits them.
 export const REASONS = [
-  'You asked for it',
-  'A customer hit it',
-  'Keeps the store selling',
-  'Stops a wrong price, stone, or order',
-  'Saves office hours',
-  'Required by Google, Apple, or the law',
-  'Had to happen before launch',
-  'Caught before a customer saw it',
+  'At your request',
+  'Customer-reported issue',
+  'Conversion readiness',
+  'Data integrity',
+  'Operational efficiency',
+  'Compliance and search standards',
+  'Launch readiness',
+  'Quality assurance',
 ] as const;
 
 export type Why = { reason: string | null; sentence: string | null };
@@ -25,6 +25,6 @@ export function splitWhy(why: string | null | undefined): Why {
   if (nl < 0) return { reason: null, sentence: why };
   const head = why.slice(0, nl).trim();
   const rest = why.slice(nl + 1).trim();
-  const known = (REASONS as readonly string[]).includes(head) || head.startsWith('Groundwork for ');
+  const known = (REASONS as readonly string[]).includes(head) || head.startsWith('Foundation for ');
   return known ? { reason: head, sentence: rest || null } : { reason: null, sentence: why };
 }
