@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { slugForProject } from '@/lib/brain/lanes';
+import { slugForProject, lanesForProject } from '@/lib/brain/lanes';
 import { migrateWorklog } from '@/lib/brain/migrate';
 import { absorbConsole } from '@/lib/brain/absorb';
 
@@ -51,10 +51,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'No such project' }, { status: 404 });
 
   const slug = slugForProject(project.name);
+  const lanes = lanesForProject(project.name);
 
   // Two nets, one list: rows tied to the project id (worklog migration) and
-  // rows tied to the lane slug (bundle ingestion, which may have run before
-  // the project was linked). De-duplicated by id.
+  // rows tied to the project's lane slugs (bundle ingestion, which may have run
+  // before the project was linked; a family project reads the lanes it absorbed
+  // as well). De-duplicated by id.
   const seen = new Set<string>();
   const entries: any[] = [];
   const take = (rows: any[] | null) => {
@@ -77,11 +79,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: byProject.error.message }, { status: 500 });
   take(byProject.data);
 
-  if (slug) {
+  for (const lane of lanes) {
     const bySlug = await db
       .from('brain_entries')
       .select(cols)
-      .eq('slug', slug)
+      .eq('slug', lane)
       .order('created', { ascending: false })
       .limit(500);
     if (bySlug.error)
