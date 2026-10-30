@@ -113,6 +113,16 @@ export async function middleware(request: NextRequest) {
     return carry(response, NextResponse.redirect(url));
   }
 
+  // A starter password opens the door once. Until the person has chosen their
+  // own, every page is the page where they choose it; the key they were handed
+  // must not become the key they keep.
+  if (user?.user_metadata?.starter_password && !path.startsWith('/account/password')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/account/password';
+    url.search = '?starter=1';
+    return carry(response, NextResponse.redirect(url));
+  }
+
   return response;
 }
 

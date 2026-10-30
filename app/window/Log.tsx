@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { splitWhy } from '@/lib/window/reason';
 import { createClient } from '@/lib/supabase/client';
 import DaySummary from './DaySummary';
 import QuietDay from './QuietDay';
@@ -492,6 +493,9 @@ export default function Log({ projectId }: { projectId: string | null }) {
                     <span className="we-headline">
                       {e.area && <i className="we-area">{e.area}</i>}
                       <b>{e.title || 'Work'}</b>
+                      {splitWhy(e.why).reason && (
+                        <em className="we-reason">{splitWhy(e.why).reason}</em>
+                      )}
                     </span>
                     {firstShot &&
                       (shotUrls[firstShot] ? (
@@ -510,8 +514,10 @@ export default function Log({ projectId }: { projectId: string | null }) {
                           Ran {clock(e.started_at)} to {clock(e.ended_at)}
                         </p>
                       )}
+                      {splitWhy(e.why).sentence && (
+                        <p className="we-why">{splitWhy(e.why).sentence}</p>
+                      )}
                       {e.eli5 && <p className="we-eli5">{e.eli5}</p>}
-                      {e.why && <p className="we-why">{e.why}</p>}
 
                       {!!pics.length && (
                         <div className="we-gal">
