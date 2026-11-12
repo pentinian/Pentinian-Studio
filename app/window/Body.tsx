@@ -4,6 +4,7 @@ import { useState } from 'react';
 import StudioHeader from '../StudioHeader';
 import ProjectHead from './ProjectHead';
 import Log from './Log';
+import LogDownloads from './LogDownloads';
 
 // The Window's shell, client side so the Contact button in the header can open the
 // console onto Requests. That is the only reason this is not a server component: a
@@ -115,7 +116,9 @@ export default function Body({
         <div className="panel">
           <div className="ph">
             <h4>The work</h4>
-            <span className="meta">Days work landed, and what each piece took</span>
+            {/* Read or keep the log: the day, week or month around the day
+                chosen on the calendar below. */}
+            {project && <LogDownloads projectId={project.id} />}
           </div>
           <div style={{ padding: 16 }}>
             <Log projectId={project?.id ?? null} />
