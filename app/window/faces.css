@@ -1,0 +1,113 @@
+/* r719: the five faces under the project card (The project, Files, Brand,
+ * Inspiration, Requests).
+ *
+ * Owned by Console.tsx and imported by it, so globals.css is untouched. Every value
+ * here is an existing Window token. The job colors match the day view's (r718,
+ * day.css): Artinian in sage, Caveman in clay, both in haze, so a job reads the same
+ * color everywhere in the Window.
+ *
+ * One rule runs through all five: every face opens on .cn-body's 22px inset with a
+ * header (.bg-head), then numbered rows (.cn-row). A face that skipped .cn-body put its
+ * first line on the panel's border (R109). */
+
+/* The face head. The incumbent .bg-head, one column when it has no sentence beside
+ * the title, so a short head does not leave half the row empty. */
+.fc-head{grid-template-columns:1fr}
+.fc-head h4{font-size:22px}
+
+/* Rows stack on a phone: the label over its content, not a 118px column that leaves
+ * the content a third of the screen. */
+@media (max-width:640px){
+  .cn .cn-row{grid-template-columns:1fr; gap:10px}
+  .cn .cn-row-l em{display:inline; margin:0 8px 0 0; font-size:13px}
+  .cn .cn-body{padding:16px 18px 20px}
+  /* Two tiles a row on a phone: one a row made every file a full screen tall. */
+  .cn .cn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.cn .mini-btn{white-space:nowrap}
+
+/* ---- Files: one month at a time (R108) ----------------------------------------- */
+/* The Window's own .tabs (the workroom's sub navigation), with a count beside each
+ * month the way the faces row carries one. */
+.fc-tabs{margin:2px 0 6px}
+.fc-tabs button{display:inline-flex; align-items:baseline; gap:8px; font-family:inherit}
+.fc-tabs button b{font:400 10.5px/1 var(--mono); color:var(--ink-3); font-weight:400}
+.fc-tabs button.on b{color:var(--sage-deep)}
+.fc-tabs + .cn-row{padding-top:10px}
+
+/* ---- The project: work read by day (R111) --------------------------------------- */
+.fc-slot:empty{display:block; height:0}
+.fc-days{margin:0 0 18px; padding:0 0 0 42px}
+.fc-day{padding:16px 0 14px; border-top:1px solid var(--line)}
+.fc-day:first-child,.fc-slot + .fc-day{border-top:0; padding-top:6px}
+/* The day header: the date as a heading, its hours at the right. */
+.fc-day-h{display:flex; align-items:baseline; gap:14px; margin:0 0 4px}
+.fc-day-h h5{margin:0; font:400 16px/1.3 var(--serif); color:var(--ink)}
+.fc-day-h span{margin-left:auto; font:500 11px/1 var(--mono); color:var(--ink-2); white-space:nowrap}
+.fc-purpose{margin:0 0 8px; font:400 12.5px/1.55 var(--sans); color:var(--ink-2); max-width:66ch}
+.fc-ran{margin:0 0 8px; font:400 10.5px/1.5 var(--mono); color:var(--ink-3)}
+
+/* One line per chunk (or per piece on the older days): the time span in a gutter,
+ * then the title and its chips. The bullets wait behind the line. */
+.fc-lines{list-style:none; margin:0; padding:0}
+.fc-lines > li{border-top:1px solid var(--line)}
+.fc-lines > li:first-child{border-top:0}
+.fc-line{display:grid; grid-template-columns:150px 1fr auto 14px; gap:14px; align-items:baseline;
+  width:100%; padding:9px 0; background:none; border:0; text-align:left; cursor:pointer;
+  font-family:inherit; color:inherit}
+.fc-line:hover .fc-t{color:var(--sage-deep)}
+.fc-span{font:400 10.5px/1.5 var(--mono); color:var(--ink-3); white-space:nowrap}
+.fc-tb{display:flex; flex-wrap:wrap; align-items:baseline; gap:5px 10px; min-width:0}
+.fc-t{font:400 13.5px/1.4 var(--serif); color:var(--ink)}
+.fc-chips{display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px}
+.fc-chips{min-width:0; max-width:100%}
+/* A long reason ("Foundation for ...") wraps inside its chip rather than running
+ * past the panel on a phone. */
+.fc-chips .we-reason{margin:0; width:auto; max-width:100%; white-space:normal; line-height:1.3}
+.fc-job{display:inline-flex; align-items:center; gap:5px; font:500 10.5px/1 var(--sans); color:var(--ink-2); white-space:nowrap}
+.fc-job i{width:7px; height:7px; border-radius:2px; background:var(--sage)}
+.fc-job.caveman i{background:var(--clay)}
+.fc-job.both i{background:var(--haze)}
+.fc-h{font:400 10px/1.5 var(--mono); color:var(--ink-3); white-space:nowrap}
+.fc-c{font:400 13px/1 var(--sans); color:var(--ink-3); text-align:center}
+.fc-late .fc-t,.fc-late .fc-span{color:var(--ink-3)}
+
+/* What waits behind a line: the why, what was done, then the bullets as a list. */
+.fc-more{padding:0 0 14px 164px}
+.fc-more p{margin:0 0 6px; font:400 12.5px/1.6 var(--sans); color:var(--ink-2); max-width:64ch}
+.fc-more .ov-why{color:var(--ink); font-style:italic}
+.fc-more .fc-where{font:400 10.5px/1.5 var(--mono); color:var(--ink-3)}
+.fc-items{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:4px}
+.fc-items li{position:relative; padding-left:16px; font:400 12.5px/1.5 var(--sans); color:var(--ink); max-width:64ch}
+.fc-items li::before{content:""; position:absolute; left:3px; top:.7em; width:5px; height:1px; background:var(--ink-3)}
+/* A body the parser could not place, kept exactly as written, one line per line. */
+.fc-raw{margin:0; font:400 12.5px/1.6 var(--sans); color:var(--ink-2); white-space:pre-line; max-width:66ch}
+
+@media (max-width:640px){
+  .fc-days{padding-left:0}
+  .fc-line{grid-template-columns:1fr auto 14px; gap:4px 10px}
+  .fc-span{grid-column:1 / -1}
+  .fc-more{padding-left:0}
+  .ov-head{grid-template-columns:24px 1fr auto 14px; gap:10px}
+  .ov-head .ov-bar{display:none}
+}
+
+/* ---- Inspiration and Requests: what is there, then the composer (R110) ---------- */
+.fc-face .cn-row .cn-pair{margin-top:0; padding-top:0; border-top:0}
+.fc-face .cn-row .cur-empty{margin:4px 0 0; font-size:12.5px; max-width:60ch}
+
+/* ---- Touch: every control at least 44px under a finger -------------------------- */
+@media (pointer:coarse){
+  .cn-tab{min-height:44px}
+  .cn .mini-btn{min-height:44px; padding-top:0; padding-bottom:0}
+  .cn .cn-add input{min-height:44px}
+  .cn .ov-links a{display:flex; align-items:center; min-height:44px}
+  .cn .cn-x{min-width:44px; min-height:44px}
+  .fc-tabs button{min-height:44px; align-items:center}
+  .fc-line{min-height:44px; align-items:center}
+  .ov-head{min-height:44px}
+}
+
+/* The shelf's add row sits under the last row's own rule; a second rule on top of it
+ * drew two lines one under the other. */
+.cn-row + .cn-add{margin-top:0; border-top:0}
