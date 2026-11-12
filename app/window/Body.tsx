@@ -5,6 +5,7 @@ import StudioHeader from '../StudioHeader';
 import ProjectHead from './ProjectHead';
 import Log from './Log';
 import LogDownloads from './LogDownloads';
+import './topbar.css';
 
 // The Window's shell, client side so the Contact button in the header can open the
 // console onto Requests. That is the only reason this is not a server component: a

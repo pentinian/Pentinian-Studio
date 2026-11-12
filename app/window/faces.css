@@ -25,6 +25,9 @@
   .cn .cn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 .cn .mini-btn{white-space:nowrap}
+/* The status pill beside the project's name keeps its one line on a phone; squeezed by
+ * the name it broke into "In / progress". */
+.pj-info h3 .pill{flex:none; white-space:nowrap}
 
 /* ---- Files: one month at a time (R108) ----------------------------------------- */
 /* The Window's own .tabs (the workroom's sub navigation), with a count beside each
@@ -34,9 +37,20 @@
 .fc-tabs button b{font:400 10.5px/1 var(--mono); color:var(--ink-3); font-weight:400}
 .fc-tabs button.on b{color:var(--sage-deep)}
 .fc-tabs + .cn-row{padding-top:10px}
+/* A document tile names its kind in the middle of its face. `.cn-thumb a{display:block}`
+ * outranked `.cn-doc{display:grid}`, so "PDF" sat on the tile's top left corner. */
+.cn .cn-thumb a.cn-doc{display:grid}
+/* Tiles in a row share a height; the caption fills the rest, so a tile with a one
+ * line name does not show a band of the thumb's ground under its caption. */
+.cn .cn-thumb{display:flex; flex-direction:column}
+.cn .cn-thumb .cn-cap{flex:1}
 
 /* ---- The project: work read by day (R111) --------------------------------------- */
 .fc-slot:empty{display:block; height:0}
+/* The work log's two buttons (LogDownloads, r720), at the right over its first day.
+ * They were drawn for a panel head, so the reach into the head's padding is undone. */
+.fc-slot:not(:empty){display:flex; justify-content:flex-end; margin:0 0 4px}
+.fc-slot .ld{margin:0}
 .fc-days{margin:0 0 18px; padding:0 0 0 42px}
 .fc-day{padding:16px 0 14px; border-top:1px solid var(--line)}
 .fc-day:first-child,.fc-slot + .fc-day{border-top:0; padding-top:6px}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { splitWhy } from '@/lib/window/reason';
 import { createClient } from '@/lib/supabase/client';
 import { parseDay, clock12, type Chunk } from '@/lib/worklog/parse';
+import LogDownloads from './LogDownloads';
 
 // The whole project, rather than one day of it.
 //
@@ -196,9 +197,21 @@ export default function Overview({
                     line, so the open area is a list of days rather than a wall. */}
                 {on && (
                   <div className="fc-days">
-                    {/* The work log's download control mounts here after the merge
-                        (contract interface 3, r720 provides, r721 mounts). */}
-                    {/^work log$/i.test(a.name) && <div className="fc-slot" data-slot="log-downloads" />}
+                    {/* Read or keep the work log (R112): the same two buttons as the
+                        head of "The work", over the days this area spans, offered
+                        first, then the day, week and month around its last day. */}
+                    {/^work log$/i.test(a.name) && (() => {
+                      const keys = a.es.map((e) => dayKey(e.started_at)).filter((k) => k !== 'undated').sort();
+                      return (
+                        <div className="fc-slot" data-slot="log-downloads">
+                          <LogDownloads
+                            projectId={projectId}
+                            from={keys[0]}
+                            to={keys[keys.length - 1]}
+                          />
+                        </div>
+                      );
+                    })()}
                     {byDay(a.es).map((d) => (
                       <section className="fc-day" key={d.key} data-day={d.key}>
                         <header className="fc-day-h">

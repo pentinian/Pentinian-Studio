@@ -1,0 +1,16 @@
+/* The Window's top bar on a phone (HANDOFF-topbar-overflow-390-from-r719).
+ *
+ * The bar is one row of brand, rooms, project switcher, Get in touch and the
+ * account. At 390 that row is 888 px wide, so a phone drew the whole Window zoomed
+ * out to fit it. At 720 px and under the row wraps: the switcher takes its own row
+ * under the brand, and everything else stays on the brand's row.
+ *
+ * Scoped to the bar that holds the Window's switcher (.switch is rendered only by
+ * Body.tsx), so the Atelier's bar is untouched. globals.css is not edited. */
+@media (max-width:720px){
+  .topbar:has(> .switch){flex-wrap:wrap; gap:10px 12px; padding:12px 18px}
+  .topbar:has(> .switch) > .switch{order:5; flex:1 1 100%; min-width:0}
+  .topbar:has(> .switch) .proj-pick{flex:1 1 auto; min-width:0; max-width:100%; text-overflow:ellipsis}
+  .topbar:has(> .switch) > .tb-right{gap:10px}
+  .topbar:has(> .switch) .switch label{white-space:nowrap}
+}
