@@ -58,15 +58,35 @@ export default function WindowKit({
     };
   }, [projectId]);
 
-  if (entries === null) return <p className="cur-empty">Reading the brand book…</p>;
-  if (err) return <p className="cur-msg bad">{err}</p>;
+  // Every state sits inside .cn-body, the panel's inset, as the other faces do. The
+  // empty, loading and error lines used to return bare, which put them on the panel's
+  // left border, 22px left of every other face's first line (R109, frame 130).
+  const head = (
+    <header className="bg-head fc-head">
+      <div>
+        <span className="bg-kicker">Brand book</span>
+        <h4>What we have settled</h4>
+      </div>
+    </header>
+  );
+
+  if (entries === null) return <div className="cn-body">{head}<p className="cur-empty">Reading the brand book…</p></div>;
+  if (err) return <div className="cn-body">{head}<p className="cur-msg bad">{err}</p></div>;
   if (!entries.length)
     return (
-      <p className="cur-empty">
-        Nothing released to the book yet. What appears here is chosen deliberately, piece by
-        piece.
-      </p>
+      <div className="cn-body fc-face">
+        {head}
+        <p className="cur-empty">
+          Nothing released to the book yet. What appears here is chosen deliberately, piece by
+          piece.
+        </p>
+      </div>
     );
 
-  return <Kit entries={entries} projectName={projectName} lane={null} />;
+  // The book carries its own title (Kit), so it is not given a second one here.
+  return (
+    <div className="cn-body">
+      <Kit entries={entries} projectName={projectName} lane={null} />
+    </div>
+  );
 }

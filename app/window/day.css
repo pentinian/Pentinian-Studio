@@ -1,0 +1,96 @@
+/* r718: the day, read as its chunks (Window, "The work").
+ *
+ * Owned by DayChunks.tsx and imported by it, so globals.css is untouched. Every value
+ * here is an existing Window token; nothing new is introduced except two tones for
+ * place (office reads in sage, remote in haze) and the second color for hours past
+ * eight (clay, the Window's own accent, already used by the day bar). */
+
+/* R107: the day's hours as a line. One hour per segment, eight marked as the full
+ * day, the hours past eight in clay, the figure beside it. It sits where the bare
+ * "11h 30m" sat and keeps to the heading's line box. */
+.hl{display:inline-flex; align-items:center; gap:9px; margin-left:auto; flex:none; align-self:center}
+.hl-track{position:relative; display:flex; gap:2px; height:5px}
+.hl-track span{display:block; height:5px; border-radius:1px; background:var(--sage); opacity:.85}
+.hl-track span.over{background:var(--clay); opacity:.85}
+.hl-track span.empty{background:var(--line-2); opacity:1}
+/* The mark at eight: a hairline taller than the line, so a full day reads as a
+ * filled line up to it and anything past it is visibly past it. */
+.hl-eight{position:absolute; top:-4px; bottom:-4px; width:1px; background:var(--ink-2)}
+.hl-fig{font:500 11px/1 var(--mono); color:var(--ink); white-space:nowrap}
+.hl-fig i{font-style:normal; color:var(--clay-deep); margin-left:6px; font-weight:400}
+
+/* R102: the job tabs. The Window's own .tabs, with each tab's hours beside its name. */
+.dc-tabs{margin:0 0 18px}
+.dc-tabs button{display:inline-flex; align-items:baseline; gap:8px}
+.dc-tabs button b{font:400 11px/1 var(--mono); color:var(--ink-3); font-weight:400}
+.dc-tabs button.on b{color:var(--ink-2)}
+@media (pointer:coarse){ .dc-tabs button{min-height:44px; justify-content:center} }
+
+/* The day said once: what it was for, then where it was worked. */
+.dc-lede{margin:0 0 22px}
+.dc-lede p{font:400 14px/1.6 var(--sans); color:var(--ink-2); margin:0 0 6px; max-width:62ch}
+.dc-lede p.dc-where{font:400 11.5px/1.5 var(--mono); color:var(--ink-3); margin:0}
+.dc-where span{color:var(--ink-2)}
+
+/* R101, R104: one block per chunk, in time order. The time sits in a gutter on the
+ * left, as the Window's entries already put it, so the eye runs down the times. */
+.dc-list{display:flex; flex-direction:column}
+.dc-chunk{display:grid; grid-template-columns:150px 1fr; column-gap:18px;
+  padding:18px 0 20px; border-top:1px solid var(--line)}
+.dc-chunk:first-child{border-top:0; padding-top:4px}
+.dc-when{display:flex; flex-direction:column; gap:6px; padding-top:3px}
+.dc-when b{font:500 12px/1.25 var(--mono); color:var(--ink); white-space:nowrap}
+.dc-when i{font-style:normal; font:400 10.5px/1.3 var(--mono); color:var(--ink-3)}
+.dc-main{min-width:0}
+.dc-main h5{font:400 17px/1.3 var(--serif); color:var(--ink); margin:0 0 7px}
+.dc-meta{display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:0 0 12px;
+  font:400 11.5px/1 var(--sans); color:var(--ink-2)}
+.dc-job{display:inline-flex; align-items:center; gap:6px}
+.dc-job i{width:7px; height:7px; border-radius:2px; background:var(--sage)}
+.dc-job.caveman i{background:var(--clay)}
+.dc-job.both i{background:var(--haze)}
+/* R103: where it was worked, on every chunk. */
+.dc-place{display:inline-flex; align-items:center; gap:5px; color:var(--ink-3)}
+.dc-place::before{content:""; width:6px; height:6px; border-radius:50%; border:1.5px solid var(--sage-deep)}
+.dc-place.remote::before{border-color:var(--haze); background:var(--haze)}
+.dc-place.mixed::before{border-color:var(--sage-deep); background:linear-gradient(90deg, transparent 50%, var(--haze) 50%)}
+.dc-meta .we-reason{margin:0}
+.dc-note{font:400 13.5px/1.6 var(--sans); color:var(--ink-2); margin:0 0 6px; max-width:66ch}
+.dc-note + .dc-items{margin-top:10px}
+.dc-items{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px}
+.dc-items li{position:relative; padding-left:16px; font:400 13px/1.5 var(--sans); color:var(--ink)}
+.dc-items li::before{content:""; position:absolute; left:3px; top:.62em; width:5px; height:1px; background:var(--ink-3)}
+
+/* R103: the switchover, a rule across the day at its hour. */
+.dc-switch{display:grid; grid-template-columns:150px 1fr; column-gap:18px; align-items:center;
+  margin:2px 0; padding:8px 0}
+.dc-switch b{font:500 11px/1 var(--mono); color:var(--ink-2)}
+.dc-switch span{display:flex; align-items:center; gap:10px; font:500 10px/1 var(--sans);
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2)}
+.dc-switch.to-office span{color:var(--sage-deep)}
+.dc-switch span::after{content:""; flex:1; height:1px; background:currentColor; opacity:.45}
+.dc-switch + .dc-chunk{border-top:0}
+
+/* Work past 10 PM: written down, not counted, and quieter for it. */
+.dc-late{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line-2)}
+.dc-late > p{font:400 10.5px/1.4 var(--mono); color:var(--ink-3); margin:0 0 4px}
+.dc-late .dc-chunk{opacity:.82}
+.dc-late .dc-chunk:first-of-type{border-top:0}
+
+@media (max-width:720px){
+  .dc-chunk{grid-template-columns:1fr; row-gap:8px}
+  .dc-when{flex-direction:row; align-items:baseline; gap:10px; padding-top:0}
+  .dc-switch{grid-template-columns:auto 1fr; column-gap:12px}
+  .dc-lede p{font-size:13.5px}
+  /* The date keeps its one line; the hours line takes the row under it. */
+  .wl-dayhead.has-hl{flex-wrap:wrap; row-gap:10px}
+  .wl-dayhead.has-hl .hl{margin-left:0; flex-basis:100%}
+  /* Three tabs in one row at phone width: the hours sit under each name. */
+  .dc-tabs{flex-wrap:nowrap}
+  .dc-tabs button{flex-direction:column; align-items:flex-start; gap:5px; padding:10px 9px}
+}
+
+/* What hangs off the day's entry (pictures, files, links, the conversation) sits
+ * under the last chunk, set apart from it. */
+.dc-day > .we-gal, .dc-day > .we-links{margin-top:22px}
+.dc-day > .wl-talk{margin-top:26px; padding-top:16px; border-top:1px solid var(--line)}
