@@ -2,11 +2,13 @@
    and the small menu of files under "Download". Built from the incumbent
    .mini-btn and the panel's own bone, line and ink; nothing here is a new color. */
 
-.ld{margin-left:auto; display:flex; align-items:center; gap:6px; position:relative; flex:none}
+/* The buttons reach into the head's own padding, so the head keeps the height it
+   had with its line of text (45 px) instead of growing around them. */
+.ld{margin-left:auto; margin-block:-9px; display:flex; align-items:center; gap:6px; position:relative; flex:none}
 .ld-btn{display:inline-flex; align-items:center; gap:6px; text-decoration:none; white-space:nowrap;
   background:var(--bone)}
 .ld-btn:hover,.ld-btn.on{border-color:var(--line-3); color:var(--ink)}
-.ld-btn i{font-style:normal; font-size:9px; color:var(--ink-3)}
+.ld-btn i{font-style:normal; font-size:11px; line-height:1; color:var(--ink-2)}
 .ld-btn:focus-visible,.ld-file:focus-visible{outline:2px solid var(--sage); outline-offset:2px}
 
 .ld-menu{position:absolute; right:0; top:calc(100% + 8px); z-index:30;
@@ -29,3 +31,5 @@
   .ld-btn{min-height:44px; padding:0 14px}
   .ld-file{min-height:44px; min-width:48px; display:inline-flex; align-items:center; justify-content:center}
 }
+/* At a finger's size the buttons need more of the head; it grows to 63 px, never a second row. */
+@media (pointer:coarse){ .ld{margin-block:-6px} }

@@ -14,70 +14,7 @@
 // sheet that disagrees with itself is never served.
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-// ------------------------------------------------------------------ parse -----
-// Contract interface 1 is lib/worklog/parse.ts, written by the day view. Until it
-// lands on this branch, a thin copy of its signature lives here so this file
-// builds and can be proven; the import replaces it the day it arrives.
-type Chunk = {
-  start: string;
-  end: string;
-  title: string;
-  job: 'artinian' | 'caveman' | 'both' | null;
-  place: 'office' | 'remote' | null;
-  parallel: boolean;
-  reason: string | null;
-  hours: number | null;
-  lines: string[];
-};
-type Day = { ran?: { start: string; end: string }; purpose?: string; chunks: Chunk[]; raw: string };
-
-const T = String.raw`(\d{1,2}(?::\d{2})?\s*[AP]M)`;
-const CHUNK_RE = new RegExp(String.raw`^${T} to ${T}(, not counted)?: (.+?)(?: \[([^\]]+)\])?(?: \(([^)]*)\)?)?$`, 'i');
-const RAN_RE = new RegExp(String.raw`^${T} to ${T}\.`, 'i');
-
-function parseDay(body: string): Day {
-  const raw = body ?? '';
-  const day: Day = { chunks: [], raw };
-  let cur: Chunk | null = null;
-  for (const line of raw.split('\n')) {
-    if (!line.trim()) continue;
-    const indented = /^\s/.test(line);
-    const l = line.trim();
-    if (indented && cur) {
-      cur.lines.push(l);
-      continue;
-    }
-    if (/^Purpose:/i.test(l)) {
-      day.purpose = l.replace(/^Purpose:\s*/i, '');
-      continue;
-    }
-    const c = l.match(CHUNK_RE);
-    if (c) {
-      const tail = (c[6] ?? '').toLowerCase();
-      cur = {
-        start: to24(c[1]),
-        end: to24(c[2]),
-        title: c[4].trim(),
-        job: /artinian/.test(tail) && /caveman/.test(tail) ? 'both' : /artinian/.test(tail) ? 'artinian' : /caveman/.test(tail) ? 'caveman' : null,
-        place: /\boffice\b/.test(tail) ? 'office' : /\bremote\b|\bhome\b/.test(tail) ? 'remote' : null,
-        parallel: /in parallel/.test(tail),
-        reason: c[5] ? c[5].charAt(0) + c[5].slice(1).toLowerCase() : null,
-        hours: c[3] ? 0 : null,
-        lines: [],
-      };
-      day.chunks.push(cur);
-      continue;
-    }
-    const r = l.match(RAN_RE);
-    if (r && !day.ran) {
-      day.ran = { start: to24(r[1]), end: to24(r[2]) };
-      continue;
-    }
-    cur = null;
-  }
-  return day;
-}
-
+import { parseDay, type Chunk, type Day } from './parse';
 export const STUDIO_TZ = 'America/Los_Angeles';
 
 /** The columns the route reads from work_log_released. */
@@ -246,14 +183,6 @@ function readSplit(raw: string): { line: string; split: Partial<Record<Job, numb
   return null;
 }
 
-/** A chunk the log lists under its day but does not count ("10:05 PM to 11:58 PM, not counted: ..."). */
-function isUncounted(day: Day, c: Chunk): boolean {
-  if (c.hours === 0) return true;
-  return day.raw
-    .split('\n')
-    .some((l) => /not counted/i.test(l) && l.includes(c.title) && to24(l.split(' to ')[0] ?? '') === c.start);
-}
-
 /**
  * Minutes divided among weighted rows, in whole units (a quarter hour when the
  * pool is made of them), largest remainder first, so the parts always sum to the
@@ -283,8 +212,8 @@ function readPiece(entry: LogEntry): Piece {
   const day = parseDay(body);
   const s = readSplit(body);
   const minutes = entry.minutes ?? 0;
-  const live = day.chunks.filter((c) => !isUncounted(day, c));
-  const uncounted = day.chunks.filter((c) => isUncounted(day, c));
+  const live = day.chunks.filter((c) => c.counted);
+  const uncounted = day.chunks.filter((c) => !c.counted);
 
   // The day's minutes are the Window's figure. The day line splits them by job;
   // when that split adds up, each job's minutes go to that job's chunks by the
@@ -292,6 +221,13 @@ function readPiece(entry: LogEntry): Piece {
   // is one pool across every chunk. Either way the parts sum to the day.
   let counted: Piece['counted'] = [];
   const split = s?.split ?? null;
+  // First choice: the parser's own chunk hours (the day builder's rule, already
+  // checked against the day's sentence). Used only when they add up to the day.
+  const own = live.map((c) => (c.hours == null ? NaN : Math.round(c.hours * 60)));
+  if (live.length && day.hoursAgree && own.every(Number.isFinite) && own.reduce((a, b) => a + b, 0) === minutes) {
+    counted = live.map((chunk, i) => ({ chunk, minutes: own[i] }));
+    return { entry, day, split, spanLine: s?.line ?? null, counted, uncounted };
+  }
   const splitSum = split ? Object.values(split).reduce((a, b) => a + (b ?? 0), 0) : -1;
   const byJob =
     split &&
@@ -379,7 +315,7 @@ export function buildLog(opts: {
             start: chunk.start,
             end: chunk.end,
             job: chunk.job ? JOB_NAME[chunk.job] : '',
-            place: chunk.place ?? '',
+            place: (chunk.placeLabel ?? '').toLowerCase(),
             title: clean(chunk.title),
             hours: Number(hrs(m)),
           });
@@ -403,7 +339,7 @@ export function buildLog(opts: {
           start: c.start,
           end: c.end,
           job: c.job ? JOB_NAME[c.job] : '',
-          place: 'not counted',
+          place: ['not counted', (c.placeLabel ?? '').toLowerCase()].filter(Boolean).join(', '),
           title: clean(c.title),
           hours: 0,
         });
@@ -525,21 +461,40 @@ class Pen {
 }
 
 /** A reason, set small and spaced in sage with a hairline box, the Window's tag. */
-function chip(p: Pen, s: string, x: number, y: number) {
+/**
+ * A reason, set small and spaced in sage with a hairline box, the Window's tag.
+ * A reason too long for one line is split at words into stacked tags, never cut.
+ * Returns the height it used below y.
+ */
+function chip(p: Pen, s: string, x: number, y: number, maxW: number): number {
   const size = 6.6;
-  const t = s.toUpperCase();
   const tracking = 0.7;
-  const w = p.f.bold.widthOfTextAtSize(t, size) + tracking * (t.length - 1);
-  p.page.drawRectangle({ x, y: y - 3, width: w + 9, height: size + 6, borderColor: rgb(0.69, 0.75, 0.63), borderWidth: 0.6, color: rgb(0.96, 0.97, 0.95) });
-  let cx = x + 4.5;
-  for (const ch of t) {
-    p.page.drawText(ch, { x: cx, y, size, font: p.f.bold, color: SAGE });
-    cx += p.f.bold.widthOfTextAtSize(ch, size) + tracking;
+  const width = (t: string) => p.f.bold.widthOfTextAtSize(t, size) + tracking * Math.max(0, t.length - 1);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of s.toUpperCase().split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (!line || width(next) + 9 <= maxW) line = next;
+    else {
+      lines.push(line);
+      line = word;
+    }
   }
+  if (line) lines.push(line);
+  lines.forEach((t, i) => {
+    const ly = y - i * 13;
+    p.page.drawRectangle({ x, y: ly - 3, width: width(t) + 9, height: size + 6, borderColor: rgb(0.69, 0.75, 0.63), borderWidth: 0.6, color: rgb(0.96, 0.97, 0.95) });
+    let cx = x + 4.5;
+    for (const ch of t) {
+      p.page.drawText(ch, { x: cx, y: ly, size, font: p.f.bold, color: SAGE });
+      cx += p.f.bold.widthOfTextAtSize(ch, size) + tracking;
+    }
+  });
+  return (lines.length - 1) * 13;
 }
 
 function placeLine(c: Chunk): string {
-  const bits = [c.job ? JOB_NAME[c.job] : null, c.place, c.parallel ? 'in parallel' : null].filter(Boolean);
+  const bits = [c.company ?? (c.job ? JOB_NAME[c.job] : null), c.placeLabel?.toLowerCase(), c.parallel ? 'in parallel' : null].filter(Boolean);
   return bits.join(', ');
 }
 
@@ -609,7 +564,14 @@ export async function toPdf(m: LogModel): Promise<Uint8Array> {
   };
   head();
 
-  const rowH = 17;
+  // A month sets its rows closer so the sheet stays on the cover when it can.
+  const rowH = m.days.length > 18 ? 15 : 17;
+  // The total and the sign line (about 90 pt) always travel with at least the
+  // last three rows; when the sheet cannot all fit, it breaks early enough for that.
+  const tail = 90;
+  const fitsHere = Math.floor((p.y - BOTTOM) / rowH);
+  const firstPage =
+    m.days.length * rowH + tail <= p.y - BOTTOM ? m.days.length : Math.max(0, Math.min(fitsHere, m.days.length - 3));
   const short = (k: string) => {
     const [, mo, d] = parts(k);
     return `${MONTHS[mo - 1].slice(0, 3)} ${d}`;
@@ -618,8 +580,8 @@ export async function toPdf(m: LogModel): Promise<Uint8Array> {
     p.y -= rowH;
     p.text('Nothing released in these days.', M, 9.5, f.sans, INK3);
   }
-  for (const d of m.days) {
-    if (p.y - rowH < BOTTOM + 60) {
+  m.days.forEach((d, i) => {
+    if (i === firstPage || (i > firstPage && p.y - rowH < BOTTOM)) {
       p.add();
       head();
     }
@@ -631,7 +593,7 @@ export async function toPdf(m: LogModel): Promise<Uint8Array> {
     p.right(hrs(d.minutes), R, 9.5, f.sans, INK);
     p.y -= 5;
     p.rule(M, R, LINE, 0.5);
-  }
+  });
   if (m.days.length) {
     p.y -= rowH - 5;
     const n = m.days.length;
@@ -642,6 +604,22 @@ export async function toPdf(m: LogModel): Promise<Uint8Array> {
     p.right(hrs(m.totalMinutes), R, 9.5, f.bold, INK);
     p.y -= 6;
     p.rule(M, R, LINE2, 0.8);
+
+    // Minutes the Window counts on a day that belong to neither company (an
+    // entry with no company lines, such as a month's summary note) are said
+    // under the sheet, so a reader adding the columns knows why they fall short.
+    for (const d of m.days) {
+      const loose = d.minutes - jobs.reduce((s, j) => s + (d.jobs[j] ?? 0), 0);
+      if (loose <= 0) continue;
+      const what = d.pieces
+        .filter((pc) => !pc.counted.length)
+        .map((pc) => clean(pc.entry.title ?? 'a note'))
+        .join('; ');
+      p.para(
+        `${short(d.date)}: the total includes ${loose} ${loose === 1 ? 'minute' : 'minutes'} not tied to either company${what ? ` (${what})` : ''}.`,
+        M, textW, 8, f.sans, INK3, 1.6,
+      );
+    }
   }
 
   p.need(70);
@@ -664,8 +642,9 @@ export async function toPdf(m: LogModel): Promise<Uint8Array> {
   const bodyX = M + timeW;
   const bodyW = R - bodyX - 42; // room for the hours column
   for (const d of m.days) {
-    // A day header never sits alone at a page foot.
-    p.need(90);
+    // A day header never sits alone at a page foot: it keeps its purpose, its
+    // span line and the head of its first piece with it.
+    p.need(170);
     p.y -= 22;
     p.text(`${d.weekday}, ${MONTHS[parts(d.date)[1] - 1]} ${parts(d.date)[2]}`, M, 14, f.serif, INK);
     if (d.held) {
@@ -711,7 +690,7 @@ export async function toPdf(m: LogModel): Promise<Uint8Array> {
         p.text(`${clock24(c.start)} to ${clock24(c.end)}`, M, 8.5, f.sans, INK2);
         p.right(`${hrs(mins)} h`, R, 9.5, f.sans, INK2);
         if (reason) {
-          chip(p, reason, bodyX, p.y);
+          p.y -= chip(p, reason, bodyX, p.y, bodyW);
           p.y -= 15;
         }
         titleLines.forEach((l, i) => {
@@ -726,29 +705,19 @@ export async function toPdf(m: LogModel): Promise<Uint8Array> {
         p.y -= 3;
         // The first sentence is why the work was needed, set apart in italic;
         // what was done follows in plain ink, then the list.
-        let said = 0;
-        let listed = false;
-        for (const raw of c.lines) {
-          const l = clean(raw.trim());
-          if (!l) continue;
-          const bullet = /^[\u2022*-]\s*/.test(l);
-          const txt = l.replace(/^[\u2022*-]\s*/, '');
-          if (bullet && !listed) {
-            p.y -= 2;
-            listed = true;
-          }
-          if (bullet) {
-            const ls = p.wrap(txt, bodyW - 11, 9, f.sans);
-            ls.forEach((x, i) => {
-              p.need(12.5);
-              p.y -= 12.5;
-              if (!i) p.text('\u2022', bodyX + 1, 9, f.sans, INK3);
-              p.text(x, bodyX + 11, 9, f.sans, INK);
-            });
-          } else {
-            const first = said++ === 0;
-            p.para(txt, bodyX, bodyW, 9, first ? f.italic : f.sans, first ? INK2 : INK, 1.42);
-          }
+        c.notes.forEach((raw, i) => {
+          const t = clean(raw.trim());
+          if (t) p.para(t, bodyX, bodyW, 9, i === 0 ? f.italic : f.sans, i === 0 ? INK2 : INK, 1.42);
+        });
+        if (c.items.length) p.y -= 2;
+        for (const raw of c.items) {
+          const ls = p.wrap(clean(raw.trim()), bodyW - 11, 9, f.sans);
+          ls.forEach((x, i) => {
+            p.need(12.5);
+            p.y -= 12.5;
+            if (!i) p.text('\u2022', bodyX + 1, 9, f.sans, INK3);
+            p.text(x, bodyX + 11, 9, f.sans, INK);
+          });
         }
         p.y -= 4;
       }
