@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { splitWhy } from '@/lib/window/reason';
 import { createClient } from '@/lib/supabase/client';
+import { parseDay, clock12, type Chunk } from '@/lib/worklog/parse';
+import LogDownloads from './LogDownloads';
 
 // The whole project, rather than one day of it.
 //
@@ -35,6 +37,33 @@ const dur = (m: number) => {
 const when = (s: string | null) =>
   s ? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
 
+// Days are the studio's days, the same clock the log uses (Log.tsx), so an entry
+// started at 11 PM in the studio never lands on the next day for a reader elsewhere.
+const STUDIO_TZ = 'America/Los_Angeles';
+const dayKey = (s: string | null) =>
+  s ? new Date(s).toLocaleDateString('en-CA', { timeZone: STUDIO_TZ }) : 'undated';
+const dayName = (s: string | null) =>
+  s
+    ? new Date(s).toLocaleDateString('en-US', { timeZone: STUDIO_TZ, weekday: 'long', month: 'long', day: 'numeric' })
+    : 'Undated';
+const clockOf = (s: string | null) =>
+  s ? new Date(s).toLocaleTimeString('en-US', { timeZone: STUDIO_TZ, hour: 'numeric', minute: '2-digit' }).replace(':00 ', ' ') : '';
+
+type DayGroup = { key: string; label: string; minutes: number; entries: Entry[] };
+
+/** An area's entries, gathered by the day they were worked, in the order they happened. */
+function byDay(es: Entry[]): DayGroup[] {
+  const out: DayGroup[] = [];
+  for (const e of es) {
+    const k = dayKey(e.started_at);
+    let g = out.find((d) => d.key === k);
+    if (!g) out.push((g = { key: k, label: dayName(e.started_at), minutes: 0, entries: [] }));
+    g.entries.push(e);
+    g.minutes += e.minutes ?? 0;
+  }
+  return out;
+}
+
 export default function Overview({
   projectId, projectName, phase,
 }: {
@@ -45,6 +74,13 @@ export default function Overview({
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [openArea, setOpenArea] = useState<string | null>(null);
+  // Which lines are open, by entry id and chunk index. Everything starts closed.
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
+  const flip = useCallback((k: string) => setOpen((s) => {
+    const n = new Set(s);
+    if (n.has(k)) n.delete(k); else n.add(k);
+    return n;
+  }), []);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -154,25 +190,40 @@ export default function Overview({
                   <span className="ov-caret" aria-hidden="true">{on ? '−' : '+'}</span>
                 </button>
 
+                {/* Read by day (R111). Each day is a header (the date, its hours), then
+                    one line per piece of it: the chunks of a day's entry when its body
+                    parses (lib/worklog/parse.ts), or the entry itself on the older days
+                    that logged one entry per piece. What was done waits behind each
+                    line, so the open area is a list of days rather than a wall. */}
                 {on && (
-                  <ol className="ov-list">
-                    {a.es.map((e) => (
-                      <li key={e.id}>
-                        <span className="ov-when">{when(e.started_at)}</span>
-                        <div className="ov-b">
-                          <b>{e.title}</b>
-                          {splitWhy(e.why).reason && (
-                            <em className="we-reason">{splitWhy(e.why).reason}</em>
-                          )}
-                          {splitWhy(e.why).sentence && (
-                            <p className="ov-why">{splitWhy(e.why).sentence}</p>
-                          )}
-                          {e.eli5 && <p>{e.eli5}</p>}
+                  <div className="fc-days">
+                    {/* Read or keep the work log (R112): the same two buttons as the
+                        head of "The work", over the days this area spans, offered
+                        first, then the day, week and month around its last day. */}
+                    {/^work log$/i.test(a.name) && (() => {
+                      const keys = a.es.map((e) => dayKey(e.started_at)).filter((k) => k !== 'undated').sort();
+                      return (
+                        <div className="fc-slot" data-slot="log-downloads">
+                          <LogDownloads
+                            projectId={projectId}
+                            from={keys[0]}
+                            to={keys[keys.length - 1]}
+                          />
                         </div>
-                        <span className="ov-dur">~{dur(e.minutes ?? 0)}</span>
-                      </li>
+                      );
+                    })()}
+                    {byDay(a.es).map((d) => (
+                      <section className="fc-day" key={d.key} data-day={d.key}>
+                        <header className="fc-day-h">
+                          <h5>{d.label}</h5>
+                          {d.minutes > 0 && <span>{dur(d.minutes)}</span>}
+                        </header>
+                        {d.entries.map((e) => (
+                          <DayEntry key={e.id} e={e} open={open} flip={flip} />
+                        ))}
+                      </section>
                     ))}
-                  </ol>
+                  </div>
                 )}
               </section>
             );
@@ -201,5 +252,103 @@ export default function Overview({
         </div>
       )}
     </div>
+  );
+}
+
+const JOB_LABEL = { artinian: 'Artinian Gems', caveman: 'Caveman Gems', both: 'Both' } as const;
+
+/** One entry on a day: its chunks when the body parses, otherwise one line for the
+ *  entry. Nothing in the entry is rewritten or dropped; it is only laid out. */
+function DayEntry({ e, open, flip }: { e: Entry; open: Set<string>; flip: (k: string) => void }) {
+  const day = useMemo(() => parseDay(e.eli5), [e.eli5]);
+  const why = splitWhy(e.why);
+
+  if (day.chunks.length) {
+    return (
+      <>
+        {day.purpose && <p className="fc-purpose">{day.purpose}</p>}
+        {day.ran && (
+          <p className="fc-ran">
+            {clock12(day.ran.start)} to {clock12(day.ran.end)}
+            {(() => {
+              const parts = [
+                day.totals?.office ? `office ${dur(Math.round(day.totals.office * 60))}` : null,
+                day.totals?.remote ? `remote ${dur(Math.round(day.totals.remote * 60))}` : null,
+              ].filter(Boolean).join(', ');
+              return parts ? `. ${parts.charAt(0).toUpperCase()}${parts.slice(1)}.` : '';
+            })()}
+          </p>
+        )}
+        <ul className="fc-lines">
+          {day.chunks.map((c, i) => (
+            <ChunkLine key={i} c={c} k={`${e.id}:${i}`} on={open.has(`${e.id}:${i}`)} flip={flip} />
+          ))}
+        </ul>
+      </>
+    );
+  }
+
+  // The older days logged one entry per piece of work, and a day entry whose body
+  // the parser cannot place falls back here too: its text exactly as written, one
+  // paragraph per line, behind the line.
+  const k = `${e.id}:e`;
+  const on = open.has(k);
+  const lines = (e.eli5 ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+  const items = lines.filter((l) => /^[•·]\s?/.test(l)).map((l) => l.replace(/^[•·]\s?/, ''));
+  const prose = lines.filter((l) => !/^[•·]\s?/.test(l));
+  const has = !!(why.sentence || lines.length);
+  return (
+    <ul className="fc-lines">
+      <li data-chunk>
+        <button className="fc-line" onClick={() => has && flip(k)} aria-expanded={has ? on : undefined}
+                data-chunk-toggle={has ? '' : undefined}>
+          <span className="fc-span">{clockOf(e.started_at)}</span>
+          <span className="fc-tb">
+            <span className="fc-t">{e.title || 'Work'}</span>
+            {why.reason && <span className="fc-chips"><em className="we-reason">{why.reason}</em></span>}
+          </span>
+          <span className="fc-h">{e.minutes ? `~${dur(e.minutes)}` : ''}</span>
+          <span className="fc-c" aria-hidden="true">{has ? (on ? '−' : '+') : ''}</span>
+        </button>
+        {on && (
+          <div className="fc-more">
+            {why.sentence && <p className="ov-why">{why.sentence}</p>}
+            {prose.map((p, i) => <p key={i}>{p}</p>)}
+            {items.length > 0 && <ul className="fc-items">{items.map((t, i) => <li key={i}>{t}</li>)}</ul>}
+          </div>
+        )}
+      </li>
+    </ul>
+  );
+}
+
+function ChunkLine({ c, k, on, flip }: { c: Chunk; k: string; on: boolean; flip: (k: string) => void }) {
+  const has = c.lines.length > 0;
+  const where = [c.placeLabel, c.parallel ? 'in parallel' : null].filter(Boolean).join(', ');
+  return (
+    <li data-chunk className={c.counted ? undefined : 'fc-late'}>
+      <button className="fc-line" onClick={() => has && flip(k)} aria-expanded={has ? on : undefined}
+              data-chunk-toggle={has ? '' : undefined}>
+        <span className="fc-span">{clock12(c.start)} to {clock12(c.end)}</span>
+        <span className="fc-tb">
+          <span className="fc-t">{c.title}</span>
+          <span className="fc-chips">
+            {c.job && (
+              <span className={'fc-job ' + c.job}><i aria-hidden="true" />{c.company ?? JOB_LABEL[c.job]}</span>
+            )}
+            {c.reason && <em className="we-reason">{c.reason}</em>}
+          </span>
+        </span>
+        <span className="fc-h">{!c.counted ? 'not counted' : c.hours != null ? dur(Math.round(c.hours * 60)) : ''}</span>
+        <span className="fc-c" aria-hidden="true">{has ? (on ? '−' : '+') : ''}</span>
+      </button>
+      {on && (
+        <div className="fc-more">
+          {where && <p className="fc-where">{where}</p>}
+          {c.notes.map((n, i) => <p key={i}>{n}</p>)}
+          {c.items.length > 0 && <ul className="fc-items">{c.items.map((t, i) => <li key={i}>{t}</li>)}</ul>}
+        </div>
+      )}
+    </li>
   );
 }

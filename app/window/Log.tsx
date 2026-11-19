@@ -5,6 +5,8 @@ import { splitWhy } from '@/lib/window/reason';
 import { createClient } from '@/lib/supabase/client';
 import DaySummary from './DaySummary';
 import QuietDay from './QuietDay';
+import DayChunks, { HoursLine } from './DayChunks';
+import { parseDay } from '@/lib/worklog/parse';
 import { isImage, pretty } from '../Attach';
 
 // The client's view of the work: a month of days that had work, and the hours inside
@@ -349,7 +351,108 @@ export default function Log({ projectId }: { projectId: string | null }) {
   };
 
   const monthTotal = entries.reduce((n, e) => n + (e.minutes ?? 0), 0);
+
+  // The open day's body, read into chunks when it is one entry in the day grammar.
+  const openParsed = useMemo(() => {
+    const es = openDay ? byDay[openDay] ?? [] : [];
+    if (es.length !== 1) return null;
+    const d = parseDay(es[0].eli5 ?? '');
+    return d.chunks.length ? d : null;
+  }, [openDay, byDay]);
   const todayKey = dayKey(new Date().toISOString());
+
+  /** What hangs off an entry whichever way its body is drawn: its pictures, its
+   *  files, its links, and the conversation under it. */
+  const extras = (e: Entry) => {
+    const pics = (e.shots ?? []).filter(isImage);
+    const docs = (e.shots ?? []).filter((p) => !isImage(p));
+    return (
+      <>
+        {!!pics.length && (
+          <div className="we-gal">
+            {pics.map((p) =>
+              shotUrls[p] ? (
+                <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={shotUrls[p]} alt="" loading="lazy" />
+                </a>
+              ) : (
+                <span key={p} className="we-shot-skel" />
+              )
+            )}
+          </div>
+        )}
+
+        {/* Documents attached to this entry, signed per view like the
+            screenshots above, so the link is never a standing credential.
+            They open in a new tab, where the browser shows a PDF itself. */}
+        {!!docs.length && (
+          <div className="we-links we-files">
+            <span className="we-links-l">Attached</span>
+            {docs.map((p) =>
+              shotUrls[p] ? (
+                <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
+                  {pretty(p.split('/').pop() ?? p)} <i>{(p.split('.').pop() ?? '').toUpperCase()}</i>
+                </a>
+              ) : (
+                <span key={p} className="we-shot-skel we-file-skel" />
+              )
+            )}
+          </div>
+        )}
+
+        {!!e.links?.length && (
+          <div className="we-links">
+            <span className="we-links-l">Have a look</span>
+            {e.links.map((u) => (
+              <a key={u} href={u} target="_blank" rel="noopener noreferrer">
+                {labelFor(u)} <i>&#8599;</i>
+              </a>
+            ))}
+            {/* Said plainly and once, rather than an asterisk on every link.
+                A dead link a client was warned about is a shrug. One they
+                were not warned about looks like the work went missing. */}
+            <p className="we-links-note">
+              These point at wherever the thing was living when I wrote the note.
+              Builds move, so some will already be dead. I keep them mostly for my
+              own record. While one still answers, poke at it.
+            </p>
+          </div>
+        )}
+
+        <div className="wl-talk">
+          {(comments[e.id] ?? []).map((c) => (
+            <div key={c.id} className={'wl-c' + (c.from_staff ? ' staff' : '')}>
+              <span className="who">{c.from_staff ? 'Pentinian' : 'You'}</span>
+              <p>{c.body}</p>
+            </div>
+          ))}
+          <div className="wl-say">
+            <input
+              placeholder="Ask about this, or say something…"
+              value={draft[e.id] ?? ''}
+              onChange={(ev) => setDraft((p) => ({ ...p, [e.id]: ev.target.value }))}
+              onKeyDown={(ev) => ev.key === 'Enter' && say(e)}
+            />
+            <button
+              className="mini-btn"
+              onClick={() => say(e)}
+              disabled={busy === e.id || !(draft[e.id] ?? '').trim()}
+            >
+              Send
+            </button>
+          </div>
+          {/* aria-live, because the failure arrives after the press
+              and a screen reader would otherwise never hear it. */}
+          {sayErr[e.id] && (
+            <p className="wl-say-err" role="status" aria-live="polite">
+              {sayErr[e.id]}
+            </p>
+          )}
+        </div>
+      </>
+    );
+  };
 
   if (!projectId) {
     return <div className="empty">No project is linked to your account yet.</div>;
@@ -447,7 +550,7 @@ export default function Log({ projectId }: { projectId: string | null }) {
 
         {openDay && (byDay[openDay] ?? []).length > 0 && (
           <>
-            <div className="wl-dayhead">
+            <div className="wl-dayhead has-hl">
               <h4>
                 {keyToDate(openDay).toLocaleDateString('en-US', {
                   weekday: 'long',
@@ -455,11 +558,19 @@ export default function Log({ projectId }: { projectId: string | null }) {
                   day: 'numeric',
                 })}
               </h4>
-              <span className="meta">
-                {dur((byDay[openDay] ?? []).reduce((n, e) => n + (e.minutes ?? 0), 0))}
-              </span>
+              <HoursLine minutes={(byDay[openDay] ?? []).reduce((n, e) => n + (e.minutes ?? 0), 0)} />
             </div>
 
+            {/* A day written as one entry in the day grammar reads as its chunks
+                (r718). Anything else, including every older entry, reads exactly as
+                before: the parser returns no chunks for a body it cannot place. */}
+            {openParsed ? (
+              <div className="dc-day">
+                <DayChunks day={openParsed} key={openDay} />
+                {extras((byDay[openDay] ?? [])[0])}
+              </div>
+            ) : (
+            <>
             {/* Collapsed by default: the duration, the title, and a thumbnail. A day
                 with six blocks in it should read as a list you can scan, not a wall of
                 prose you have to scroll past to find the one you care about. Everything
@@ -479,8 +590,6 @@ export default function Log({ projectId }: { projectId: string | null }) {
               // The thumbnail is a picture or nothing. An entry can also carry a
               // document (a PDF, a CSV), which an <img> would draw as a broken frame.
               const firstShot = e.shots?.find(isImage);
-              const pics = (e.shots ?? []).filter(isImage);
-              const docs = (e.shots ?? []).filter((p) => !isImage(p));
               return (
                 <div className={'win-entry' + (isOpen ? ' open' : '')} key={e.id}>
                   <button className="we-head" onClick={() => setOpenEntry(isOpen ? null : e.id)}>
@@ -519,93 +628,14 @@ export default function Log({ projectId }: { projectId: string | null }) {
                       )}
                       {e.eli5 && <p className="we-eli5">{e.eli5}</p>}
 
-                      {!!pics.length && (
-                        <div className="we-gal">
-                          {pics.map((p) =>
-                            shotUrls[p] ? (
-                              <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={shotUrls[p]} alt="" loading="lazy" />
-                              </a>
-                            ) : (
-                              <span key={p} className="we-shot-skel" />
-                            )
-                          )}
-                        </div>
-                      )}
-
-                      {/* Documents attached to this entry, signed per view like the
-                          screenshots above, so the link is never a standing credential.
-                          They open in a new tab, where the browser shows a PDF itself. */}
-                      {!!docs.length && (
-                        <div className="we-links we-files">
-                          <span className="we-links-l">Attached</span>
-                          {docs.map((p) =>
-                            shotUrls[p] ? (
-                              <a key={p} href={shotUrls[p]} target="_blank" rel="noopener noreferrer">
-                                {pretty(p.split('/').pop() ?? p)} <i>{(p.split('.').pop() ?? '').toUpperCase()}</i>
-                              </a>
-                            ) : (
-                              <span key={p} className="we-shot-skel we-file-skel" />
-                            )
-                          )}
-                        </div>
-                      )}
-
-                      {!!e.links?.length && (
-                        <div className="we-links">
-                          <span className="we-links-l">Have a look</span>
-                          {e.links.map((u) => (
-                            <a key={u} href={u} target="_blank" rel="noopener noreferrer">
-                              {labelFor(u)} <i>&#8599;</i>
-                            </a>
-                          ))}
-                          {/* Said plainly and once, rather than an asterisk on every link.
-                              A dead link a client was warned about is a shrug. One they
-                              were not warned about looks like the work went missing. */}
-                          <p className="we-links-note">
-                            These point at wherever the thing was living when I wrote the note.
-                            Builds move, so some will already be dead. I keep them mostly for my
-                            own record. While one still answers, poke at it.
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="wl-talk">
-                        {(comments[e.id] ?? []).map((c) => (
-                          <div key={c.id} className={'wl-c' + (c.from_staff ? ' staff' : '')}>
-                            <span className="who">{c.from_staff ? 'Pentinian' : 'You'}</span>
-                            <p>{c.body}</p>
-                          </div>
-                        ))}
-                        <div className="wl-say">
-                          <input
-                            placeholder="Ask about this, or say something…"
-                            value={draft[e.id] ?? ''}
-                            onChange={(ev) => setDraft((p) => ({ ...p, [e.id]: ev.target.value }))}
-                            onKeyDown={(ev) => ev.key === 'Enter' && say(e)}
-                          />
-                          <button
-                            className="mini-btn"
-                            onClick={() => say(e)}
-                            disabled={busy === e.id || !(draft[e.id] ?? '').trim()}
-                          >
-                            Send
-                          </button>
-                        </div>
-                        {/* aria-live, because the failure arrives after the press
-                            and a screen reader would otherwise never hear it. */}
-                        {sayErr[e.id] && (
-                          <p className="wl-say-err" role="status" aria-live="polite">
-                            {sayErr[e.id]}
-                          </p>
-                        )}
-                      </div>
+                      {extras(e)}
                     </div>
                   )}
                 </div>
               );
             })}
+            </>
+            )}
           </>
         )}
       </div>
