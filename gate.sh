@@ -111,7 +111,7 @@ trap cleanup EXIT
 # context carrying a staff cookie is how a privacy check passes for the wrong
 # reason.
 for s in verify-privacy verify-window verify-console verify-replies \
-         verify-window-brain verify-brain verify-nonadmin probe-reply-failure \
+         verify-window-brain verify-brain verify-nonadmin verify-mail-key probe-reply-failure \
          probe-atelier-upload; do
   step "$s"
   node "scripts/$s.mjs" > "/tmp/pentinian-$s.log" 2>&1

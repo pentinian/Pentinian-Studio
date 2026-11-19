@@ -39,6 +39,15 @@ function LoginForm() {
     setCanPasskey(typeof window !== 'undefined' && !!window.PublicKeyCredential);
   }, []);
 
+  // A link in a letter that has run out, or was never good, is sent here by
+  // /auth/mail with e=mailkey. Say so, and open the password door: from the site,
+  // a password is the way in.
+  useEffect(() => {
+    if (params.get('e') !== 'mailkey') return;
+    setWithPassword(true);
+    setError('That link from your mail no longer opens the door. Sign in with your password, or ask for a link instead.');
+  }, [params]);
+
   // Some sign-in links hand back the session in the URL fragment rather than as a
   // code to exchange. Links minted by the admin API do exactly this, because there is
   // no browser in the loop to hold a PKCE verifier. The callback route only knew how
