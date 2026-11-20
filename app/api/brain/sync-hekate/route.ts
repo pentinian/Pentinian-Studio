@@ -10,7 +10,7 @@ import {
   sha256,
   type Bundle,
 } from '@/lib/brain/ingest';
-import { LANES } from '@/lib/brain/lanes';
+import { LANES, projectNameForSlug } from '@/lib/brain/lanes';
 
 // Sync Hekate: bundles in, internal brain entries out, counts back.
 //
@@ -88,10 +88,8 @@ export async function POST() {
     (projects ?? []).map((p: any) => [String(p.name).trim(), p.id])
   );
   const projectForSlug = (slug: string): string | null => {
-    for (const [name, s] of Object.entries(LANES)) {
-      if (s === slug) return projectByName.get(name) ?? null;
-    }
-    return null;
+    const name = projectNameForSlug(slug);
+    return name ? projectByName.get(name) ?? null : null;
   };
 
   const report: PerBundle[] = [];

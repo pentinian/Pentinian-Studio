@@ -7,6 +7,7 @@ import Files from './Files';
 import WindowKit from './WindowKit';
 import Overview from './Overview';
 import { ExampleInspiration, ExampleRequest } from './Mocks';
+import './faces.css';
 
 // The project console: what we settled, what you want it to feel like, what you asked
 // for, and everything the project holds.
@@ -107,6 +108,7 @@ export default function Console({
   const [notes, setNotes] = useState<Note[]>([]);
   const [shotUrls, setShotUrls] = useState<Record<string, string>>({});
   const [fileCount, setFileCount] = useState<number | null>(null);
+  const [bookCount, setBookCount] = useState<number | null>(null);
   const [missing, setMissing] = useState(false);
   const [ready, setReady] = useState(false);
   const [msg, setMsg] = useState('');
@@ -147,10 +149,15 @@ export default function Console({
      *
      * Counted the way the face builds itself: screenshots claimed by released entries,
      * plus whatever has been uploaded to files. */
-    const [{ data: attached }, { data: released }] = await Promise.all([
+    // The Brand tab's number follows the same rule: the face is the book read from
+    // window_brain (WindowKit.tsx), so the badge counts that, not the note board the
+    // face no longer mounts. It said 38 over a face that said nothing was there.
+    const [{ data: attached }, { data: released }, book] = await Promise.all([
       supabase.storage.from('shots').list(`${projectId}/files`, { limit: 500 }),
       supabase.from('work_log_released').select('shots').eq('project_id', projectId),
+      supabase.from('window_brain').select('id', { count: 'exact', head: true }).eq('project_id', projectId),
     ]);
+    setBookCount(book.error ? null : book.count ?? 0);
     const uploaded = (attached ?? []).filter(
       (o: any) => o.name && !o.name.startsWith('.') && o.id
     ).length;
@@ -217,7 +224,7 @@ export default function Console({
             answers what happened on a day; this answers what the thing is. */}
         {tab('overview', 'The project', null, 'Everything built so far')}
         {tab('files', 'Files', fileCount, 'Everything the project holds')}
-        {tab('brand', 'Brand', settledBrand.length, 'What we have settled')}
+        {tab('brand', 'Brand', bookCount, 'What we have settled')}
         {tab('inspiration', 'Inspiration', of('inspiration').length, 'What it should feel like')}
         {tab('requests', 'Requests', openRequests, 'What you have asked for')}
       </div>
@@ -584,8 +591,18 @@ function Inspiration({ notes, ready, projectId, shotUrls, add, remove }: any) {
     if (ok) setD({ body: '', url: '', shot: '' });
   };
 
+  // Laid out as the other faces are (R110): a head, then numbered rows, what is
+  // pinned first and the composer second, on the panel's one inset.
   return (
-    <div className="cn-body">
+    <div className="cn-body fc-face">
+      <header className="bg-head fc-head">
+        <div>
+          <span className="bg-kicker">Inspiration</span>
+          <h4>What it should feel like</h4>
+        </div>
+      </header>
+
+      <Row label="Pinned" no="01">
       {ready && !notes.length && (
         <p className="cur-empty">
           Nothing pinned yet. Anything you want this to feel like belongs here: paste a
@@ -625,10 +642,12 @@ function Inspiration({ notes, ready, projectId, shotUrls, add, remove }: any) {
           ))}
         </div>
       )}
+      </Row>
 
       {/* The composer and a worked example side by side. A blank field on its own asks
           someone to invent the format as well as the content, and the usual answer to
           that is nothing at all. */}
+      <Row label="Pin something" no="02">
       <div className="cn-pair">
         <div className="cn-add">
           <textarea rows={3} placeholder="What you like about it" value={d.body}
@@ -645,6 +664,7 @@ function Inspiration({ notes, ready, projectId, shotUrls, add, remove }: any) {
         </div>
         <ExampleInspiration />
       </div>
+      </Row>
     </div>
   );
 }
@@ -669,7 +689,15 @@ function Requests({ notes, ready, projectId, shotUrls, add }: any) {
   };
 
   return (
-    <div className="cn-body">
+    <div className="cn-body fc-face">
+      <header className="bg-head fc-head">
+        <div>
+          <span className="bg-kicker">Requests</span>
+          <h4>What you have asked for</h4>
+        </div>
+      </header>
+
+      <Row label="Asked so far" no="01">
       {ready && !notes.length && (
         <p className="cur-empty">
           Nothing asked for yet. Anything you want changed or added, put it here, and add
@@ -693,7 +721,9 @@ function Requests({ notes, ready, projectId, shotUrls, add }: any) {
           </div>
         </div>
       ))}
+      </Row>
 
+      <Row label="Ask for something" no="02">
       <div className="cn-pair">
         <div className="cn-add">
           <input placeholder="What would you like" value={d.title}
@@ -710,6 +740,7 @@ function Requests({ notes, ready, projectId, shotUrls, add }: any) {
         </div>
         <ExampleRequest />
       </div>
+      </Row>
     </div>
   );
 }

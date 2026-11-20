@@ -2,6 +2,7 @@ import { fetchWorkLog, fetchConsole, fetchPageTitle } from '@/lib/notion';
 import { createClient } from '@/lib/supabase/server';
 import { record } from '@/lib/events';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { MERGED_INTO } from '@/lib/brain/lanes';
 import { NextResponse } from 'next/server';
 
 // Pulls the Notion work log into the Quarry (work_log_raw).
@@ -71,6 +72,12 @@ export async function POST(request: Request) {
     if (!id) {
       const title = await fetchPageTitle(pageId);
       id = title ? byName.get(title.trim().toLowerCase()) ?? null : null;
+      // A page for a project that was folded into another lands on the project
+      // that holds the record now (lib/brain/lanes.ts, MERGED_INTO).
+      if (!id) {
+        const into = MERGED_INTO[pageId] ?? (title ? MERGED_INTO[title.trim()] : undefined);
+        if (into) id = byName.get(into.trim().toLowerCase()) ?? null;
+      }
       if (!id) unmatched.add(title ?? pageId);
     }
     pageToProject.set(pageId, id);

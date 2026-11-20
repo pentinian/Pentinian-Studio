@@ -28,10 +28,25 @@ function LoginForm() {
   // Only offer the passkey door where the browser can actually open it. An offer
   // that fails on click is worse than no offer.
   const [canPasskey, setCanPasskey] = useState(false);
+  // The third door: a starter password handed over in person, for someone who
+  // would rather not hunt for a link. It opens once. The first sign in with it
+  // mails a reset and lands on the page where they choose their own, and the
+  // middleware will not let them anywhere else until they have.
+  const [withPassword, setWithPassword] = useState(false);
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     setCanPasskey(typeof window !== 'undefined' && !!window.PublicKeyCredential);
   }, []);
+
+  // A link in a letter that has run out, or was never good, is sent here by
+  // /auth/mail with e=mailkey. Say so, and open the password door: from the site,
+  // a password is the way in.
+  useEffect(() => {
+    if (params.get('e') !== 'mailkey') return;
+    setWithPassword(true);
+    setError('That link from your mail no longer opens the door. Sign in with your password, or ask for a link instead.');
+  }, [params]);
 
   // Some sign-in links hand back the session in the URL fragment rather than as a
   // code to exchange. Links minted by the admin API do exactly this, because there is
@@ -156,6 +171,34 @@ function LoginForm() {
     window.location.assign(next || '/');
   }
 
+  async function signInWithPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setBusy(false);
+    if (error) {
+      setError(
+        /invalid login credentials/i.test(error.message)
+          ? 'That email and password do not match. If you were given a starter password, check it, or ask for a link instead.'
+          : error.message
+      );
+      return;
+    }
+    if (data.user?.user_metadata?.starter_password) {
+      // A starter password is a key cut for one turn. Mail the reset now, so the
+      // person has a way back if they close the page, and send them to choose
+      // their own. The middleware keeps them on that page until they do.
+      const back = new URL('/auth/callback', window.location.origin);
+      back.searchParams.set('next', '/account/password');
+      await supabase.auth.resetPasswordForEmail(email, { redirectTo: back.toString() });
+      window.location.assign('/account/password?starter=1');
+      return;
+    }
+    window.location.assign(next || '/');
+  }
+
   async function ask(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -222,7 +265,7 @@ function LoginForm() {
             <h1 className="auth-h">Sign in.</h1>
             <p className="auth-sub">
               Access is by invitation. Use your passkey if you have one, otherwise I'll
-              send a one-time link. Either way there is no password to remember.
+              send a one-time link. There is no password to remember unless you chose one.
             </p>
 
             {canPasskey && (
@@ -236,7 +279,7 @@ function LoginForm() {
               </>
             )}
 
-            <form onSubmit={asking ? ask : submit} className="auth-form">
+            <form onSubmit={asking ? ask : withPassword ? signInWithPassword : submit} className="auth-form">
               <input
                 className="uline"
                 type="email"
@@ -263,11 +306,37 @@ function LoginForm() {
                   />
                 </>
               )}
+              {withPassword && !asking && (
+                <input
+                  className="uline"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              )}
               <button className="btn-line" type="submit" disabled={busy}>
-                {busy ? 'Sending…' : asking ? 'Ask for access ↗' : 'Send my link ↗'}
+                {busy
+                  ? withPassword && !asking ? 'Checking…' : 'Sending…'
+                  : asking ? 'Ask for access ↗' : withPassword ? 'Sign in ↗' : 'Send my link ↗'}
               </button>
             </form>
             {error && <p className="auth-err">{error}</p>}
+            {!asking && (
+              <button
+                className="auth-flip"
+                type="button"
+                onClick={() => {
+                  setWithPassword((w) => !w);
+                  setPassword('');
+                  setError('');
+                }}
+              >
+                {withPassword ? 'Send me a link instead' : 'Have a password? Use it'}
+              </button>
+            )}
             <button
               className="auth-flip"
               type="button"

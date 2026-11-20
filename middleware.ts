@@ -36,6 +36,43 @@ function canonicalHost() {
   }
 }
 
+/**
+ * Did this session come in through a letter (/auth/mail)?
+ *
+ * That door leaves a `pt-letter` cookie holding the id of the session it opened.
+ * The access token carries the same id (`session_id`) and says how the session
+ * began (`amr`). getUser() has already had the server vouch for this token by
+ * the time this is asked, so reading the claims off the cookie's copy is reading
+ * something checked.
+ *
+ * True only when all of it lines up: the cookie names THIS session, and no
+ * password was used in it. Anything unreadable or unexpected answers false, so
+ * the person is held on the choose-a-password page rather than waved through.
+ */
+async function openedByLetter(
+  supabase: ReturnType<typeof createServerClient>,
+  request: NextRequest
+) {
+  try {
+    const mark = request.cookies.get('pt-letter')?.value;
+    if (!mark) return false;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const part = session?.access_token?.split('.')[1];
+    if (!part) return false;
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    const claims = JSON.parse(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
+    if (!claims?.session_id || claims.session_id !== mark) return false;
+    const methods: string[] = (Array.isArray(claims.amr) ? claims.amr : []).map((m: any) =>
+      typeof m === 'string' ? m : String(m?.method ?? '')
+    );
+    return methods.length > 0 && !methods.includes('password');
+  } catch {
+    return false;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   // Cookies are scoped to a hostname, so a session created on the stable alias does
   // not exist on a preview deployment, and every push mints a new preview hostname.
@@ -110,6 +147,26 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/no-access';
     url.search = '';
+    return carry(response, NextResponse.redirect(url));
+  }
+
+  // A starter password opens the door once. Until the person has chosen their
+  // own, every page is the page where they choose it; the key they were handed
+  // must not become the key they keep.
+  //
+  // One way past: the session was opened by a link in a letter from the studio
+  // (/auth/mail). That reader never used the starter, so there is nothing to make
+  // them trade in, and the letter is meant to open with nothing typed. Everyone
+  // who comes through the site itself (the starter password, or a link asked for
+  // on the login page) is still held here until they have a password of their own.
+  if (
+    user?.user_metadata?.starter_password &&
+    !path.startsWith('/account/password') &&
+    !(await openedByLetter(supabase, request))
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/account/password';
+    url.search = '?starter=1';
     return carry(response, NextResponse.redirect(url));
   }
 
